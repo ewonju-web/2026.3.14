@@ -530,7 +530,7 @@
         {% endif %}
     </div>
 
-    <h2 class="section-title d-none d-md-block">추천 매물</h2>
+    <h2 class="section-title d-none d-md-block gn-recommend-title">추천 매물</h2>
 
     <!-- PC: 첫 20개 4열 카드 + 더보기 시 21번째부터 한 줄씩 목록 -->
     <div class="d-none d-md-block mb-5">
@@ -944,6 +944,14 @@
   .gn-pc-advanced-filters .btn-warning:hover {
     background: #ca8a04 !important;
     color: #fff !important;
+  }
+  /* 추천 매물 영역: 제목/카드 시작점을 살짝 아래로 */
+  .gn-recommend-title {
+    margin-top: 1rem;
+    margin-bottom: 1.35rem;
+  }
+  .gn-index-pc-initial {
+    margin-top: 0.35rem;
   }
 
   /* 상세검색 select: 값 선택 시 하이라이트 (모바일 등 나머지) */
