@@ -1,0 +1,189 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Q
+from django.contrib.auth import logout
+
+from .models import Equipment, JobPost, Part, EquipmentImage
+from .forms import EquipmentForm
+
+
+# [1] 메인 페이지
+def index(request):
+    query = (request.GET.get('q', '') or '').strip()
+    equipment_list = Equipment.objects.all().order_by('-created_at')
+
+    if query:
+        lookups = (
+            Q(model_name__icontains=query) |
+            Q(manufacturer__icontains=query) |
+            Q(current_location__icontains=query)   # ✅ 위치(주소) 검색 추가
+        )
+
+        # ✅ 숫자(가격) 검색 지원: 1,500 / 1500만원 / 1500원
+        q_num = query.replace(',', '').replace('만원', '').replace('원', '').strip()
+        if q_num.isdigit():
+            lookups |= Q(listing_price=int(q_num))
+
+        equipment_list = equipment_list.filter(lookups).distinct()
+
+    return render(request, 'equipment/equipment_list.html', {'equipment_list': equipment_list, 'query': query})
+
+
+
+# [2] 로그인 관련
+def user_login(request):
+    return render(request, 'registration/login.html')
+
+
+def user_logout(request):
+    logout(request)
+    return redirect('index')
+
+
+def signup(request):
+    return render(request, 'registration/signup.html')
+
+
+def my_page(request):
+    # 로그인 안 했으면 로그인 페이지로 보내기
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    my_equipments = Equipment.objects.filter(author=request.user).order_by('-created_at')
+    return render(request, 'registration/my_page.html', {'my_equipments': my_equipments})
+
+
+# [3] 구인구직 관련
+def job_list(request):
+    qs = JobPost.objects.all().order_by('-created_at')
+    return render(request, 'equipment/job_list.html', {'job_list': qs, 'jobs': qs})
+
+
+def job_detail(request, pk):
+    job = get_object_or_404(JobPost, pk=pk)
+    return render(request, 'equipment/job_detail.html', {'job': job})
+
+
+def job_create(request):
+    if request.method == "POST":
+        title = (request.POST.get("title") or "").strip()
+        writer = (request.POST.get("writer") or "익명").strip()
+        contact = (request.POST.get("contact") or "").strip()
+        mode = request.POST.get("job_mode", "hire")
+        content_main = (request.POST.get("content") or "").strip()
+
+        if mode == "seek":
+            location = (request.POST.get("seek_location") or "").strip()
+            label = "구직"
+        else:
+            location = (request.POST.get("location") or "").strip()
+            label = "구인"
+
+        if not title:
+            title = f"[{label}] 제목없음"
+
+        full_content = (
+            f"[{label}]\n"
+            f"작성자: {writer}\n"
+            f"연락처: {contact}\n"
+            f"지역: {location}\n\n"
+            f"[내용]\n{content_main}"
+        )
+
+        JobPost.objects.create(
+            title=title,
+            content=full_content,
+            location=location,
+            author=request.user if request.user.is_authenticated else None,
+        )
+        return redirect("job_list")
+
+    return render(request, "equipment/job_form.html")
+
+
+def job_edit(request, pk):
+    return render(request, 'equipment/job_form.html')
+
+
+def job_delete(request, pk):
+    get_object_or_404(JobPost, pk=pk).delete()
+    return redirect('job_list')
+
+
+# [4] 매물 관련
+def equipment_detail(request, pk):
+    return render(request, 'equipment/equipment_detail.html', {'equipment': get_object_or_404(Equipment, pk=pk)})
+
+
+def equipment_create(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    if request.method == 'POST':
+        form = EquipmentForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.author = request.user
+            obj.save()
+
+            # ✅ 사진 여러장 저장
+            for f in request.FILES.getlist('images'):
+                EquipmentImage.objects.create(equipment=obj, image=f)
+
+            return redirect('equipment_detail', obj.pk)
+    else:
+        form = EquipmentForm()
+
+    return render(request, 'equipment/equipment_form.html', {'form': form, 'mode': 'create'})
+
+
+def equipment_edit(request, pk):
+    obj = get_object_or_404(Equipment, pk=pk)
+
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # 내 글만 수정 가능 (author가 None이면 일단 막음)
+    if obj.author_id != request.user.id:
+        return redirect('equipment_detail', obj.pk)
+
+    if request.method == 'POST':
+        form = EquipmentForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+
+            # ✅ 수정 시에도 새 사진 추가 업로드 가능(기존은 유지)
+            for f in request.FILES.getlist('images'):
+                EquipmentImage.objects.create(equipment=obj, image=f)
+
+            return redirect('equipment_detail', obj.pk)
+    else:
+        form = EquipmentForm(instance=obj)
+
+    return render(request, 'equipment/equipment_form.html', {'form': form, 'mode': 'edit', 'equipment': obj})
+
+
+def equipment_delete(request, pk):
+    get_object_or_404(Equipment, pk=pk).delete()
+    return redirect('index')
+
+
+# [5] 부품 관련
+def part_list(request):
+    return render(request, 'equipment/part_list.html', {'part_list': Part.objects.all()})
+
+
+def part_detail(request, pk):
+    return render(request, 'equipment/part_detail.html', {'part': get_object_or_404(Part, pk=pk)})
+
+
+def part_create(request):
+    return render(request, 'equipment/part_form.html')
+
+
+def part_edit(request, pk):
+    return render(request, 'equipment/part_form.html')
+
+
+def part_delete(request, pk):
+    get_object_or_404(Part, pk=pk).delete()
+    return redirect('part_list')

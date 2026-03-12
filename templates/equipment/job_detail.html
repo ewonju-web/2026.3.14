@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/jobs.css' %}?v=5">
+{% endblock %}
+{% block content %}
+<div class="container py-5 pb-5 pb-md-4 gn-job-detail-page">
+    <div class="max-auto" style="max-width: 720px; margin: 0 auto;">
+        <header class="gn-job-hero">
+            <h1 class="gn-job-title">{{ job.title }}</h1>
+            <p class="gn-job-meta-line">
+                <span class="badge {% if job.job_type == 'HIRING' %}bg-primary{% else %}bg-success{% endif %} gn-job-badge">{{ job.get_job_type_display }}</span>
+                <span class="ms-2">등록일 {{ job.created_at|date:"Y-m-d" }}</span>
+                {% if job.region_sido or job.region_sigungu or job.location %}
+                <span class="mx-2">·</span>
+                <a href="https://map.naver.com/v5/search/{% if job.region_sido %}{{ job.region_sido }}{% endif %}{% if job.region_sigungu %} {{ job.region_sigungu }}{% endif %}{% if job.location %} {{ job.location }}{% endif %}" target="_blank" rel="noopener" class="text-decoration-none"><i class="bi bi-geo-alt"></i> 지도</a>
+                {% endif %}
+            </p>
+        </header>
+
+        <!-- 단순화: 사람구함 / 일자리구함 블록 -->
+        <div class="card border-0 gn-job-light-card gn-job-simple-block">
+            <div class="card-body">
+                {% if job.job_type == 'HIRING' %}
+                <div class="gn-job-simple-list">
+                    <div class="gn-job-simple-row"><span class="gn-job-dt gn-job-label-bg">회사명</span><span class="gn-job-dd"> : {{ job.company_name|default:"—" }}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt gn-job-label-bg">근무지역</span><span class="gn-job-dd"> : {% if job.region_sido or job.region_sigungu %}{{ job.region_sido|default:'' }} {{ job.region_sigungu|default:'' }}{% if job.location %} {{ job.location }}{% endif %}{% else %}{{ job.location|default:"—" }}{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">급여</span><span class="gn-job-dd gn-job-pay"> : {% if job.pay %}{{ job.pay }}{% else %}협의후 결정{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">모집인원</span><span class="gn-job-dd"> : {% if job.recruit_count %}{{ job.recruit_count }}명{% else %}—{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">마감</span><span class="gn-job-dd"> : {% if job.deadline_type == 'DATE' and job.deadline %}{{ job.deadline|date:"Y-m-d" }}{% else %}채용시까지{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">담당자</span><span class="gn-job-dd"> : {{ job.writer_display|default:"—" }}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">전화번호</span><span class="gn-job-dd"> : {% if job.contact %}<a href="tel:{{ job.contact }}" class="text-decoration-none">{{ job.contact }}</a>{% else %}—{% endif %}</span></div>
+                    {% if job.company_address %}<div class="gn-job-simple-row"><span class="gn-job-dt">주소</span><span class="gn-job-dd"> : {{ job.company_address }}</span></div>{% endif %}
+                </div>
+                {% else %}
+                <p class="gn-job-simple-heading">일자리구합니다.</p>
+                <div class="gn-job-simple-list">
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">지역</span><span class="gn-job-dd"> : {% if job.region_sido or job.region_sigungu %}{{ job.region_sido|default:'' }} {{ job.region_sigungu|default:'' }}{% if job.location %} {{ job.location }}{% endif %}{% else %}{{ job.location|default:"—" }}{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">경력</span><span class="gn-job-dd"> : {{ job.experience|default:"—" }}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">작성자</span><span class="gn-job-dd"> : {{ job.writer_display|default:"—" }}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">연락처</span><span class="gn-job-dd"> : {% if job.contact %}<a href="tel:{{ job.contact }}" class="text-decoration-none">{{ job.contact }}</a>{% else %}—{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">등록일</span><span class="gn-job-dd"> : {{ job.created_at|date:"Y-m-d" }}</span></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if job.content %}
+        <div class="card border-0 gn-job-light-card">
+            <div class="card-body">
+                <h2 class="gn-job-card-title">상세 내용</h2>
+                <div class="gn-job-content">{{ job.content }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 1:1 문의 (공개 댓글 없음) -->
+        <div class="card border-0 gn-job-light-card">
+            <div class="card-body text-center py-4">
+                {% if user.is_authenticated and job.author_id == user.id %}
+                <a href="{% url 'chat_room_list' %}" class="btn btn-lg w-100 py-3 fw-bold gn-job-inquiry-btn" style="background: var(--gn-accent); color: #0f172a; border-radius: 12px;"><i class="bi bi-envelope-open me-2"></i>문의함 보기</a>
+                <p class="small text-muted mt-2 mb-0">이 글로 들어온 1:1 문의를 채팅에서 확인하세요.</p>
+                {% else %}
+                {% if job.author_id %}
+                {% if user.is_authenticated %}
+                <a href="{% url 'job_chat_start' job.pk %}" class="btn btn-lg w-100 py-3 fw-bold gn-job-inquiry-btn" style="background: var(--gn-accent); color: #0f172a; border-radius: 12px;"><i class="bi bi-envelope me-2"></i>문의하기</a>
+                {% else %}
+                <a href="{% url 'login' %}?next={% url 'job_chat_start' job.pk %}" class="btn btn-lg w-100 py-3 fw-bold gn-job-inquiry-btn" style="background: var(--gn-accent); color: #0f172a; border-radius: 12px;"><i class="bi bi-envelope me-2"></i>문의하기</a>
+                {% endif %}
+                <p class="small text-muted mt-2 mb-0">작성자와만 1:1 대화가 가능합니다.{% if not user.is_authenticated %} (로그인 필요){% endif %}</p>
+                {% else %}
+                <p class="text-muted small mb-0">문의는 로그인된 작성자 글에만 가능합니다.</p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 액션: 사직(작게) / 목록(좌) / 수정·삭제(우) -->
+        <div class="gn-job-actions-wrap">
+            <div class="card border-0 gn-job-actions-card">
+                <div class="card-body">
+                    <div class="gn-job-actions-inner">
+                        <div class="d-flex flex-column align-items-start gap-2">
+                            <a href="{% url 'job_list' %}" class="gn-job-cta-btn gn-job-cta-small">사직</a>
+                            <a href="{% url 'job_list' %}" class="gn-job-cta-btn gn-job-cta-list"><i class="bi bi-list-ul me-2"></i>목록</a>
+                        </div>
+                        {% if user.is_authenticated and job.author_id == user.id %}
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{% url 'job_edit' job.pk %}" class="gn-job-cta-btn gn-job-cta-edit"><i class="bi bi-pencil me-2"></i>수정</a>
+                            <a href="{% url 'job_delete' job.pk %}" class="gn-job-cta-btn gn-job-cta-delete"><i class="bi bi-trash me-2"></i>삭제</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

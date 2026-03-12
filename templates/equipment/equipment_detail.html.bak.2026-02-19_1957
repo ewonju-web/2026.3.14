@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid px-md-5 py-4">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="d-flex flex-column gap-4">
+                {% if equipment.images.all %}
+                    {% for image in equipment.images.all %}
+                    <div class="shadow-sm rounded-4 overflow-hidden border bg-white">
+                        <img src="{{ image.image.url }}" class="img-fluid w-100" 
+                             style="cursor: zoom-in; min-height: 400px; object-fit: contain;" 
+                             data-bs-toggle="modal" data-bs-target="#imgModal{{ forloop.counter }}">
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="bg-light p-5 text-center rounded-4 border">
+                        <i class="bi bi-camera text-muted fs-1"></i>
+                        <p class="text-muted mt-2">등록된 사진이 없습니다.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 90px; z-index: 10;">
+                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px; border: 2px solid #cfe2ff !important;">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge bg-primary px-3 py-2">매물번호 #{{ equipment.pk }}</span>
+                        <span class="text-muted small"><i class="bi bi-eye"></i> 조회수 124</span>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ equipment.model_name }}</h2>
+                    <p class="text-muted mb-4">{{ equipment.manufacturer }} | {{ equipment.year_manufactured }}년식</p>
+                    
+                    <div class="bg-primary bg-opacity-10 p-4 rounded-4 mb-4 text-center border border-primary border-opacity-25">
+                        <div class="text-primary small fw-bold mb-1">판매가격</div>
+                        <span class="h1 fw-bold text-danger">{{ equipment.listing_price }}<small class="fs-4">만원</small></span>
+                    </div>
+
+                    <table class="table table-sm border-top mb-4">
+                        <tbody>
+                            <tr>
+                                <th class="py-2 text-muted fw-normal">지역</th>
+                                <td class="py-2 text-end fw-bold">{{ equipment.current_location }}</td>
+                            </tr>
+                            <tr>
+                                <th class="py-2 text-muted fw-normal">가동시간</th>
+                                <td class="py-2 text-end fw-bold">1,200 HR (예시)</td>
+                            </tr>
+                            <tr>
+                                <th class="py-2 text-muted fw-normal">압류/저당</th>
+                                <td class="py-2 text-end fw-bold text-success">없음</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="d-grid gap-2">
+                        <a href="tel:010-1234-5678" class="btn btn-primary btn-lg py-3 fw-bold shadow" style="border-radius: 15px; background: #1a237e;">
+                            <i class="bi bi-telephone-fill me-2"></i> 전화 상담하기
+                        </a>
+                        <button class="btn btn-outline-secondary py-2" style="border-radius: 12px;">
+                            <i class="bi bi-share me-2"></i> 매물 공유하기
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm p-4 rounded-4 bg-white">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">상세 설명</h5>
+                    <div class="text-dark lh-lg mb-0" style="white-space: pre-wrap; font-size: 0.95rem;">
+                        {{ equipment.description|default:"내용이 없습니다." }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for image in equipment.images.all %}
+<div class="modal fade" id="imgModal{{ forloop.counter }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen p-2 p-md-5">
+        <div class="modal-content bg-black border-0 bg-opacity-90">
+            <div class="modal-body p-0 d-flex align-items-center justify-content-center position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-4" data-bs-dismiss="modal"></button>
+                <img src="{{ image.image.url }}" class="img-fluid" style="max-height: 95vh;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

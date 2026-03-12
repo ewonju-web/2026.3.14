@@ -1,0 +1,9 @@
+{% extends "admin/base.html" %}
+
+{% block title %}관리자 | 굴삭기나라{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">🚜 굴삭기나라 관리자</a>
+</h1>
+{% endblock %}

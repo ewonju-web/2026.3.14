@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5 mb-5" style="max-width: 750px;">
+    <div class="card shadow border-0 rounded-4 p-4 p-md-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold" style="color: #333;">매물 등록하기</h2>
+            <p class="text-muted">빠르고 간편하게 매물을 등록해보세요.</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-5">
+                <h5 class="fw-bold mb-4" style="color: #FFB800;">| 장비 정보</h5>
+                <div class="row g-3">
+                    {% for field in form %}
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label fw-bold" style="color: #444;">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-5" style="border-top: 1px solid #eee;">
+
+            <div class="mb-5">
+                <h5 class="fw-bold mb-3" style="color: #FFB800;">| 장비 사진</h5>
+                <p class="small text-muted mb-4">📸 첫 번째 칸에 메인 사진을 올려주세요. (카메라/갤러리 연동)</p>
+                
+                <div class="row g-3">
+                    {% for i in "1234567890" %}
+                    <div class="col-6 col-md-4">
+                        <div class="border rounded-3 p-2 bg-white text-center shadow-sm position-relative">
+                            <label class="small d-block mb-2 text-muted fw-bold">사진 {{ forloop.counter }}</label>
+                            <input type="file" name="images" class="form-control form-control-sm image-input" 
+                                   accept="image/*" capture="camera" onchange="previewImage(this, 'preview-{{ forloop.counter }}')">
+                            <div id="preview-{{ forloop.counter }}" class="mt-2 rounded overflow-hidden" style="height: 80px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 1px dashed #ddd;">
+                                <span class="text-muted" style="font-size: 0.7rem;">미리보기</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <button type="submit" class="btn w-100 fw-bold py-3 rounded-pill shadow" 
+                        style="background-color: #FFB800; color: black; border: none; font-size: 1.2rem;">
+                    가입 완료하기
+                </button>
+                <a href="/" class="btn btn-link w-100 mt-3 text-decoration-none text-muted">취소하고 돌아가기</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// 사진 미리보기 함수 (2번 요청)
+function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 3번 요청: 제작년월일(1), 가동시간(0) 초기값 삭제
+window.onload = function() {
+    const fields = document.querySelectorAll('input');
+    fields.forEach(f => {
+        if (f.value === '1' || f.value === '0') {
+            f.value = '';
+        }
+    });
+}
+</script>
+
+<style>
+    /* 폼 디자인 통일 */
+    input[type="text"], input[type="number"], input[type="password"], select, textarea {
+        display: block; width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem;
+        border: 1px solid #dee2e6; border-radius: 0.6rem; background-color: #fff;
+    }
+    input:focus { border-color: #FFB800; outline: 0; box-shadow: 0 0 0 0.25rem rgba(255, 184, 0, 0.15); }
+    .image-input { font-size: 0.75rem; }
+</style>
+
+{% endblock %}

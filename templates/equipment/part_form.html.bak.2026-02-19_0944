@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="mx-auto" style="max-width: 700px;">
+        <h3 class="fw-bold mb-4" style="border-left: 5px solid #ffc107; padding-left: 15px;">🛠️ 부품/어테치먼트 등록</h3>
+        <div class="card shadow-sm border-0 p-4" style="border-radius: 20px;">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">📸 사진 첨부 (여러 장 선택 가능)</label>
+                    <input type="file" name="images" class="form-control" multiple accept="image/*">
+                    <small class="text-muted">여러 장을 한꺼번에 선택해 주세요.</small>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-dark btn-lg py-3" style="border-radius: 12px;">부품 매물 등록하기</button>
+                    <a href="{% url 'part_list' %}" class="btn btn-light border">취소</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}굴삭기나라{% endblock %}</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --gn-nav: #374151;
+            --gn-nav-hover: #4b5563;
+            --gn-accent: #e8a317;
+            --gn-accent-hover: #d49410;
+            /* 흰 바탕(라이트) 배경·카드·텍스트 */
+            --gn-bg: #ffffff;
+            --gn-card: #ffffff;
+            --gn-text: #111827;
+            --gn-muted: #6b7280;
+            --gn-border: #e5e7eb;
+            --gn-radius: 12px;
+            --gn-radius-lg: 16px;
+            --gn-shadow: 0 1px 3px rgba(0,0,0,.08);
+            --gn-shadow-hover: 0 8px 24px -4px rgba(0,0,0,.12);
+        }
+        body {
+            font-family: "Pretendard", -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--gn-bg);
+            color: var(--gn-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        main { flex: 1; }
+
+        /* Navbar */
+        .navbar-gn {
+            background: var(--gn-nav) !important;
+            padding: 0.6rem 0;
+            box-shadow: 0 1px 0 rgba(255,255,255,.06);
+        }
+        .navbar-gn .navbar-brand {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffd86b !important;
+            letter-spacing: -0.02em;
+        }
+        .navbar-gn .navbar-brand:hover { color: #ffe8a3 !important; }
+        .navbar-gn .nav-link {
+            color: rgba(255,255,255,.88) !important;
+            font-weight: 500;
+            font-size: 1.02rem;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px;
+            transition: color .2s, background .2s;
+        }
+        .navbar-gn .nav-link:hover {
+            color: #fff !important;
+            background: var(--gn-nav-hover);
+        }
+        /* 흙 메뉴: 포인트 강조 (과하지 않게) */
+        .navbar-gn .nav-link.soil-nav {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: rgba(255,255,255,.95) !important;
+        }
+        .navbar-gn .nav-link.soil-nav:hover {
+            color: var(--gn-accent) !important;
+            background: var(--gn-nav-hover);
+        }
+        /* 모바일 햄버거 메뉴 내 흙 링크 강조 */
+        .soil-nav-mobile {
+            font-weight: 700 !important;
+            letter-spacing: 0.5px;
+        }
+        .soil-nav-mobile:hover, .soil-nav-mobile:focus {
+            color: var(--gn-accent) !important;
+        }
+        .navbar-gn .btn-outline-light {
+            border-color: rgba(255,255,255,.4);
+            color: #fff;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-radius: 8px;
+        }
+        .navbar-gn .btn-outline-light:hover {
+            background: rgba(255,255,255,.1);
+            border-color: #fff;
+            color: #fff;
+        }
+        .navbar-gn .btn-accent {
+            background: var(--gn-accent);
+            color: #0c1929;
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 8px;
+        }
+        .navbar-gn .btn-accent:hover {
+            background: var(--gn-accent-hover);
+            color: #0c1929;
+        }
+        /* PC 전용: 상단 메뉴바를 살짝 더 크게 */
+        @media (min-width: 768px) {
+            .navbar-gn {
+                padding: 0.72rem 0;
+            }
+            .navbar-gn .navbar-brand {
+                font-size: 1.5rem;
+            }
+            .navbar-gn .nav-link {
+                font-size: 1.08rem;
+                padding: 0.58rem 1.08rem !important;
+            }
+            .navbar-gn .navbar-nav .nav-link {
+                font-size: 1.12rem;
+            }
+            .navbar-gn .btn-outline-light,
+            .navbar-gn .btn-accent {
+                font-size: 1rem;
+                padding: 0.42rem 0.82rem;
+            }
+        }
+
+        /* Cards 공통 */
+        .item-card {
+            cursor: pointer;
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+            position: relative;
+            z-index: 1;
+            border: 1px solid var(--gn-border);
+            border-radius: var(--gn-radius-lg);
+            overflow: hidden;
+            background: var(--gn-card);
+            box-shadow: var(--gn-shadow);
+        }
+        .item-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--gn-shadow-hover);
+            border-color: rgba(232,163,23,.35);
+        }
+        .item-card img { transition: transform .35s ease; }
+        .item-card:hover img { transform: scale(1.04); }
+
+        /* Section title */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gn-text);
+            margin-bottom: 1.25rem;
+            padding-left: 0.75rem;
+            border-left: 4px solid var(--gn-accent);
+        }
+
+        /* Footer (라이트) */
+        footer {
+            background: #f3f4f6;
+            color: var(--gn-muted);
+            font-size: 0.875rem;
+            padding: 1.5rem 0;
+            margin-top: auto;
+            border-top: 1px solid var(--gn-border);
+        }
+        @media (max-width: 767.98px) {
+            footer { padding-bottom: 5rem; }
+            .footer-visitor-row { display: flex !important; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+            .footer-visitor-row .col-auto { width: 100%; text-align: center !important; }
+        }
+        footer a { color: #374151; text-decoration: none; }
+        footer a:hover { color: var(--gn-accent); }
+        .footer-nav { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; justify-content: center; }
+        .footer-disclaimer {
+            color: var(--gn-muted);
+            line-height: 1.6;
+            max-width: 52em;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        .footer-company, .footer-contact { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; align-items: center; }
+        .form-control, .form-select {
+            border-radius: 10px;
+            background: var(--gn-card);
+            border-color: var(--gn-border);
+            color: var(--gn-text);
+        }
+        .form-control::placeholder { color: var(--gn-muted); }
+        .form-control:focus, .form-select:focus {
+            background: var(--gn-card);
+            border-color: var(--gn-accent);
+            color: var(--gn-text);
+        }
+        .table { color: var(--gn-text); }
+        .table-light { background: var(--gn-card); color: var(--gn-text); }
+        .border, .border-bottom { border-color: var(--gn-border) !important; }
+        .bg-light { background: var(--gn-card) !important; color: var(--gn-text); }
+        .bg-white { background: var(--gn-card) !important; }
+        .text-dark { color: var(--gn-text) !important; }
+        .text-muted { color: var(--gn-muted) !important; }
+
+        /* 모바일 전용: 당근 스타일 상단바·하단 네비 */
+        .gn-mobile-header {
+            display: none;
+            background: var(--gn-nav);
+            color: #fff;
+            padding: 0.6rem 1rem;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            box-shadow: 0 1px 0 rgba(255,255,255,.06);
+        }
+        .gn-mobile-bottom {
+            display: none;
+            background: var(--gn-card);
+            border-top: 1px solid var(--gn-border);
+            padding: 0.5rem 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1025;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .gn-mobile-bottom a {
+            color: var(--gn-muted);
+            text-decoration: none;
+            font-size: 0.7rem;
+            text-align: center;
+            flex: 1;
+        }
+        .gn-mobile-bottom a:hover, .gn-mobile-bottom a.active { color: var(--gn-accent); }
+        .gn-mobile-bottom .nav-icon { font-size: 1.4rem; display: block; margin-bottom: 2px; }
+        .gn-fab {
+            display: none;
+            position: fixed;
+            bottom: 4.2rem;
+            right: 1.25rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gn-accent);
+            color: #0c1929;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(232,163,23,.45);
+            z-index: 1020;
+            text-decoration: none;
+        }
+        .gn-fab:hover { color: #0c1929; background: var(--gn-accent-hover); }
+        @media (max-width: 767.98px) {
+            .gn-mobile-header { display: flex; }
+            .gn-mobile-bottom { display: flex; }
+            .navbar-gn .container { padding-top: 0; padding-bottom: 0; }
+            main { padding-bottom: 4.5rem; }
+        }
+        @media (max-width: 767.98px) {
+            .gn-fab { display: flex; }
+        }
+        .gn-category-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding: 0.5rem 0.25rem; }
+        .gn-category-scroll::-webkit-scrollbar { height: 0; }
+        .gn-cat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1.1rem;
+            margin-right: 0.6rem;
+            border-radius: 999px;
+            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            font-size: 0.86rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .gn-cat-pill i { font-size: 1rem; }
+        .gn-cat-pill.active {
+            background: linear-gradient(135deg, var(--gn-accent) 0%, #ffcc40 100%);
+            color: #111827;
+            border-color: rgba(248,250,252,.9);
+        }
+        /* 검색 패널: 작고 이쁘게, 다크, 가운데 정렬
+         * 모바일에서 왼쪽으로 밀리는 이유: 오프캔버스 열릴 때 body에 padding-right(스크롤바 보정)가 들어가거나,
+         * 뷰포트/containing block 차이로 100%가 실제 화면보다 좁아져서 중앙이 어긋남. → 모바일만 100vw로 고정 */
+        .gn-search-offcanvas.offcanvas-top {
+            height: auto;
+            max-height: 220px;
+            border-radius: 0 0 1rem 1rem;
+            background: var(--gn-card);
+            border: none;
+            border-bottom: 1px solid var(--gn-border);
+            box-shadow: 0 10px 40px rgba(0,0,0,.4);
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100%;
+        }
+        @media (max-width: 767.98px) {
+            .gn-search-offcanvas.offcanvas-top {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                left: 0 !important;
+                right: 0 !important;
+                margin-left: 0 !important;
+            }
+            .gn-search-offcanvas .offcanvas-body {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            .gn-search-offcanvas .gn-search-inner {
+                /* JS에서 열릴 때 viewport 기준 정중앙으로 marginLeft 계산 */
+                position: relative;
+                left: 0;
+                transform: none;
+            }
+        }
+        .gn-search-offcanvas .offcanvas-header {
+            padding: 0.6rem 3rem !important;
+            border-bottom: 1px solid var(--gn-border);
+            position: relative;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .gn-search-offcanvas .offcanvas-title {
+            font-size: 0.95rem;
+            color: var(--gn-text);
+            margin: 0;
+            display: block;
+        }
+        .gn-search-offcanvas .offcanvas-header .btn-close {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            filter: invert(1);
+            opacity: .8;
+        }
+        .gn-search-offcanvas .offcanvas-body.gn-search-body {
+            padding: 0.75rem 1rem !important;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        .gn-search-offcanvas .gn-search-inner {
+            width: 92vw;
+            max-width: 400px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .gn-search-offcanvas .gn-search-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--gn-bg);
+            border: 1px solid var(--gn-border);
+            border-radius: 12px;
+            padding: 0.4rem 0.75rem;
+            transition: border-color .2s;
+        }
+        .gn-search-offcanvas .gn-search-bar:focus-within { border-color: var(--gn-accent); box-shadow: 0 0 0 2px rgba(232,163,23,.2); }
+        .gn-search-offcanvas .gn-search-bar .bi-search { color: var(--gn-muted); font-size: 1rem; }
+        .gn-search-offcanvas .gn-search-bar input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--gn-text);
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .gn-search-offcanvas .gn-search-bar input::placeholder { color: var(--gn-muted); }
+        .gn-search-offcanvas .gn-search-btn {
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            border-radius: 10px;
+            background: var(--gn-accent);
+            color: #0c1929;
+            border: none;
+            font-weight: 600;
+        }
+        .gn-search-offcanvas .gn-search-btn:hover { background: var(--gn-accent-hover); color: #0c1929; }
+        .gn-search-offcanvas .gn-search-hint { font-size: 0.95rem; color: var(--gn-muted); margin-top: 0.5rem; }
+
+        /* 전체 서비스 (햄버거) 아이템 */
+        .gn-service-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gn-muted);
+            margin: 0.5rem 1rem 0.25rem;
+        }
+        .gn-service-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+            padding: 0.5rem 1rem 1rem;
+        }
+        .gn-service-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 12px;
+            background: var(--gn-card);
+            border: 1px solid var(--gn-border);
+            text-decoration: none;
+            color: var(--gn-text);
+        }
+        .gn-service-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, var(--gn-accent) 0%, #ffcc40 100%);
+        }
+        .gn-service-item-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <!-- 모바일 전용 상단바 (당근 스타일) -->
+    <div class="gn-mobile-header">
+        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}" class="text-white text-decoration-none fw-bold" style="font-size: 1.2rem;">굴삭기나라</a>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-link text-white p-2 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#gnSearchOffcanvas" aria-label="검색"><i class="bi bi-search" style="font-size: 1.25rem;"></i></button>
+            <button class="btn btn-link text-white p-2 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#gnServiceMenu" aria-label="메뉴"><i class="bi bi-list" style="font-size: 1.5rem;"></i></button>
+        </div>
+    </div>
+
+    <!-- 모바일: 검색 아이콘 클릭 시 검색 패널 (작고 이쁜 다크 스타일) -->
+    <div class="offcanvas offcanvas-top gn-search-offcanvas" tabindex="-1" id="gnSearchOffcanvas" aria-labelledby="gnSearchOffcanvasLabel" style="left: 0 !important; right: 0 !important; width: 100% !important; max-width: 100% !important;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold" id="gnSearchOffcanvasLabel">검색</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="닫기"></button>
+        </div>
+        <div class="offcanvas-body gn-search-body">
+            <div class="gn-search-inner">
+                <form action="{% url 'index' %}" method="get" id="gnSearchForm">
+                    <input type="hidden" name="category" value="{{ request.GET.category|default:'' }}">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="gn-search-bar flex-grow-1" style="min-width: 0;">
+                            <i class="bi bi-search"></i>
+                            <input type="text" name="q" id="gnSearchInput" placeholder="모델명, 제조사, 지역, 가격" value="{{ request.GET.q|default:'' }}" autocomplete="off">
+                        </div>
+                        <button type="submit" class="gn-search-btn flex-shrink-0">검색</button>
+                    </div>
+                    <p class="gn-search-hint mb-0">예: 두산, 25톤, 2026년, 경기, 3,000만원</p>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function(){
+        var offcanvas = document.getElementById('gnSearchOffcanvas');
+        var body = document.querySelector('.gn-search-offcanvas .offcanvas-body');
+        var inner = document.querySelector('.gn-search-offcanvas .gn-search-inner');
+        function centerSearchBar() {
+            if (!inner || !body || window.innerWidth > 768) return;
+            var vw = window.innerWidth;
+            var width = Math.min(400, vw - 32);
+            inner.style.cssText = 'position:fixed!important;left:50%!important;transform:translateX(-50%)!important;width:' + width + 'px!important;max-width:' + width + 'px!important;margin:0!important;box-sizing:border-box!important;';
+            var rect = body.getBoundingClientRect();
+            inner.style.top = (rect.top + 8) + 'px';
+        }
+        function resetSearchBar() {
+            if (!inner) return;
+            inner.style.cssText = '';
+            inner.style.position = '';
+            inner.style.left = '';
+            inner.style.transform = '';
+            inner.style.top = '';
+            inner.style.width = '';
+            inner.style.margin = '';
+        }
+        if (offcanvas) {
+            offcanvas.addEventListener('shown.bs.offcanvas', function () {
+                if (window.innerWidth <= 768) centerSearchBar();
+                var input = document.getElementById('gnSearchInput');
+                if (input) { input.focus(); }
+            });
+            offcanvas.addEventListener('hidden.bs.offcanvas', resetSearchBar);
+        }
+        window.addEventListener('resize', function() {
+            if (inner && offcanvas && offcanvas.classList.contains('show') && window.innerWidth <= 768) centerSearchBar();
+            if (window.innerWidth > 768) resetSearchBar();
+        });
+    })();
+    </script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top navbar-gn d-none d-md-flex">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">굴삭기나라</a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="메뉴">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">중고매물</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'job_list' %}">구인구직</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'part_list' %}">어태치먼트</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'excavator_info' %}">굴삭기 유튜브</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'parts_as' %}">부품/AS</a></li>
+                    <li class="nav-item"><a class="nav-link soil-nav" href="{% url 'soil_list' %}">흙 받으실분</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="언어">{% if request.session.lang == 'en' %}EN{% else %}한국어{% endif %}</button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'set_language' %}?lang=ko&amp;next={{ request.get_full_path|urlencode }}">한국어</a></li>
+                            <li><a class="dropdown-item" href="{% url 'set_language' %}?lang=en&amp;next={{ request.get_full_path|urlencode }}">English</a></li>
+                        </ul>
+                    </div>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'chat_room_list' %}" class="nav-link d-none d-md-inline-block"><i class="bi bi-chat-dots me-1"></i>채팅{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
+                        <a href="{% url 'my_page' %}" class="nav-link d-none d-md-inline-block"><strong>{{ user.username }}</strong>님</a>
+                        <a href="{% url 'equipment_create' %}" class="btn btn-accent btn-sm">매물등록</a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">로그아웃</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">로그인</a>
+                        <a href="{% url 'signup' %}" class="btn btn-accent btn-sm">회원가입</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 햄버거 메뉴: 전체 서비스 (모바일, 다크) -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="gnServiceMenu" aria-labelledby="gnServiceMenuLabel" style="background: var(--gn-card); color: var(--gn-text);">
+        <div class="offcanvas-header border-bottom" style="border-color: var(--gn-border)!important;">
+            <h5 class="offcanvas-title fw-bold" id="gnServiceMenuLabel">전체 서비스</h5>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'set_language' %}?lang=ko&amp;next={{ request.get_full_path|urlencode }}" class="btn btn-sm {% if LANG == 'ko' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">한국어</a>
+                <a href="{% url 'set_language' %}?lang=en&amp;next={{ request.get_full_path|urlencode }}" class="btn btn-sm {% if LANG == 'en' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">EN</a>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="닫기"></button>
+        </div>
+        <div class="offcanvas-body px-0 pt-2 pb-3">
+            <div>
+                <div class="gn-service-section-title">장비 거래</div>
+                <div class="gn-service-grid">
+                    <a href="{% url 'index' %}?category=excavator" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-truck-front-fill"></i></div>
+                        <div>
+                            <div class="gn-service-item-title">굴삭기</div>
+                            <div class="small text-muted">어태치먼트</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'index' %}?category=forklift" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-box-seam-fill"></i></div>
+                        <div>
+                            <div class="gn-service-item-title">지게차</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'index' %}?category=dump" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-truck-flatbed"></i></div>
+                        <div>
+                            <div class="gn-service-item-title">덤프트럭</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'index' %}?category=loader" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-box2-heart-fill"></i></div>
+                        <div>
+                            <div class="gn-service-item-title">로더</div>
+                            <div class="small text-muted">스키로더</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'index' %}?category=etc" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                        <div>
+                            <div class="gn-service-item-title">기타장비</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <hr class="my-2" style="border-color: var(--gn-border); opacity: .4;">
+
+            <div class="px-3">
+                <div class="gn-service-section-title">서비스</div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'index' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-house me-2"></i>중고매물 홈</a>
+                    <a href="{% url 'job_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-briefcase me-2"></i>구인구직</a>
+                    <a href="{% url 'excavator_info' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-youtube me-2"></i>굴삭기 유튜브/정보</a>
+                    <a href="{% url 'parts_as' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-gear me-2"></i>부품/AS 부품점</a>
+                    <a href="{% url 'soil_list' %}" class="list-group-item list-group-item-action soil-nav-mobile" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-droplet-half me-2"></i>흙 받으실분</a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'chat_room_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-chat-dots me-2"></i>채팅{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
+                    <a href="{% url 'my_page' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-person me-2"></i>마이페이지</a>
+                    <a href="{% url 'logout' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-right me-2"></i>로그아웃</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-in-right me-2"></i>로그인</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모바일 하단 네비 (카테고리 선택 시 유지) -->
+    <nav class="gn-mobile-bottom">
+        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i class="bi bi-house-fill nav-icon"></i>홈</a>
+        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}"><i class="bi bi-grid nav-icon"></i>매물</a>
+        <a href="{% url 'job_list' %}"><i class="bi bi-briefcase nav-icon"></i>구인구직</a>
+        <a href="{% url 'my_page' %}"><i class="bi bi-person nav-icon"></i>마이</a>
+    </nav>
+
+    <main>{% block content %}{% endblock %}</main>
+    <footer>
+        <div class="container">
+            <div class="footer-nav mb-3">
+                <a href="#">회사소개</a>
+                <a href="#">이용약관</a>
+                <a href="#">개인정보처리방침</a>
+                <a href="#">광고안내</a>
+            </div>
+            <p class="footer-disclaimer small mb-2">굴삭기 나라의 모든 거래는 구매자와 판매자에게 있으며, 굴삭기 나라에서는 일체의 책임을 지지 않습니다.</p>
+            <div class="footer-company mb-2">
+                <span>회사명. 굴삭기나라</span>
+                <span class="mx-2">|</span>
+                <span>대표. 이원주</span>
+                <span class="mx-2">|</span>
+                <span>사업장 : 충청북도 음성군 소이면 소이로 313</span>
+                <span class="mx-2">|</span>
+                <span>사업자등록번호 : 833-47-00313</span>
+                <span class="mx-2">|</span>
+                <span>통신판매업번호 : 제2020-와부조안-0187호</span>
+            </div>
+            <div class="footer-contact mb-2">
+                <span>Tel. <a href="tel:010-2469-3800">010-2469-3800</a></span>
+                <span class="mx-2">|</span>
+                <span>Fax. 0504-056-4614</span>
+                <span class="mx-2">|</span>
+                <span>E-mail. <a href="mailto:ewonju@naver.com">ewonju@naver.com</a></span>
+            </div>
+            <div class="row align-items-center flex-wrap justify-content-center justify-content-md-between gap-2 footer-visitor-row">
+                <div class="col-auto text-center text-md-start">
+                    <span class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-center justify-content-md-start">
+                        <i class="bi bi-people"></i>
+                        <strong>오늘 방문자</strong> <span class="text-warning">{{ VISITOR_TODAY|default:0 }}</span>명
+                        <span class="opacity-75">(어제 {{ VISITOR_YESTERDAY|default:0 }}명)</span>
+                    </span>
+                </div>
+                <div class="col-auto text-center text-md-end">
+                    <span>Copyright ⓒ 굴삭기나라. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% load static %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}굴삭기나라{% endblock %}</title>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  <div style="font-size:14px; color:#666; margin:10px 0;">
+    오늘 방문자: <strong>{{ VISITOR_TODAY }}</strong>명 /
+    어제 방문자: <strong>{{ VISITOR_YESTERDAY }}</strong>명
+  </div>
+
+  {% block content %}{% endblock %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

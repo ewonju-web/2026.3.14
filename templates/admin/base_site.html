@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+
+{% block branding %}
+{{ block.super }}
+<div style="margin:8px 0 0 0; padding:8px 12px; background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; font-size:13px; color:#555; display:flex; gap:10px; align-items:center;">
+  <span>오늘 방문자 <strong>{{ VISITOR_TODAY }}</strong>명</span>
+  <span style="opacity:.4;">|</span>
+  <span>어제 방문자 <strong>{{ VISITOR_YESTERDAY }}</strong>명</span>
+</div>
+{% endblock %}

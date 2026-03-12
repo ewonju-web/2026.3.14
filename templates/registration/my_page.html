@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="section-title">마이페이지</h2>
+    <div class="gn-profile-card mb-4">
+        <div class="gn-profile-card-inner">
+            <div class="gn-profile-header">
+                <div class="gn-profile-avatar" aria-hidden="true">{{ user.username|slice:":1"|upper }}</div>
+                <div class="gn-profile-info">
+                    <p class="gn-profile-greeting">안녕하세요, {{ user.username }}님</p>
+                    <p class="gn-profile-meta">아이디: {{ user.username }} · 가입일: {{ user.date_joined|date:"Y-m-d" }}</p>
+                </div>
+            </div>
+            <div class="gn-profile-actions">
+                <a href="{% url 'index' %}" class="gn-profile-btn gn-profile-btn-home"><i class="bi bi-house me-1"></i>홈</a>
+                <a href="{% url 'chat_room_list' %}" class="gn-profile-btn gn-profile-btn-chat"><i class="bi bi-chat-dots me-1"></i>채팅</a>
+                <form action="{% url 'logout' %}" method="post" class="gn-profile-btn-form">
+                    {% csrf_token %}
+                    <button type="submit" class="gn-profile-btn gn-profile-btn-logout">로그아웃</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3"><i class="bi bi-heart-fill text-danger"></i> 찜한 매물</h5>
+    {% if fav_equipments or fav_parts %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
+        {% for e in fav_equipments %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
+                <div style="height:120px; background:#e2e8f0;">
+                    {% if e.images.all %}<img src="{{ e.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
+                </div>
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-1">{% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}</h6>
+                    <p class="text-danger fw-bold mb-2">{{ e.listing_price|floatformat:0|intcomma }}만원</p>
+                    <a href="{% url 'equipment_detail' e.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
+                    <a href="{% url 'toggle_equipment_favorite' e.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% for p in fav_parts %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
+                <div style="height:120px; background:#e2e8f0;">
+                    {% if p.images.all %}<img src="{{ p.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
+                </div>
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-1">{{ p.title }}</h6>
+                    <p class="text-danger fw-bold mb-2">{{ p.price }}</p>
+                    <a href="{% url 'part_detail' p.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
+                    <a href="{% url 'toggle_part_favorite' p.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted mb-4">찜한 매물이 없습니다. 목록에서 하트를 눌러 저장하세요.</p>
+    {% endif %}
+
+    <hr class="my-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0">내가 올린 매물</h5>
+        <a href="{% url 'equipment_create' %}" class="btn text-white fw-bold gn-my-listings-register" style="background: var(--gn-accent); border-radius: 10px; min-height: 42px; padding: 0.4rem 1rem;">매물 등록</a>
+    </div>
+
+            {% if my_equipments %}
+            <div class="table-responsive gn-my-listings-table-wrap">
+                <table class="table table-hover align-middle gn-my-listings-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="gn-th-model">모델명</th>
+                            <th class="gn-th-price">가격</th>
+                            <th class="gn-th-date">등록일</th>
+                            <th class="gn-th-actions">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for e in my_equipments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'equipment_detail' e.pk %}" class="text-decoration-none fw-bold">
+                                    {% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}
+                                </a>
+                            </td>
+                            <td>{{ e.listing_price|floatformat:0|intcomma }}만원</td>
+                            <td class="text-muted small">{{ e.created_at|date:"Y-m-d" }}</td>
+                            <td>
+                                <a class="btn btn-primary btn-sm rounded-2 gn-btn-edit" href="{% url 'equipment_edit' e.pk %}">수정</a>
+                                <a class="btn btn-danger btn-sm rounded-2 gn-btn-delete" href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}">삭제</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="text-muted">아직 등록한 매물이 없습니다.</p>
+            {% endif %}
+</div>
+<style>
+  /* 마이페이지 상단 프로필 카드 (고급 카드형) */
+  .gn-profile-card {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    background: linear-gradient(165deg, #f0f2f5 0%, #e8eaef 100%);
+    padding: 1.25rem;
+  }
+  .gn-profile-card-inner { background: transparent; }
+  .gn-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .gn-profile-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gn-accent) 0%, #d49410 100%);
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .gn-profile-info { min-width: 0; flex: 1; }
+  .gn-profile-greeting {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 0.2rem 0;
+    line-height: 1.3;
+  }
+  .gn-profile-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .gn-profile-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .gn-profile-btn,
+  .gn-profile-btn-form { flex: 1; min-width: 0; }
+  .gn-profile-btn-form { display: flex; margin: 0; }
+  .gn-profile-btn-form .gn-profile-btn { flex: 1; width: 100%; }
+  .gn-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    transition: background .2s, border-color .2s, color .2s;
+    cursor: pointer;
+  }
+  .gn-profile-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+  }
+  .gn-profile-btn-home:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
+  .gn-profile-btn-chat:hover { background: #f8fafc; border-color: #64748b; }
+  .gn-profile-btn-logout {
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #fff;
+  }
+  .gn-profile-btn-logout:hover {
+    background: #334155;
+    border-color: #334155;
+    color: #fff;
+  }
+  @media (min-width: 768px) {
+    .gn-profile-card { padding: 1.5rem; }
+    .gn-profile-greeting { font-size: 1.35rem; }
+    .gn-profile-meta { font-size: 0.8125rem; }
+    .gn-profile-btn { min-height: 46px; font-size: 0.95rem; }
+  }
+
+  /* 내 매물 테이블: 모바일 헤더 줄바꿈 방지 + 정렬 */
+  .gn-my-listings-table th {
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+  .gn-my-listings-table .gn-th-model { min-width: 4rem; }
+  .gn-my-listings-table .gn-th-price { min-width: 3.5rem; }
+  .gn-my-listings-table .gn-th-vehicle { min-width: 4.5rem; }
+  .gn-my-listings-table .gn-th-date { min-width: 3.5rem; }
+  .gn-my-listings-table .gn-th-actions { width: 1px; white-space: nowrap; }
+  @media (max-width: 767px) {
+    .gn-my-listings-table th { font-size: 0.8rem; padding: 0.5rem 0.35rem; }
+    .gn-my-listings-table td { font-size: 0.875rem; padding: 0.5rem 0.35rem; }
+  }
+  /* 수정/삭제 버튼: 높이·간격 통일, 다크테마에 맞게 */
+  .gn-my-listings-table .gn-btn-edit,
+  .gn-my-listings-table .gn-btn-delete {
+    min-height: 36px;
+    padding: 0.35rem 0.75rem;
+    font-weight: 600;
+    border: none;
+  }
+  .gn-my-listings-table .gn-btn-edit {
+    background: #2563eb;
+    color: #fff;
+  }
+  .gn-my-listings-table .gn-btn-edit:hover {
+    background: #1d4ed8;
+    color: #fff;
+  }
+  .gn-my-listings-table .gn-btn-delete {
+    background: #dc2626;
+    color: #fff;
+  }
+  .gn-my-listings-table .gn-btn-delete:hover {
+    background: #b91c1c;
+    color: #fff;
+  }
+  .gn-my-listings-table td:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+  }
+</style>
+{% endblock %}

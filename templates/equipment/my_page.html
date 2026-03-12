@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="mb-4">
+        <h2 class="fw-bold">👤 마이페이지</h2>
+        <p class="text-muted"><strong>{{ user.username }}</strong>님이 등록하신 내역입니다.</p>
+    </div>
+
+    <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="equip-tab" data-bs-toggle="pill" data-bs-target="#equip" type="button">🚜 내 매물 ({{ my_equipments.count }})</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="job-tab" data-bs-toggle="pill" data-bs-target="#job" type="button">👷 내 구인글 ({{ my_jobs.count }})</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="part-tab" data-bs-toggle="pill" data-bs-target="#part" type="button">🛠️ 내 부품 ({{ my_parts.count }})</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="equip">
+            <div class="list-group shadow-sm">
+                {% for item in my_equipments %}
+                <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">{% if item.model_name %}{{ item.model_name }}{% else %}모름{% endif %}</h6>
+                        <small class="text-muted">{{ item.get_equipment_type_display }} · {% if item.year_manufactured %}{{ item.year_manufactured }}년{% else %}연식 모름{% endif %} · {{ item.created_at|date:"Y-m-d" }} 등록</small>
+                    </div>
+                    <div class="btn-group"><a href="{% url 'equipment_detail' item.pk %}" class="btn btn-outline-primary btn-sm">보기</a><a href="{% url 'equipment_edit' item.pk %}" class="btn btn-outline-secondary btn-sm">수정</a><a href="{% url 'equipment_delete' item.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a></div>
+                </div>
+                {% empty %}
+                <div class="p-5 text-center bg-white rounded">등록한 매물이 없습니다.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="job">
+            <div class="list-group shadow-sm">
+                {% for job in my_jobs %}
+                <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">{{ job.title }}</h6>
+                        <small class="text-muted">{{ job.created_at|date:"Y-m-d" }}</small>
+                    </div>
+                    <div class="btn-group"><a href="{% url 'job_detail' job.pk %}" class="btn btn-outline-primary btn-sm">보기</a><a href="{% url 'job_edit' job.pk %}" class="btn btn-outline-secondary btn-sm">수정</a><a href="{% url 'job_delete' job.pk %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a></div>
+                </div>
+                {% empty %}
+                <div class="p-5 text-center bg-white rounded">등록한 구인글이 없습니다.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="part">
+            <div class="list-group shadow-sm">
+                {% for part in my_parts %}
+                <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">{{ part.title }}</h6>
+                        <small class="text-muted">{{ part.price }}</small>
+                    </div>
+                    <div class="btn-group"><a href="{% url 'part_detail' part.pk %}" class="btn btn-outline-primary btn-sm">보기</a><a href="{% url 'part_edit' part.pk %}" class="btn btn-outline-secondary btn-sm">수정</a><a href="{% url 'part_delete' part.pk %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a></div>
+                </div>
+                {% empty %}
+                <div class="p-5 text-center bg-white rounded">등록한 부품이 없습니다.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-pills .nav-link { color: #666; font-weight: bold; border-radius: 10px; }
+    .nav-pills .nav-link.active { background-color: #0d6efd; }
+</style>
+{% endblock %}

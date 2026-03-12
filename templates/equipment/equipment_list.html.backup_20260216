@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    {% if not query %}
+    <div id="mainBanner" class="carousel slide shadow-sm mb-4" data-bs-ride="carousel" style="border-radius: 20px; overflow: hidden;">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <div class="d-flex align-items-center justify-content-center text-white" style="height: 250px; background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);">
+                    <div class="text-center px-3">
+                        <h1 class="fw-bold text-warning mb-2">🚜 굴삭기나라 리뉴얼</h1>
+                        <p class="fs-5">중고 매물부터 구인구직까지 한 번에</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <form action="{% url 'index' %}" method="get" class="input-group input-group-lg shadow-sm">
+                <input type="text" name="q" class="form-control border-0 px-4" placeholder="모델명, 지역 검색" value="{{ query|default:'' }}" style="border-radius: 50px 0 0 50px;">
+                <button class="btn btn-primary px-4" type="submit" style="background-color: #1a237e; border: none;">
+                    <i class="bi bi-search"></i> 검색
+                </button>
+                {% if user.is_authenticated %}
+                <a href="{% url 'equipment_create' %}" class="btn btn-success px-4 d-flex align-items-center" style="border-radius: 0 50px 50px 0; border: none;">
+                    <i class="bi bi-plus-lg me-1"></i> 등록
+                </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <h4 class="fw-bold mb-4">🚜 추천 매물</h4>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for equipment in equipment_list %}
+        <div class="col">
+            <div class="card h-100 shadow-sm item-card position-relative" style="border: 2px solid #cfe2ff; border-radius: 20px; overflow: hidden;">
+                <div style="height: 230px; background: #eee; overflow: hidden;">
+                    {% if equipment.images.all %}
+                        <img src="{{ equipment.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex h-100 align-items-center justify-content-center text-muted">사진 준비중</div>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-1">{{ equipment.model_name }}</h5>
+                    <div class="d-flex justify-content-between align-items-center mt-3 p-3 rounded-4" style="background-color: #f0f7ff;">
+                        <div class="text-primary fw-bold fs-4">{{ equipment.listing_price }}만원</div>
+                        <a href="{% url 'equipment_detail' equipment.pk %}" class="btn btn-primary px-3 fw-bold stretched-link" style="border-radius: 10px;">상세보기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

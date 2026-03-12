@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+    <h2 class="section-title mb-4">{% if mode == "edit" %}매물 수정{% else %}매물 등록{% endif %}</h2>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-body p-4">
+            <form id="equipment-form" method="post" enctype="multipart/form-data" data-mode="{{ mode }}" data-edit-existing-images="{% if mode == 'edit' and equipment %}{{ equipment.images.count }}{% else %}0{% endif %}">
+                {% csrf_token %}
+                {% if form.errors %}
+                <div class="alert alert-danger small">입력값을 다시 확인해 주세요.</div>
+                {% endif %}
+
+                {{ form.sub_type }}{{ form.weight_class }}{{ form.mast_type }}{{ form.region_sido }}{{ form.region_sigungu }}
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-bold">기종 선택 <span class="text-danger">(필수)</span></label>
+                        <div id="equipment-type-select" class="d-none" aria-hidden="true">{{ form.equipment_type }}</div>
+                        <div class="gn-equipment-type-btns d-flex flex-wrap gap-2 mt-1" role="group" aria-label="기종 선택">
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="excavator"><i class="bi bi-truck-front-fill"></i><span>굴삭기</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="forklift"><i class="bi bi-box-seam-fill"></i><span>지게차</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="dump"><i class="bi bi-truck-flatbed"></i><span>덤프</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="loader"><i class="bi bi-box2-heart-fill"></i><span>로더</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="attachment"><i class="bi bi-wrench-adjustable"></i><span>어태치먼트</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="etc"><i class="bi bi-grid-3x3-gap-fill"></i><span>기타</span></button>
+                        </div>
+                        {% if form.equipment_type.errors %}<p class="text-danger small mt-1 mb-0">{{ form.equipment_type.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">모델명</label>
+                        {{ form.model_name }}
+                    </div>
+                    <div class="col-md-6" id="manufacturer-text-wrapper">
+                        <label class="form-label fw-bold">제조사</label>
+                        {{ form.manufacturer }}
+                    </div>
+                    <div class="col-md-6 d-none" id="excavator-maker-wrapper">
+                        <label class="form-label fw-bold">제조사 (굴삭기)</label>
+                        <select id="exc-maker-select" class="form-select">
+                            <option value="">제조사 선택</option>
+                            <option value="HD 현대">HD 현대</option>
+                            <option value="두산">두산</option>
+                            <option value="볼보">볼보</option>
+                            <option value="구보다">구보다</option>
+                            <option value="얀마">얀마</option>
+                            <option value="밥켓">밥켓</option>
+                            <option value="코츠마츠">코츠마츠</option>
+                            <option value="코벨코">코벨코</option>
+                            <option value="히타치">히타치</option>
+                            <option value="케터피라">케터피라</option>
+                            <option value="존디어">존디어</option>
+                            <option value="SANY">SANY</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-none" id="forklift-maker-wrapper">
+                        <label class="form-label fw-bold">제조사 (지게차)</label>
+                        <select id="fk-maker-select" class="form-select">
+                            <option value="">제조사 선택</option>
+                            <option value="현대">현대</option>
+                            <option value="두산">두산</option>
+                            <option value="클라크">클라크</option>
+                            <option value="코마츠">코마츠</option>
+                            <option value="니치유/미쓰비시">니치유/미쓰비시</option>
+                            <option value="융하인리히">융하인리히</option>
+                            <option value="린데">린데</option>
+                            <option value="헬리">헬리</option>
+                            <option value="항차">항차</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-none" id="exc-sub-type-wrapper">
+                        <label class="form-label fw-bold">종류</label>
+                        <select id="exc-sub-type-select" class="form-select">
+                            <option value="">선택</option>
+                            <option value="EXC_TIRE">타이어식</option>
+                            <option value="EXC_CRAWLER">크롤러식(체인)</option>
+                            <option value="EXC_ATTACHMENT">어테치먼트</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-none" id="exc-weight-class-wrapper">
+                        <label class="form-label fw-bold">장비중량</label>
+                        <select id="exc-weight-class-select" class="form-select">
+                            <option value="">선택</option>
+                            <!-- 타이어식: 03W/06W/08W -->
+                            <option value="EXC_TIRE_LE_6" data-group="tire">03W 6톤</option>
+                            <option value="EXC_TIRE_LE_17" data-group="tire">06W 17톤</option>
+                            <option value="EXC_TIRE_LE_21" data-group="tire">08W 21톤</option>
+                            <!-- 크롤러식 -->
+                            <option value="EXC_CR_LT_1" data-group="crawler">1톤 미만 (크롤러)</option>
+                            <option value="EXC_CR_LE_2" data-group="crawler">2톤 이하 (크롤러)</option>
+                            <option value="EXC_CR_LE_3_5" data-group="crawler">3.5톤 이하 (크롤러)</option>
+                            <option value="EXC_CR_LE_6_5" data-group="crawler">6.5톤 이하 (크롤러)</option>
+                            <option value="EXC_CR_LE_16" data-group="crawler">16톤 이하 (크롤러)</option>
+                            <option value="EXC_CR_EQ_20" data-group="crawler">20톤 (크롤러)</option>
+                            <option value="EXC_CR_GE_30" data-group="crawler">30톤 이상 (크롤러)</option>
+                            <!-- 어테치먼트 -->
+                            <option value="EXC_ATT_LT_1" data-group="attachment">1톤 미만 (어테치)</option>
+                            <option value="EXC_ATT_LE_2" data-group="attachment">2톤 이하 (어테치)</option>
+                            <option value="EXC_ATT_LE_3_5" data-group="attachment">3.5톤 이하 (어테치)</option>
+                            <option value="EXC_ATT_LE_6_5" data-group="attachment">6.5톤 이하 (어테치)</option>
+                            <option value="EXC_ATT_LE_16" data-group="attachment">16톤 이하 (어테치)</option>
+                            <option value="EXC_ATT_EQ_20" data-group="attachment">20톤 (어테치)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-none" id="fk-sub-type-wrapper">
+                        <label class="form-label fw-bold">형식 (지게차)</label>
+                        <select id="fk-sub-type-select" class="form-select">
+                            <option value="">선택</option>
+                            <option value="FORK_DIESEL">디젤식</option>
+                            <option value="FORK_ELEC_SIT">전동좌식</option>
+                            <option value="FORK_ELEC_STAND">전동입식</option>
+                            <option value="FORK_LPG">LPG지게차</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-none" id="fk-weight-class-wrapper">
+                        <label class="form-label fw-bold">장비중량 (지게차)</label>
+                        <select id="fk-weight-class-select" class="form-select">
+                            <option value="">선택</option>
+                            <option value="FORK_1_5">1.5톤</option>
+                            <option value="FORK_2_5">2.5톤</option>
+                            <option value="FORK_LE_3">3톤 이하</option>
+                            <option value="FORK_LE_7">7톤 이하</option>
+                            <option value="FORK_LE_10">10톤 이하</option>
+                            <option value="FORK_LE_15">15톤 이하</option>
+                            <option value="FORK_LE_20">20톤 이하</option>
+                            <option value="FORK_LE_30">30톤 이상</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-none" id="fk-mast-type-wrapper">
+                        <label class="form-label fw-bold">종류 (마스트)</label>
+                        <select id="fk-mast-type-select" class="form-select">
+                            <option value="">선택</option>
+                            <option value="2단">2단</option>
+                            <option value="3단">3단</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label">제작년도</label>
+                        {{ form.year_manufactured }}
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label">제작월</label>
+                        {{ form.month_manufactured }}
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label">가동시간(hr)</label>
+                        {{ form.operating_hours }}
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label fw-bold">가격(만원) <span class="text-danger">(필수)</span></label>
+                        {{ form.listing_price }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">차량번호(장비번호) <span class="text-muted small">(선택)</span></label>
+                        {{ form.vehicle_number }}
+                        <p class="form-text small text-muted mb-0 mt-1">추후 차량번호 조회로 연식/모델 자동 입력 예정</p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">지역</label>
+                        <div class="row g-2">
+                            <div class="col-6 col-md-4">
+                                <select id="form-region-sido" class="form-select">
+                                    {% if sido_choices %}
+                                        {% for val, label in sido_choices %}
+                                        <option value="{{ val }}">{{ label }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="">시/도 선택</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <select id="form-region-sigungu" class="form-select">
+                                    <option value="">시/군/구 선택</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">상세 설명 <span class="text-muted small">(최대 50자)</span></label>
+                        {{ form.description }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">사진 (1장 이상 필수)</label>
+                        <p class="form-text small text-muted mb-1">허위 매물 방지를 위해 실제 장비 사진을 1장 이상 등록해주세요.</p>
+                        <div class="photo-upload d-flex flex-wrap gap-2 align-items-center">
+                            <label for="photo_gallery" class="btn btn-outline-secondary mb-0" style="border-radius: 10px;">
+                                <i class="bi bi-images me-1"></i> 갤러리에서 선택
+                            </label>
+                            <input id="photo_gallery" type="file" accept="image/*" multiple hidden>
+                            <label for="photo_camera" class="btn btn-outline-primary mb-0" style="border-radius: 10px; margin-left: 8px;">
+                                <i class="bi bi-camera-fill me-1"></i> 사진 촬영
+                            </label>
+                            <input id="photo_camera" type="file" accept="image/*" capture="environment" multiple hidden>
+                            <input id="id_images" type="file" name="images" multiple hidden>
+                        </div>
+                        <div id="preview-container" class="d-flex flex-wrap gap-2 mt-3"></div>
+                        <p class="form-text small mb-0 mt-2">모바일: 갤러리에서 선택은 앨범, 사진 촬영은 카메라가 열려요. X를 누르면 제거됩니다.</p>
+                        {% if form.non_field_errors %}<p class="text-danger small mt-1 mb-0">{{ form.non_field_errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn fw-bold px-4 py-2 text-dark" style="background: var(--gn-accent); border-radius: 10px;">
+                        {% if mode == "edit" %}수정 저장{% else %}등록하기{% endif %}
+                    </button>
+                    <a href="{% url 'index' %}" class="btn btn-outline-secondary px-4" style="border-radius: 10px;">취소</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+  /* 기종 버튼: 정렬·간격·폭 통일 */
+  .gn-equipment-type-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .gn-equipment-type-btns .gn-equipment-type-btn {
+    margin-right: 0;
+    cursor: pointer;
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: calc(50% - 0.25rem);
+    max-width: none;
+    transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease;
+  }
+  @media (min-width: 576px) {
+    .gn-equipment-type-btns .gn-equipment-type-btn {
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+  }
+  /* PC hover: 살짝 떠오르며 색·그림자 변화 */
+  .gn-equipment-type-btns .gn-equipment-type-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.25);
+    background: rgba(30,41,59,0.85);
+    color: #e2e8f0;
+    border-color: rgba(148,163,184,.8);
+  }
+  .gn-equipment-type-btns .gn-equipment-type-btn.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(232,163,23,.35);
+  }
+  /* 모바일 가독성: 비활성도 글씨 선명 (밝은 톤) */
+  .gn-equipment-type-btns .gn-equipment-type-btn {
+    background: rgba(15,23,42,0.85);
+    border: 1px solid rgba(148,163,184,.55);
+    color: #e2e8f0;
+  }
+  .gn-equipment-type-btns .gn-equipment-type-btn.active {
+    background: linear-gradient(135deg, var(--gn-accent) 0%, #ffcc40 100%);
+    color: #0f172a;
+    border-color: rgba(248,250,252,.95);
+  }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function() {
+  let selectedFiles = [];
+  const form = document.getElementById('equipment-form');
+  const hiddenInput = document.getElementById('id_images');
+  const previewContainer = document.getElementById('preview-container');
+  const photoGallery = document.getElementById('photo_gallery');
+  const photoCamera = document.getElementById('photo_camera');
+  const equipmentTypeSelect = document.getElementById('id_equipment_type');
+  const manufacturerInput = document.getElementById('id_manufacturer');
+  const subTypeInput = document.getElementById('id_sub_type');
+  const weightClassInput = document.getElementById('id_weight_class');
+  const mastTypeInput = document.getElementById('id_mast_type');
+  const regionSidoInput = document.getElementById('id_region_sido');
+  const regionSigunguInput = document.getElementById('id_region_sigungu');
+
+  const makerTextWrapper = document.getElementById('manufacturer-text-wrapper');
+  const excavatorMakerWrapper = document.getElementById('excavator-maker-wrapper');
+  const makerSelect = document.getElementById('exc-maker-select');
+  const forkliftMakerWrapper = document.getElementById('forklift-maker-wrapper');
+  const fkMakerSelect = document.getElementById('fk-maker-select');
+  const excSubTypeWrapper = document.getElementById('exc-sub-type-wrapper');
+  const excWeightWrapper = document.getElementById('exc-weight-class-wrapper');
+  const excSubTypeSelect = document.getElementById('exc-sub-type-select');
+  const excWeightSelect = document.getElementById('exc-weight-class-select');
+
+  const fkSubTypeWrapper = document.getElementById('fk-sub-type-wrapper');
+  const fkWeightWrapper = document.getElementById('fk-weight-class-wrapper');
+  const fkMastWrapper = document.getElementById('fk-mast-type-wrapper');
+  const fkSubTypeSelect = document.getElementById('fk-sub-type-select');
+  const fkWeightSelect = document.getElementById('fk-weight-class-select');
+  const fkMastSelect = document.getElementById('fk-mast-type-select');
+
+  const sidoEl = document.getElementById('form-region-sido');
+  const sigunguEl = document.getElementById('form-region-sigungu');
+  const SIGUNGU_MAP = {{ sigungu_map_json|default:'{}'|safe }};
+
+  const WEIGHT_OPTIONS = {
+    tire: [
+      {value: 'EXC_TIRE_LE_6', label: '03W 5~6 ton'},
+      {value: 'EXC_TIRE_LE_17', label: '06W 12~16 ton'},
+      {value: 'EXC_TIRE_LE_21', label: '08W 20~22 ton'},
+    ],
+    crawler: [
+      {value: 'EXC_CR_LT_1', label: '1톤 미만 (크롤러)'},
+      {value: 'EXC_CR_LE_2', label: '2톤 이하 (크롤러)'},
+      {value: 'EXC_CR_LE_3_5', label: '3.5톤 이하 (크롤러)'},
+      {value: 'EXC_CR_LE_6_5', label: '6.5톤 이하 (크롤러)'},
+      {value: 'EXC_CR_LE_16', label: '16톤 이하 (크롤러)'},
+      {value: 'EXC_CR_EQ_20', label: '20톤 (크롤러)'},
+      {value: 'EXC_CR_GE_30', label: '30톤 이상 (크롤러)'},
+    ],
+    attachment: [
+      {value: 'EXC_ATT_LT_1', label: '1톤 미만 (어테치)'},
+      {value: 'EXC_ATT_LE_2', label: '2톤 이하 (어테치)'},
+      {value: 'EXC_ATT_LE_3_5', label: '3.5톤 이하 (어테치)'},
+      {value: 'EXC_ATT_LE_6_5', label: '6.5톤 이하 (어테치)'},
+      {value: 'EXC_ATT_LE_16', label: '16톤 이하 (어테치)'},
+      {value: 'EXC_ATT_EQ_20', label: '20톤 (어테치)'},
+    ],
+  };
+
+  // ----- 기종 버튼: 기본 선택 굴삭기, 클릭 시 동기화 -----
+  if (equipmentTypeSelect) {
+    var btns = document.querySelectorAll('.gn-equipment-type-btn');
+    var currentValue = (equipmentTypeSelect.value || '').trim();
+    if (!currentValue || currentValue === '---------') {
+      currentValue = 'excavator';
+      equipmentTypeSelect.value = currentValue;
+    }
+    function updateTypeButtons(val) {
+      btns.forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-value') === val);
+      });
+    }
+    function updateTypeUI() {
+      var isExcavator = (equipmentTypeSelect.value === 'excavator');
+      var isForklift = (equipmentTypeSelect.value === 'forklift');
+
+      if (makerTextWrapper) makerTextWrapper.classList.toggle('d-none', isExcavator || isForklift);
+      if (excavatorMakerWrapper) excavatorMakerWrapper.classList.toggle('d-none', !isExcavator);
+      if (forkliftMakerWrapper) forkliftMakerWrapper.classList.toggle('d-none', !isForklift);
+
+      if (excSubTypeWrapper) excSubTypeWrapper.classList.toggle('d-none', !isExcavator);
+      if (excWeightWrapper) excWeightWrapper.classList.toggle('d-none', !isExcavator);
+
+      if (fkSubTypeWrapper) fkSubTypeWrapper.classList.toggle('d-none', !isForklift);
+      if (fkWeightWrapper) fkWeightWrapper.classList.toggle('d-none', !isForklift);
+      if (fkMastWrapper) fkMastWrapper.classList.toggle('d-none', !isForklift);
+
+      // 모델명 placeholder: 굴삭기 vs 지게차
+      if (manufacturerInput && manufacturerInput.form && manufacturerInput.form.elements['model_name']) {
+        var modelInput = manufacturerInput.form.elements['model_name'];
+        if (isForklift) {
+          modelInput.placeholder = '예) 45-X';
+        } else {
+          modelInput.placeholder = '예) HX360';
+        }
+      }
+    }
+    updateTypeButtons(currentValue);
+    updateTypeUI();
+
+    btns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var val = this.getAttribute('data-value');
+        equipmentTypeSelect.value = val;
+        updateTypeButtons(val);
+        updateTypeUI();
+      });
+    });
+  }
+
+  // ----- 굴삭기: 제조사/종류/중량 -----
+  if (makerSelect && manufacturerInput) {
+    // 초기값 동기화
+    var initialMaker = (manufacturerInput.value || '').trim();
+    if (initialMaker) {
+      Array.from(makerSelect.options).forEach(function(opt) {
+        if (opt.value === initialMaker) opt.selected = true;
+      });
+    }
+    makerSelect.addEventListener('change', function() {
+      manufacturerInput.value = this.value || '';
+    });
+  }
+
+  // ----- 지게차: 제조사 -----
+  if (fkMakerSelect && manufacturerInput) {
+    var initialFkMaker = (manufacturerInput.value || '').trim();
+    if (initialFkMaker) {
+      Array.from(fkMakerSelect.options).forEach(function(opt) {
+        if (opt.value === initialFkMaker) opt.selected = true;
+      });
+    }
+    fkMakerSelect.addEventListener('change', function() {
+      manufacturerInput.value = this.value || '';
+    });
+  }
+
+  if (excSubTypeSelect && subTypeInput) {
+    // 초기값
+    var initialSubType = (subTypeInput.value || '').trim();
+    if (initialSubType) {
+      Array.from(excSubTypeSelect.options).forEach(function(opt) {
+        if (opt.value === initialSubType) opt.selected = true;
+      });
+    }
+    function applyWeightOptionsBySubType(subType, currentWeight) {
+      if (!excWeightSelect) return;
+      var key = null;
+      if (subType === 'EXC_TIRE') key = 'tire';
+      else if (subType === 'EXC_CRAWLER') key = 'crawler';
+      else if (subType === 'EXC_ATTACHMENT') key = 'attachment';
+
+      excWeightSelect.innerHTML = '';
+      var first = document.createElement('option');
+      first.value = '';
+      first.textContent = '선택';
+      excWeightSelect.appendChild(first);
+
+      if (key && WEIGHT_OPTIONS[key]) {
+        WEIGHT_OPTIONS[key].forEach(function(item) {
+          var opt = document.createElement('option');
+          opt.value = item.value;
+          opt.textContent = item.label;
+          if (currentWeight && currentWeight === item.value) {
+            opt.selected = true;
+          }
+          excWeightSelect.appendChild(opt);
+        });
+      }
+    }
+
+    excSubTypeSelect.addEventListener('change', function() {
+      subTypeInput.value = this.value || '';
+      weightClassInput.value = '';
+      applyWeightOptionsBySubType(this.value, '');
+    });
+
+    // 페이지 처음 로드될 때도 한 번 필터링
+    if (initialSubType) {
+      applyWeightOptionsBySubType(initialSubType, (weightClassInput.value || '').trim());
+    }
+  }
+
+  if (excWeightSelect && weightClassInput) {
+    // 초기값
+    var initialWeight = (weightClassInput.value || '').trim();
+    if (initialWeight) {
+      Array.from(excWeightSelect.options).forEach(function(opt) {
+        if (opt.value === initialWeight) opt.selected = true;
+      });
+    }
+    excWeightSelect.addEventListener('change', function() {
+      weightClassInput.value = this.value || '';
+    });
+  }
+
+  // ----- 지게차: 형식/중량/마스트 -----
+  if (fkSubTypeSelect && subTypeInput) {
+    var initialFkSub = (subTypeInput.value || '').trim();
+    if (initialFkSub) {
+      Array.from(fkSubTypeSelect.options).forEach(function(opt) {
+        if (opt.value === initialFkSub) opt.selected = true;
+      });
+    }
+    fkSubTypeSelect.addEventListener('change', function() {
+      subTypeInput.value = this.value || '';
+    });
+  }
+
+  if (fkWeightSelect && weightClassInput) {
+    var initialFkWeight = (weightClassInput.value || '').trim();
+    if (initialFkWeight) {
+      Array.from(fkWeightSelect.options).forEach(function(opt) {
+        if (opt.value === initialFkWeight) opt.selected = true;
+      });
+    }
+    fkWeightSelect.addEventListener('change', function() {
+      weightClassInput.value = this.value || '';
+    });
+  }
+
+  if (fkMastSelect && mastTypeInput) {
+    var initialMast = (mastTypeInput.value || '').trim();
+    if (initialMast) {
+      Array.from(fkMastSelect.options).forEach(function(opt) {
+        if (opt.value === initialMast) opt.selected = true;
+      });
+    }
+    fkMastSelect.addEventListener('change', function() {
+      mastTypeInput.value = this.value || '';
+    });
+  }
+
+  // ----- 지역(시/도, 시/군/구) -----
+  function fillSigungu(sido, current) {
+    if (!sigunguEl) return;
+    sigunguEl.innerHTML = '<option value="">시/군/구 선택</option>';
+    var list = SIGUNGU_MAP[sido] || [];
+    list.forEach(function(name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      if (name === current) opt.selected = true;
+      sigunguEl.appendChild(opt);
+    });
+  }
+
+  if (sidoEl && regionSidoInput) {
+    // 초기 선택값
+    var initialSido = (regionSidoInput.value || '').trim();
+    var initialSigungu = (regionSigunguInput ? (regionSigunguInput.value || '').trim() : '');
+    if (initialSido) {
+      Array.from(sidoEl.options).forEach(function(opt) {
+        if (opt.value === initialSido) opt.selected = true;
+      });
+    }
+    fillSigungu(initialSido || sidoEl.value, initialSigungu);
+
+    sidoEl.addEventListener('change', function() {
+      regionSidoInput.value = this.value || '';
+      fillSigungu(this.value, '');
+      if (regionSigunguInput) regionSigunguInput.value = '';
+    });
+  }
+
+  if (sigunguEl && regionSigunguInput) {
+    sigunguEl.addEventListener('change', function() {
+      regionSigunguInput.value = this.value || '';
+    });
+  }
+
+  if (!hiddenInput || !previewContainer) return;
+
+  function updateHiddenInput() {
+    const dataTransfer = new DataTransfer();
+    selectedFiles.forEach(function(file) { dataTransfer.items.add(file); });
+    hiddenInput.files = dataTransfer.files;
+  }
+
+  function renderPreview() {
+    previewContainer.innerHTML = '';
+    selectedFiles.forEach(function(file, index) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const div = document.createElement('div');
+        div.style.cssText = 'display:inline-block; margin:5px; position:relative; width:100px; height:100px;';
+        div.className = 'border rounded overflow-hidden';
+        div.dataset.index = index;
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover; display:block;';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0';
+        btn.style.cssText = 'padding:0 4px; line-height:1; font-size:12px;';
+        btn.textContent = 'X';
+        btn.dataset.index = index;
+        div.appendChild(img);
+        div.appendChild(btn);
+        previewContainer.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  previewContainer.addEventListener('click', function(e) {
+    const btn = e.target.closest('button[data-index]');
+    if (!btn) return;
+    const index = parseInt(btn.dataset.index, 10);
+    selectedFiles.splice(index, 1);
+    updateHiddenInput();
+    renderPreview();
+  });
+
+  function handleFiles(files) {
+    for (var i = 0; i < files.length; i++) selectedFiles.push(files[i]);
+    updateHiddenInput();
+    renderPreview();
+  }
+
+  if (photoGallery) {
+    photoGallery.addEventListener('change', function() {
+      if (this.files && this.files.length) handleFiles(this.files);
+      this.value = '';
+    });
+  }
+  if (photoCamera) {
+    photoCamera.addEventListener('change', function() {
+      if (this.files && this.files.length) handleFiles(this.files);
+      this.value = '';
+    });
+  }
+
+  // ----- 사진 최소 1장 필수 (허위 매물 방지) -----
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      var mode = form.getAttribute('data-mode') || '';
+      var existingCount = parseInt(form.getAttribute('data-edit-existing-images') || '0', 10);
+      var needImages = (mode === 'create') || (mode === 'edit' && existingCount === 0);
+      if (needImages && selectedFiles.length < 1) {
+        e.preventDefault();
+        alert('허위 매물 방지를 위해 사진을 최소 1장 이상 업로드해주세요.');
+        return false;
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

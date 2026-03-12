@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .info-video-wrap { max-width: 480px; margin-left: auto; margin-right: auto; }
+    @media (min-width: 768px) { .info-video-wrap { max-width: 560px; } }
+</style>
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h2 class="section-title mb-2">굴삭기 유튜브</h2>
+        <p class="text-muted small">고장·수리, 공사, 일머리, 부분별 등 굴삭기 관련 영상을 모았습니다.</p>
+    </div>
+
+    <!-- 어태치먼트 종류 -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-tools me-1"></i>굴삭기 어태치먼트 종류</h6>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'part_list' %}?category=BUCKET" class="badge bg-secondary text-decoration-none py-2 px-3">바가지/버킷</a>
+                <a href="{% url 'part_list' %}?category=BREAKER" class="badge bg-secondary text-decoration-none py-2 px-3">뿌레카/함마</a>
+                <a href="{% url 'part_list' %}?category=GRAPPLE" class="badge bg-secondary text-decoration-none py-2 px-3">집게/그랩</a>
+                <a href="{% url 'part_list' %}?category=ETC" class="badge bg-secondary text-decoration-none py-2 px-3">기타 어태치먼트</a>
+                <a href="{% url 'part_list' %}" class="badge bg-dark text-decoration-none py-2 px-3">전체 보기</a>
+            </div>
+        </div>
+    </div>
+
+    {% for cat in categories %}
+    <div class="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden">
+        <div class="card-body p-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-youtube text-danger me-1"></i>{{ cat.title }}</h6>
+            <p class="text-muted small mb-2">{{ cat.description }}</p>
+            <div class="info-video-wrap ratio ratio-16x9 rounded-2 overflow-hidden bg-dark">
+                <iframe
+                    src="https://www.youtube.com/embed/videoseries?list={{ cat.playlist_id }}"
+                    title="{{ cat.title }}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                ></iframe>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="text-center mt-4 mb-5">
+        <a href="{% url 'index' %}" class="btn btn-outline-secondary px-4" style="border-radius: 10px;">메인으로</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow p-4" style="border-radius:15px; margin-top:50px;">
+            <h3 class="text-center mb-4" style="color:#1a237e; font-weight:bold;">회원가입</h3>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-warning w-100 fw-bold py-2 mt-3">가입 완료</button>
+            </form>
+        </div>
+    </div>
+</div>
+<style>input { width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; }</style>
+{% endblock %}

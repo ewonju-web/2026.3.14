@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h2 class="section-title mb-0">어태치먼트 · 부품</h2>
+        <a href="{% url 'part_create' %}" class="btn text-white fw-bold px-4" style="background: var(--gn-accent); border-radius: 10px;">부품 등록</a>
+    </div>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+        {% for part in part_list %}
+        <div class="col">
+            <div class="card h-100 item-card border-0 position-relative">
+                {% if user.is_authenticated %}
+                <a href="{% url 'toggle_part_favorite' part.pk %}?next={{ request.get_full_path|urlencode }}" class="position-absolute top-0 end-0 m-2 text-decoration-none" style="z-index:5;" onclick="event.stopPropagation();" title="찜">
+                    <i class="bi bi-heart{% if part.pk in favorited_part_ids %}-fill text-danger{% else %} text-white{% endif %}" style="font-size:1.4rem; text-shadow:0 0 4px rgba(0,0,0,.5);"></i>
+                </a>
+                {% endif %}
+                <div style="height: 160px; background: #e2e8f0; overflow: hidden;">
+                    {% if part.images.all %}
+                    <img src="{{ part.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ part.title }}">
+                    {% else %}
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">사진 없음</div>
+                    {% endif %}
+                </div>
+                <div class="card-body p-3">
+                    <span class="badge bg-light text-dark mb-2">{{ part.get_category_display }}</span>
+                    <h6 class="fw-bold mb-2 text-dark" style="font-size: 1rem;">{{ part.title }}</h6>
+                    <div class="fw-bold text-dark mb-1">{{ part.price }}</div>
+                    <div class="small text-muted">{{ part.compatibility|default:"" }}</div>
+                </div>
+                <a href="{% url 'part_detail' part.pk %}" class="stretched-link"></a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5 rounded-3 bg-white border">
+                <p class="text-muted mb-0">등록된 부품이 없습니다.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

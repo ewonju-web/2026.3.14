@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="section-title mb-4">부품/AS</h2>
+
+    <!-- 전국 굴삭기 부품점 연락처 검색 -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-search me-2"></i>전국 굴삭기 부품점 연락처 검색</h5>
+            <form method="get" action="{% url 'parts_as' %}" class="row g-2 mb-0">
+                <div class="col-md-4">
+                    <input type="text" name="region" value="{{ region }}" class="form-control" placeholder="지역 (예: 서울, 경기, 부산)">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="업체명·주소·비고 검색">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">검색</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'parts_as' %}" class="btn btn-outline-secondary w-100">초기화</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>업체명</th>
+                    <th>지역</th>
+                    <th>연락처</th>
+                    <th>주소</th>
+                    <th>비고</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shop in shops %}
+                <tr>
+                    <td class="fw-semibold">{{ shop.name }}</td>
+                    <td>{{ shop.region }}</td>
+                    <td>{{ shop.contact }}</td>
+                    <td class="text-muted small">{% if shop.address %}{{ shop.address }}{% else %}—{% endif %}</td>
+                    <td class="text-muted small">{% if shop.note %}{{ shop.note }}{% else %}—{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        {% if region or query %}검색 결과가 없습니다.{% else %}등록된 부품점이 없습니다. 관리자에게 문의해 주세요.{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 어태치먼트 종류별 광고 영역 (유료화) -->
+    <div class="card border-0 shadow-sm rounded-3 border-primary border-opacity-25">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-2"><i class="bi bi-megaphone me-2"></i>굴삭기 어태치먼트 종류별 광고</h5>
+            <p class="text-muted small mb-3">바가지·뿌레카·집게 등 어태치먼트 관련 업체·제품 광고를 넣을 수 있는 영역입니다. 광고 문의는 운영자에게 연락해 주세요.</p>
+            <div class="row g-3">
+                {% for value, label in attachment_categories %}
+                <div class="col-6 col-md-3">
+                    <div class="border rounded-3 p-3 text-center bg-light" style="min-height: 90px;">
+                        <span class="d-block fw-semibold small text-dark mb-1">{{ label }}</span>
+                        <span class="small text-muted">광고 문의</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <a href="{% url 'part_list' %}" class="btn btn-outline-secondary">어태치먼트 매물 보기</a>
+        <a href="{% url 'index' %}" class="btn btn-outline-secondary">메인으로</a>
+    </div>
+</div>
+{% endblock %}

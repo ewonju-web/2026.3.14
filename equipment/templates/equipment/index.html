@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    /* 배경 및 폰트 */
+    :root { --main-navy: #1a237e; --point-yellow: #fbc02d; --text-dark: #2c3e50; }
+    body { background-color: #f8fafc; color: var(--text-dark); }
+
+    /* 히어로 섹션 - 더 깊이감 있게 */
+    .hero-section { 
+        background: linear-gradient(180deg, var(--main-navy) 0%, #0d124a 100%);
+        padding: 80px 0 120px;
+        text-align: center;
+    }
+    .hero-section h1 { font-size: 2.8rem; letter-spacing: -1.5px; margin-bottom: 15px; }
+
+    /* 검색창 - 떠 있는 느낌으로 */
+    .search-box { max-width: 850px; margin: -50px auto 60px; padding: 0 20px; }
+    .search-inner { 
+        background: white; padding: 8px; border-radius: 50px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        display: flex; align-items: center; border: 1px solid #e2e8f0;
+    }
+    .search-inner input { border: none; padding-left: 30px; font-size: 1.1rem; }
+    .search-inner input:focus { box-shadow: none; }
+    .btn-search { 
+        background: var(--main-navy); color: white; border-radius: 40px;
+        padding: 12px 35px; font-weight: 700; transition: 0.3s;
+    }
+    .btn-search:hover { background: #000; transform: scale(1.05); }
+
+    /* 매물 카드 - 여백과 라운딩 강조 */
+    .equipment-card { 
+        background: white; border-radius: 20px; overflow: hidden;
+        border: 1px solid #edf2f7; transition: 0.3s; height: 100%;
+        display: block; text-decoration: none; color: inherit;
+    }
+    .equipment-card:hover { transform: translateY(-10px); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); border-color: var(--point-yellow); }
+    
+    .card-img-container { position: relative; height: 200px; }
+    .price-badge { 
+        position: absolute; bottom: 12px; left: 12px;
+        background: var(--point-yellow); color: #000;
+        padding: 5px 15px; border-radius: 10px; font-weight: 900; font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .card-body-custom { padding: 20px; }
+    .card-brand { color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+    .card-title-custom { font-size: 1.2rem; font-weight: 800; margin-bottom: 15px; color: #1e293b; }
+    .card-info { display: flex; justify-content: space-between; font-size: 0.9rem; color: #94a3b8; border-top: 1px solid #f1f5f9; pt-3; }
+
+    /* 유튜브 섹션 - 분리감 있게 */
+    .youtube-section { margin-top: 80px; padding: 40px; background: white; border-radius: 30px; border: 1px solid #e2e8f0; }
+    .section-title { font-weight: 900; font-size: 1.7rem; color: var(--main-navy); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+    .section-title::after { content: ""; flex-grow: 1; height: 2px; background: #f1f5f9; margin-left: 20px; }
+</style>
+
+<header class="hero-section">
+    <div class="container text-white">
+        <h1 class="fw-black">좋은 장비, 더 좋은 주인에게</h1>
+        <p class="fs-5 opacity-75 fw-light">굴삭기나라 TV가 보증하는 투명한 직거래 장터</p>
+    </div>
+</header>
+
+<div class="container search-box">
+    <div class="search-inner">
+        <input type="text" name="search" class="form-control" placeholder="장비명, 제조사, 지역을 입력하세요..." value="{{ search_query }}">
+        <button class="btn btn-search">검색</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h3 class="fw-black m-0">🔥 최근 업로드 매물</h3>
+        <a href="/" class="text-secondary text-decoration-none fw-bold">전체보기 <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+        {% for equip in latest_equipments %}
+        <div class="col">
+            <a href="/{{ equip.id }}/" class="equipment-card">
+                <div class="card-img-container">
+                    {% if equip.images.all %}
+                        <img src="{{ equip.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">
+                    {% else %}
+                        <div class="w-100 h-100 bg-light d-flex align-items-center justify-content-center text-muted">No Image</div>
+                    {% endif %}
+                    <div class="price-badge">{{ equip.listing_price|floatformat:0 }}만원</div>
+                </div>
+                <div class="card-body-custom">
+                    <div class="card-brand">{{ equip.manufacturer }}</div>
+                    <div class="card-title-custom text-truncate">{{ equip.model_name }}</div>
+                    <div class="card-info pt-3">
+                        <span><i class="bi bi-calendar-check me-1"></i> {{ equip.year_manufactured }}년식</span>
+                        <span><i class="bi bi-geo-alt me-1"></i> {{ equip.current_location }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="youtube-section">
+        <h4 class="section-title"><i class="bi bi-play-circle-fill text-danger"></i> 굴삭기나라 TV</h4>
+        <div class="row g-4">
+            {% for i in "123" %}
+            <div class="col-md-4">
+                <div class="ratio ratio-16x9 rounded-4 shadow-sm overflow-hidden">
+                    <iframe src="https://www.youtube.com/embed/pYOfm_qA80E" allowfullscreen></iframe>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<!-- 방문자 통계 바 -->
+<div class="container mt-5 mb-3">
+    <div class="d-flex justify-content-center gap-4 py-2 px-3 rounded-3"
+         style="background:#f8f9fa; font-size:14px; color:#555;">
+        <span>오늘 방문자 <strong>{{ VISITOR_TODAY }}</strong>명</span>
+        <span>|</span>
+        <span>어제 방문자 <strong>{{ VISITOR_YESTERDAY }}</strong>명</span>
+    </div>
+</div>
+{% endblock %}

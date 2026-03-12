@@ -1,0 +1,129 @@
+from django import forms
+from .models import Equipment
+
+class EquipmentForm(forms.ModelForm):
+    class Meta:
+        model = Equipment
+        fields = [
+            "equipment_type",
+            "model_name",
+            "manufacturer",
+            "year_manufactured",
+            "month_manufactured",
+            "operating_hours",
+            "listing_price",
+            "current_location",
+            "vehicle_number",
+            "description",
+        ]
+        widgets = {
+            "equipment_type": forms.Select(attrs={"class": "form-select"}),
+            "model_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) HX360"}),
+            "manufacturer": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 현대"}),
+            "year_manufactured": forms.NumberInput(attrs={"class": "form-control", "min": 1980, "max": 2100, "placeholder": "예) 2000 (모르면 비워도 됨)"}),
+            "month_manufactured": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 12, "placeholder": "1~12 (선택)"}),
+            "operating_hours": forms.NumberInput(attrs={"class": "form-control", "min": 0, "placeholder": "가동시간 (선택)"}),
+            "listing_price": forms.NumberInput(attrs={"class": "form-control", "min": 0, "placeholder": "예) 3500 (만원)"}),
+            "current_location": forms.TextInput(attrs={"class": "form-control", "placeholder": "위치 (선택)"}),
+            "vehicle_number": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 12가3456 (모르면 비워도 됨)"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3, "maxlength": 50, "placeholder": "최대 50자 (선택)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["model_name"].required = False
+        self.fields["manufacturer"].required = False
+        self.fields["year_manufactured"].required = False
+        self.fields["month_manufactured"].required = False
+        self.fields["operating_hours"].required = False
+        self.fields["current_location"].required = False
+        self.fields["vehicle_number"].required = False
+        self.fields["description"].required = False
+        # 필수: 기종, 가격 (기종은 빈 선택지 추가 → 미선택 시 서버 검증)
+        self.fields["equipment_type"].required = True
+        self.fields["equipment_type"].choices = [("", "---------")] + list(self.fields["equipment_type"].choices)
+        self.fields["listing_price"].required = True
+
+    def clean_year_manufactured(self):
+        val = self.cleaned_data.get("year_manufactured")
+        if val is None or val == "":
+            return None
+        if not isinstance(val, int):
+            try:
+                val = int(val)
+            except (TypeError, ValueError):
+                return None
+        if 1980 <= val <= 2100:
+            return val
+        return None
+
+    def clean_month_manufactured(self):
+        val = self.cleaned_data.get("month_manufactured")
+        if val is None or val == "":
+            return None
+        if not isinstance(val, int):
+            try:
+                val = int(val)
+            except (TypeError, ValueError):
+                return None
+        if 1 <= val <= 12:
+            return val
+        return 1
+
+    def clean_vehicle_number(self):
+        data = (self.cleaned_data.get("vehicle_number") or "").strip()
+        return data[:30] if data else ""
+
+    def clean_description(self):
+        data = (self.cleaned_data.get("description") or "").strip()
+        if len(data) > 50:
+            raise forms.ValidationError("상세 설명은 최대 50자까지 입력 가능합니다.")
+        return data[:50]
+
+
+class EquipmentEditForm(forms.ModelForm):
+    """작성자(로그인 유저)만 수정 가능 → 비밀번호 필드 없음"""
+    class Meta(EquipmentForm.Meta):
+        fields = EquipmentForm.Meta.fields
+
+# === 회원가입: 중복확인, 비밀번호 재입력, 휴대폰 (추가) ===
+from django import forms
+from django.contrib.auth.models import User
+
+
+class UserSignupForm(forms.ModelForm):
+    """회원가입 폼 - 아이디, 이메일, 비밀번호 재입력, 휴대폰"""
+    username = forms.CharField(label="아이디", max_length=150, widget=forms.TextInput(attrs={"placeholder": "아이디 입력"}))
+    email = forms.EmailField(label="이메일", required=True, widget=forms.EmailInput(attrs={"placeholder": "이메일"}))
+    password1 = forms.CharField(label="비밀번호", widget=forms.PasswordInput(attrs={"placeholder": "비밀번호"}))
+    password2 = forms.CharField(label="비밀번호 재입력", widget=forms.PasswordInput(attrs={"placeholder": "비밀번호 재입력"}))
+    phone = forms.CharField(label="휴대폰번호", max_length=20, widget=forms.TextInput(attrs={"placeholder": "010-0000-0000"}))
+
+    class Meta:
+        model = User
+        fields = ("username", "email")
+
+    def clean_username(self):
+        username = self.cleaned_data.get("username", "").strip()
+        if not username:
+            raise forms.ValidationError("아이디를 입력하세요.")
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("이미 사용 중인 아이디입니다.")
+        return username
+
+    def clean_password2(self):
+        p1 = self.cleaned_data.get("password1")
+        p2 = self.cleaned_data.get("password2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("비밀번호가 일치하지 않습니다.")
+        return p2
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        if commit:
+            user.save()
+            if hasattr(user, "member_profile"):
+                user.member_profile.phone = self.cleaned_data.get("phone", "") or "미입력"
+                user.member_profile.save()
+        return user

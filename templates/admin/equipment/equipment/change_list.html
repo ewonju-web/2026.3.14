@@ -1,0 +1,18 @@
+{% extends "admin/change_list.html" %}
+{% block content %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+    <div style="background: #1a237e; color: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <p style="margin:0; font-size: 0.9rem; opacity: 0.8;">누적 회원수</p>
+        <h3 style="margin:5px 0;">{{ total_users }}명</h3>
+    </div>
+    <div style="background: #fbc02d; color: #000; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <p style="margin:0; font-size: 0.9rem; opacity: 0.8;">현재 등록 매물</p>
+        <h3 style="margin:5px 0;">{{ total_items }}개</h3>
+    </div>
+    <div style="background: white; padding: 15px; border-radius: 12px; border: 1px solid #ddd; grid-column: span 2;">
+        <p style="margin:0; font-size: 0.9rem; color: #666;">오늘 가입 현황: <strong>+{{ daily_stats.0.c|default:0 }}명</strong></p>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %}

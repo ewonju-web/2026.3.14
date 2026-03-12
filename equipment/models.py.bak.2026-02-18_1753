@@ -1,0 +1,127 @@
+from django.db import models
+from django.contrib.auth.models import User, Group
+
+class Profile(models.Model):
+    USER_TYPE_CHOICES = (
+        ('PERSONAL', '개인'),
+        ('DEALER', '매매상'),
+    )
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="사용자")
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='PERSONAL', verbose_name="사용자 유형")
+    company_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="상호명")  # ✅ null 허용 (마이그레이션 멈춤 방지)
+    business_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="등록번호")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="연락처")
+    is_approved = models.BooleanField(default=False, verbose_name="승인여부")
+    youtube_url = models.URLField(blank=True, null=True, verbose_name='유튜브 채널 주소')
+
+    class Meta:
+        verbose_name = "사용자 프로필"
+        verbose_name_plural = "1. 사용자 프로필 관리"
+
+    def __str__(self):
+        return f"{self.user.username} ({self.get_user_type_display()})"
+
+
+class Equipment(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="작성자")
+
+    model_name = models.CharField(max_length=100, verbose_name="모델명")
+    manufacturer = models.CharField(max_length=50, verbose_name="제조사")
+
+    # ✅ 연/월 분리
+    year_manufactured = models.IntegerField(verbose_name="제작년도")
+    month_manufactured = models.IntegerField(default=1, verbose_name="제작월")  # 1~12 (폼에서 제한 걸 예정)
+
+    # ✅ 가동시간
+    operating_hours = models.IntegerField(default=0, verbose_name="가동 시간(hr)")
+
+    # 기존 유지(만원 단위든 원 단위든 대표님 기존 방식 유지)
+    listing_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="판매가격")
+    current_location = models.CharField(max_length=100, verbose_name="현재 위치")
+    description = models.TextField(verbose_name="상세 설명")
+    is_sold = models.BooleanField(default=False, verbose_name="판매 완료 여부")
+    password = models.CharField(max_length=100, verbose_name="비밀번호(수정용)")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="등록일")
+
+    class Meta:
+        verbose_name = "중고 굴삭기"
+        verbose_name_plural = "2. 중고 굴삭기 관리"
+
+    def __str__(self):
+        return self.model_name
+
+
+class EquipmentImage(models.Model):
+    equipment = models.ForeignKey(Equipment, related_name='images', on_delete=models.CASCADE, verbose_name="해당 장비")
+    image = models.ImageField(upload_to='equipment_images/', verbose_name="장비 사진")
+
+    class Meta:
+        verbose_name = "장비 사진"
+        verbose_name_plural = "3. 장비 사진 관리"
+
+
+# --- 방문 통계 ---
+class VisitorCount(models.Model):
+    date = models.DateField(auto_now_add=True, unique=True, verbose_name="날짜")
+    count = models.IntegerField(default=0, verbose_name="방문자 수")
+
+    class Meta:
+        verbose_name = "일별 방문자 수"
+        verbose_name_plural = "4. 방문자 통계"
+
+
+class VisitorLog(models.Model):
+    ip_address = models.GenericIPAddressField(verbose_name="아이피 주소")
+    visit_date = models.DateField(auto_now_add=True, verbose_name="방문 날짜")
+    referer = models.TextField(null=True, blank=True, verbose_name="유입 경로")
+
+    class Meta:
+        unique_together = ('ip_address', 'visit_date')
+        verbose_name = "방문 상세 기록"
+        verbose_name_plural = "5. 방문 상세 로그"
+
+
+# --- 강제 한글화 ---
+User._meta.verbose_name = "회원"
+User._meta.verbose_name_plural = "회원(User) 계정 관리"
+Group._meta.verbose_name = "권한 그룹"
+Group._meta.verbose_name_plural = "권한 그룹 관리"
+
+class JobPost(models.Model):
+    JOB_TYPES = [('HIRING', '사람구함'), ('SEEKING', '일자리구함')]
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    job_type = models.CharField(max_length=10, choices=JOB_TYPES, default='HIRING', verbose_name="구분")
+    title = models.CharField(max_length=200, verbose_name="제목")
+    location = models.CharField(max_length=100, verbose_name="지역")
+    equipment_type = models.CharField(max_length=100, verbose_name="필요장비/경력")
+    pay = models.CharField(max_length=100, verbose_name="급여/단가")
+    content = models.TextField(verbose_name="상세내용")
+    contact = models.CharField(max_length=50, verbose_name="연락처")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.get_job_type_display()}] {self.title}"
+
+class Part(models.Model):
+    PART_CATEGORIES = [
+        ('BUCKET', '바가지/버킷'),
+        ('BREAKER', '뿌레카/함마'),
+        ('GRAPPLE', '집게/그랩'),
+        ('ETC', '기타 어테치먼트'),
+    ]
+    category = models.CharField(max_length=20, choices=PART_CATEGORIES, default='ETC')
+    title = models.CharField(max_length=200)
+    price = models.CharField(max_length=50)
+    location = models.CharField(max_length=100)
+    compatibility = models.CharField(max_length=100, help_text="예: 02급/06급 호환")
+    description = models.TextField()
+    contact = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+class PartImage(models.Model):
+    part = models.ForeignKey(Part, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='parts/')

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-4 text-center" style="color: var(--gn-text); font-size: 1.5rem;">회원가입</h2>
+                    <form method="post" action="{% url 'signup' %}" id="signup-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">아이디</label>
+                            <div class="d-flex gap-2">
+                                <input type="text" name="username" id="id_username" class="form-control" placeholder="아이디" value="{{ form.username.value|default:'' }}" required style="border-radius: 10px;">
+                                <button type="button" id="btn-check-username" class="btn btn-outline-secondary" style="border-radius: 10px; white-space: nowrap;">중복확인</button>
+                            </div>
+                            <span id="username-msg" class="form-text small"></span>
+                            {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">이메일</label>
+                            <input type="email" name="email" class="form-control" placeholder="이메일" value="{{ form.email.value|default:'' }}" required style="border-radius: 10px;">
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">비밀번호</label>
+                            <input type="password" name="password1" class="form-control" placeholder="비밀번호" required style="border-radius: 10px;">
+                            {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">비밀번호 재입력</label>
+                            <input type="password" name="password2" class="form-control" placeholder="비밀번호 재입력" required style="border-radius: 10px;">
+                            {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-secondary">휴대폰</label>
+                            <input type="text" name="phone" class="form-control" placeholder="010-0000-0000" value="{{ form.phone.value|default:'' }}" style="border-radius: 10px;">
+                            {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold py-2 text-dark mb-3" style="background: var(--gn-accent); border-radius: 10px;">가입하기</button>
+                    </form>
+                    <p class="text-center text-muted small mb-0">이미 계정이 있으신가요? <a href="{% url 'login' %}" class="fw-bold" style="color: var(--gn-accent);">로그인</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById("btn-check-username").onclick = function() {
+  var un = document.getElementById("id_username").value.trim();
+  var msg = document.getElementById("username-msg");
+  if (!un) { msg.textContent = "아이디를 입력하세요."; msg.className = "form-text text-danger"; return; }
+  fetch("/signup/check-username/?username=" + encodeURIComponent(un))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      msg.textContent = d.msg;
+      msg.className = "form-text small " + (d.ok ? "text-success" : "text-danger");
+    });
+};
+</script>
+{% endblock %}

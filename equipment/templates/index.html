@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>굴삭기나라</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Pretendard', sans-serif; }
+        .hero-section { background: #212529; color: white; padding: 50px 0 80px; text-align: center; }
+        .search-box { max-width: 700px; margin: -50px auto 30px; position: relative; z-index: 10; padding: 0 15px; }
+        .search-inner { background: white; padding: 10px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .equipment-card { background: white; border-radius: 15px; overflow: hidden; text-decoration: none; color: inherit; display: block; border: 1px solid #eee; height: 100%; transition: 0.2s; }
+        .youtube-box { background: white; border-radius: 20px; padding: 25px; margin-top: 50px; margin-bottom: 50px; border: 1px solid #eee; width: 100%; }
+        .search-active .hide-on-search { display: none !important; }
+        .btn-search { white-space: nowrap; min-width: 80px; font-weight: bold; }
+    </style>
+</head>
+<body class="{% if search_query %}search-active{% endif %}">
+    <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">🚜 굴삭기나라</a>
+            <div class="d-flex gap-2">
+                <a href="/signup/" class="btn btn-outline-light btn-sm">회원가입</a>
+                <a href="/new/" class="btn btn-warning btn-sm fw-bold">매물등록</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero-section hide-on-search">
+        <div class="container text-center">
+            <h2 class="fw-bold mb-2">대한민국 대표 굴삭기 장터</h2>
+            <p class="opacity-75">공사장 앱보다 빠르고 정확한 운영자 직접 관리 매물</p>
+        </div>
+    </header>
+
+    <div class="container search-box">
+        <div class="search-inner px-3">
+            <form action="/" method="GET" class="d-flex gap-2">
+                <input type="text" name="search" class="form-control border-0 bg-transparent shadow-none fs-5" placeholder="모델명, 제조사 검색..." value="{{ search_query }}">
+                <button class="btn btn-warning btn-search" type="submit">🔍 검색</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <h5 class="fw-bold mb-4 px-2">
+            {% if search_query %}🔍 '{{ search_query }}' 결과{% else %}📅 실시간 최신 등록 매물{% endif %}
+        </h5>
+
+        <div class="row row-cols-2 row-cols-md-4 g-4 mb-5">
+            {% for equip in latest_equipments %}
+            <div class="col">
+                <a href="/{{ equip.id }}/" class="equipment-card shadow-sm">
+                    {% if equip.images.all %}<img src="{{ equip.images.first.image.url }}" class="card-img-top" style="height:180px; object-fit:cover;">{% endif %}
+                    <div class="p-3">
+                        <div class="text-muted small mb-1">{{ equip.manufacturer }} / {{ equip.year_manufactured }}</div>
+                        <h6 class="fw-bold mb-2 text-truncate">{{ equip.model_name }}</h6>
+                        <div class="text-danger fw-bold fs-5">{{ equip.listing_price|floatformat:0 }} 만원</div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="youtube-box shadow-sm hide-on-search">
+            <h5 class="fw-bold mb-3"><i class="bi bi-youtube text-danger"></i> 굴삭기나라 TV 최신 영상</h5>
+            <div class="row g-3">
+                <div class="col-4"><div class="ratio ratio-16x9 rounded overflow-hidden bg-dark"><iframe src="https://www.youtube.com/embed/pYOfm_qA80E" allowfullscreen></iframe></div></div>
+                <div class="col-4"><div class="ratio ratio-16x9 rounded overflow-hidden bg-dark"><iframe src="https://www.youtube.com/embed/pYOfm_qA80E" allowfullscreen></iframe></div></div>
+                <div class="col-4"><div class="ratio ratio-16x9 rounded overflow-hidden bg-dark"><iframe src="https://www.youtube.com/embed/pYOfm_qA80E" allowfullscreen></iframe></div></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

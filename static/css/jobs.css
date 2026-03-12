@@ -1,0 +1,363 @@
+/* 구인/구직 상세 페이지: 밝은 카드 + 진한 텍스트 가독성 */
+/* 상단 히어로: 다크 배경에 밝은 텍스트 */
+.gn-job-detail-page .gn-job-hero {
+  margin-bottom: 1.5rem;
+}
+.gn-job-detail-page .gn-job-title {
+  font-size: clamp(1.25rem, 4vw, 1.625rem);
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+.gn-job-detail-page .gn-job-meta-line {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-bottom: 0;
+}
+.gn-job-detail-page .gn-job-meta-line .gn-job-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.gn-job-detail-page .gn-job-meta-line a {
+  color: #94a3b8;
+}
+.gn-job-detail-page .gn-job-meta-line a:hover {
+  color: #e2e8f0;
+}
+
+/* 라이트 카드 공통 */
+.gn-job-detail-page .gn-job-light-card {
+  background: #F7F8FA;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.gn-job-detail-page .gn-job-light-card .card-body {
+  padding: 1.25rem 1.5rem;
+}
+.gn-job-detail-page .gn-job-light-card .gn-job-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+/* 단순화 블록: 사람구합니다 / 일자리구합니다 */
+.gn-job-detail-page .gn-job-simple-block .card-body {
+  padding: 1.5rem 1.5rem;
+}
+.gn-job-detail-page .gn-job-simple-heading {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+/* 한 줄씩 세로 배치: 회사명/근무지역은 회색 박스, 줄간격 띄움 */
+.gn-job-detail-page .gn-job-simple-list {
+  margin: 0;
+  font-size: 0.9375rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.gn-job-detail-page .gn-job-simple-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 1.25rem;
+  align-items: baseline;
+  min-height: 1.5em;
+}
+.gn-job-detail-page .gn-job-dt {
+  color: #6B7280;
+  font-weight: 600;
+  padding: 0.35rem 0.5rem 0.35rem 0;
+}
+.gn-job-detail-page .gn-job-dt.gn-job-label-bg {
+  background: #E5E7EB !important;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+.gn-job-detail-page .gn-job-dd {
+  color: #111827;
+  margin: 0;
+}
+.gn-job-detail-page .gn-job-dd.gn-job-pay {
+  font-weight: 700;
+  color: #B91C1C;
+}
+
+/* 기본정보 그리드 (label / value) */
+.gn-job-detail-page .gn-job-spec {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.5rem;
+  align-items: baseline;
+}
+.gn-job-detail-page .gn-job-spec .gn-spec-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #556;
+  min-width: 7rem;
+}
+.gn-job-detail-page .gn-job-spec .gn-spec-value {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #111827;
+}
+.gn-job-detail-page .gn-job-spec .gn-spec-value.gn-spec-pay {
+  color: #B91C1C;
+  font-weight: 700;
+}
+@media (max-width: 575.98px) {
+  .gn-job-detail-page .gn-job-spec {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .gn-job-detail-page .gn-job-spec .gn-spec-label {
+    margin-top: 0.5rem;
+  }
+  .gn-job-detail-page .gn-job-spec .gn-spec-label:first-child {
+    margin-top: 0;
+  }
+}
+
+/* 상세 내용 본문 - 반드시 진하게 */
+.gn-job-detail-page .gn-job-content {
+  color: #111827;
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 2em;
+}
+.gn-job-detail-page .gn-job-content.gn-job-content-empty {
+  color: #6B7280;
+  font-size: 0.9375rem;
+}
+
+/* 연락처 카드 - 미기재 시 연한 배경 + 진한 글씨 */
+.gn-job-detail-page .gn-job-contact-card {
+  background: #F0F4F8;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: #111827;
+}
+.gn-job-detail-page .gn-job-contact-card .gn-job-contact-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #6B7280;
+  margin-bottom: 0.25rem;
+}
+.gn-job-detail-page .gn-job-contact-card .gn-job-contact-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+.gn-job-detail-page .gn-job-contact-card.gn-job-contact-empty .gn-job-contact-value {
+  color: #6B7280;
+  font-weight: 600;
+}
+.gn-job-detail-page .gn-job-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.gn-job-detail-page .gn-job-contact-actions .btn {
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+}
+
+/* 문의/댓글 카드도 라이트 카드로 */
+.gn-job-detail-page .gn-job-comments-card .gn-job-card-title {
+  margin-bottom: 1rem;
+}
+.gn-job-detail-page .gn-job-comments-card .list-group-item {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.06);
+  color: #111827;
+}
+.gn-job-detail-page .gn-job-comments-card .form-control {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #111827;
+}
+
+/* 액션 버튼 영역 - 카드와 한 세트 */
+.gn-job-detail-page .gn-job-actions-card {
+  background: #F7F8FA;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+.gn-job-detail-page .gn-job-actions-card .card-body {
+  padding: 1rem 1.25rem;
+}
+.gn-job-detail-page .gn-job-actions-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.gn-job-detail-page .gn-job-btn-register {
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+}
+.gn-job-detail-page .gn-job-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 1.35rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.gn-job-detail-page .gn-job-cta-btn:hover {
+  opacity: 0.95;
+  color: inherit;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.gn-job-detail-page .gn-job-cta-btn.gn-job-cta-small {
+  min-height: 36px;
+  padding: 0 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+.gn-job-detail-page .gn-job-cta-btn.gn-job-cta-small:hover {
+  background: #E5E7EB;
+  color: #374151;
+}
+.gn-job-detail-page .gn-job-cta-list {
+  background: #fff;
+  color: #374151;
+  border: 2px solid #E5E7EB;
+}
+.gn-job-detail-page .gn-job-cta-list:hover {
+  border-color: #D1D5DB;
+  background: #F9FAFB;
+}
+.gn-job-detail-page .gn-job-cta-edit {
+  background: #2563EB;
+  color: #fff;
+}
+.gn-job-detail-page .gn-job-cta-edit:hover {
+  background: #1D4ED8;
+  color: #fff;
+}
+.gn-job-detail-page .gn-job-cta-delete {
+  background: #DC2626;
+  color: #fff;
+}
+.gn-job-detail-page .gn-job-cta-delete:hover {
+  background: #B91C1C;
+  color: #fff;
+}
+
+/* 구인구직 공통: 목록/폼/삭제 확인 버튼 스타일 */
+.gn-job-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: opacity 0.2s, transform 0.08s, box-shadow 0.2s, background 0.2s, color 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
+}
+.gn-job-btn:hover {
+  opacity: 0.96;
+  transform: translateY(-1px);
+}
+.gn-job-btn i {
+  font-size: 0.95em;
+}
+.gn-job-btn-primary {
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #f9fafb;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.55);
+  border-color: rgba(191, 219, 254, 0.85);
+}
+.gn-job-btn-primary:hover {
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.7);
+}
+.gn-job-btn-outline {
+  background: rgba(15, 23, 42, 0.1);
+  color: #dbeafe;
+  border-color: rgba(96, 165, 250, 0.9);
+}
+.gn-job-btn-outline:hover {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(191, 219, 254, 0.95);
+  color: #eff6ff;
+}
+.job-top-row .gn-job-btn-outline {
+  background: rgba(15,23,42,0.35);
+}
+.job-top-row .gn-job-btn-outline:hover {
+  background: rgba(15,23,42,0.7);
+}
+.gn-job-btn-edit {
+  background: linear-gradient(135deg, #4ade80, #16a34a);
+  color: #022c22;
+  border-color: rgba(134, 239, 172, 0.9);
+}
+.gn-job-btn-edit:hover {
+  color: #022c22;
+  background: linear-gradient(135deg, #22c55e, #15803d);
+}
+.gn-job-btn-delete {
+  background: linear-gradient(135deg, #f97373, #dc2626);
+  color: #fef2f2;
+  border-color: rgba(248, 113, 113, 0.9);
+}
+.gn-job-btn-delete:hover {
+  color: #fef2f2;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.gn-job-list-action .gn-job-btn { min-height: 36px; padding: 0 0.75rem; font-size: 0.8125rem; }
+
+/* 모바일: 액션 버튼 sticky */
+@media (max-width: 767.98px) {
+  .gn-job-detail-page {
+    padding-bottom: 5.5rem !important;
+  }
+  .gn-job-detail-page .gn-job-actions-wrap {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 0;
+    background: #0f172a;
+    margin-left: -12px;
+    margin-right: -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    z-index: 20;
+    margin-top: 1.5rem;
+  }
+  .gn-job-detail-page .gn-job-actions-card {
+    margin-bottom: 0;
+  }
+}

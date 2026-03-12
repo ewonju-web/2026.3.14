@@ -1,0 +1,77 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Q
+from .models import Equipment, JobPost, Part
+from .forms import EquipmentForm, JobPostForm
+
+# [1] 메인 페이지
+def index(request):
+    query = request.GET.get('q', '')
+    equipment_list = Equipment.objects.all().order_by('-created_at')
+    if query:
+        lookups = Q(model_name__icontains=query) | Q(manufacturer__icontains=query)
+        equipment_list = equipment_list.filter(lookups).distinct()
+    return render(request, 'equipment/equipment_list.html', {'equipment_list': equipment_list, 'query': query})
+
+# [2] 로그인 관련 (ImportError 해결 핵심)
+def user_login(request):
+    return render(request, 'registration/login.html')
+
+def user_logout(request):
+    from django.contrib.auth import logout
+    logout(request)
+    return redirect('index')
+
+def signup(request):
+    return render(request, 'registration/signup.html')
+
+def my_page(request):
+    return render(request, 'registration/my_page.html')
+
+# [3] 구인구직 관련 (비회원 저장 로직)
+def job_list(request):
+    return render(request, 'equipment/job_list.html', {'job_list': JobPost.objects.all().order_by('-created_at')})
+
+def job_detail(request, pk):
+    job = get_object_or_404(JobPost, pk=pk)
+    return render(request, 'equipment/job_detail.html', {'job': job})
+
+def job_create(request):
+    if request.method == "POST":
+        title = request.POST.get('title', '제목 없음')
+        writer = request.POST.get('writer', '익명')
+        contact = request.POST.get('contact', '')
+        location = request.POST.get('location', '') or request.POST.get('seek_location', '')
+        content_main = request.POST.get('content', '')
+        full_content = f"작성자: {writer}\n연락처: {contact}\n지역: {location}\n내용: {content_main}"
+
+        JobPost.objects.create(
+            title=title,
+            content=full_content,
+            location=location,
+            author=request.user if request.user.is_authenticated else None
+        )
+        return redirect('job_list')
+    return render(request, 'equipment/job_form.html')
+
+def job_edit(request, pk): return render(request, 'equipment/job_form.html')
+def job_delete(request, pk):
+    get_object_or_404(JobPost, pk=pk).delete()
+    return redirect('job_list')
+
+# [4] 매물 관련
+def equipment_detail(request, pk):
+    return render(request, 'equipment/equipment_detail.html', {'equipment': get_object_or_404(Equipment, pk=pk)})
+def equipment_create(request): return render(request, 'equipment/equipment_form.html')
+def equipment_edit(request, pk): return render(request, 'equipment/equipment_form.html')
+def equipment_delete(request, pk):
+    get_object_or_404(Equipment, pk=pk).delete()
+    return redirect('index')
+
+# [5] 부품 관련
+def part_list(request): return render(request, 'equipment/part_list.html', {'part_list': Part.objects.all()})
+def part_detail(request, pk): return render(request, 'equipment/part_detail.html', {'part': get_object_or_404(Part, pk=pk)})
+def part_create(request): return render(request, 'equipment/part_form.html')
+def part_edit(request, pk): return render(request, 'equipment/part_form.html')
+def part_delete(request, pk):
+    get_object_or_404(Part, pk=pk).delete()
+    return redirect('part_list')

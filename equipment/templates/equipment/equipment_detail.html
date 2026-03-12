@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ equipment.model_name }} - 굴삭기나라</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Pretendard', sans-serif; padding-bottom: 100px; }
+        .detail-card { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .carousel-item img { height: 500px; object-fit: contain; background-color: #000; }
+        .spec-table th { background: #f8f9fa; width: 35%; color: #666; }
+        .seller-box { background: #fffdf5; border: 2px solid #ffc107; border-radius: 20px; padding: 25px; }
+        .youtube-embed { border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .carousel-indicators [button] { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container"><a class="navbar-brand fw-bold" href="/">🚜 굴삭기나라</a></div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="detail-card p-4 mb-4">
+            <h2 class="fw-bold mb-4">{{ equipment.model_name }}</h2>
+            
+            <div class="row g-4">
+                <div class="col-md-7">
+                    <div id="equipmentCarousel" class="carousel slide shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
+                        <div class="carousel-indicators">
+                            {% for img in equipment.images.all %}
+                            <button type="button" data-bs-target="#equipmentCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}"></button>
+                            {% endfor %}
+                        </div>
+                        <div class="carousel-inner">
+                            {% for img in equipment.images.all %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ img.image.url }}" class="d-block w-100" alt="장비사진">
+                            </div>
+                            {% empty %}
+                            <div class="carousel-item active">
+                                <div class="d-flex align-items-center justify-content-center bg-secondary text-white" style="height:500px;">등록된 사진이 없습니다.</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#equipmentCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#equipmentCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-md-5">
+                    <div class="seller-box h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <h3 class="text-danger fw-bold mb-4">{{ equipment.listing_price|floatformat:0 }} 만원</h3>
+                            <table class="table spec-table">
+                                <tr><th>제조사</th><td>{{ equipment.manufacturer }}</td></tr>
+                                <tr><th>연식</th><td>{{ equipment.year_manufactured }}년</td></tr>
+                                <tr><th>지역</th><td>{{ equipment.current_location }}</td></tr>
+                                <tr><th>판매자</th><td>{{ equipment.author.profile.company_name|default:"개인직거래" }}</td></tr>
+                            </table>
+                        </div>
+                        <a href="tel:{{ equipment.author.profile.phone|default:'010-0000-0000' }}" class="btn btn-warning w-100 py-3 fw-bold fs-5 shadow-sm mt-3">
+                            <i class="bi bi-telephone-fill"></i> 전화 상담하기
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <h5 class="fw-bold border-bottom pb-3"><i class="bi bi-info-circle"></i> 상세 설명</h5>
+                <p class="mt-3 text-muted" style="line-height:1.8; white-space:pre-wrap;">{{ equipment.description }}</p>
+            </div>
+
+            {% if equipment.author.profile.youtube_url %}
+            <div class="mt-5">
+                <h5 class="fw-bold mb-3 text-danger"><i class="bi bi-youtube"></i> 판매자 추천 영상</h5>
+                <div class="youtube-embed ratio ratio-16x9">
+                    <iframe src="{{ equipment.author.profile.youtube_url }}" allowfullscreen></iframe>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

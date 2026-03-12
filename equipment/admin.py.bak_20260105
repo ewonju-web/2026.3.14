@@ -1,0 +1,44 @@
+from django.contrib import admin
+from django.db.models import Sum
+from django.utils.timezone import now
+from .models import Profile, Equipment, EquipmentImage, VisitorCount, VisitorLog
+
+# 1. 사진 등록 (미리보기 포함 및 세련된 디자인)
+class EquipmentImageInline(admin.TabularInline):
+    model = EquipmentImage
+    extra = 10
+    fields = ['image']
+
+@admin.register(Equipment)
+class EquipmentAdmin(admin.ModelAdmin):
+    list_display = ("model_name", "manufacturer", "year_manufactured", "listing_price", "is_sold")
+    inlines = [EquipmentImageInline]
+
+# 2. 통계 전용 관리자 클래스 (데이터 요약용)
+@admin.register(VisitorCount)
+class VisitorCountAdmin(admin.ModelAdmin):
+    list_display = ("date", "count")
+    list_filter = ("date",)
+    
+    # 관리자 페이지 메인에서 요약 정보를 볼 수 있게 개선
+    def changelist_view(self, request, extra_context=None):
+        today = now().date()
+        this_month = today.month
+        this_year = today.year
+        
+        extra_context = extra_context or {}
+        extra_context['today_total'] = VisitorCount.objects.filter(date=today).aggregate(Sum('count'))['count__sum'] or 0
+        extra_context['month_total'] = VisitorCount.objects.filter(date__month=this_month, date__year=this_year).aggregate(Sum('count'))['count__sum'] or 0
+        extra_context['year_total'] = VisitorCount.objects.filter(date__year=this_year).aggregate(Sum('count'))['count__sum'] or 0
+        
+        return super().changelist_view(request, extra_context=extra_context)
+
+@admin.register(VisitorLog)
+class VisitorLogAdmin(admin.ModelAdmin):
+    list_display = ("visit_date", "ip_address", "referer")
+    list_filter = ("visit_date", "referer")
+    search_fields = ("ip_address", "referer")
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "company_name", "phone", "is_approved")

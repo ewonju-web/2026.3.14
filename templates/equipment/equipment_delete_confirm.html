@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5" style="max-width: 480px;">
+    <h2 class="section-title mb-4">매물 삭제</h2>
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <p class="mb-3">다음 매물을 삭제하시겠습니까?</p>
+            <p class="fw-bold text-dark mb-4">« {% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %} »</p>
+            <form method="post">
+                {% csrf_token %}
+                {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">삭제하기</button>
+                    <a href="{% url 'equipment_detail' equipment.pk %}" class="btn btn-outline-secondary">취소</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

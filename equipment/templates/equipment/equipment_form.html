@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-camera-fill me-2"></i>매물 등록하기</h5>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <h6 class="fw-black mb-3 text-secondary">장비 기본 정보</h6>
+                            <div class="row g-3">
+                                {% for field in form %}
+                                    {% if field.name != 'password' %}
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">{{ field.label }}</label>
+                                        {{ field }}
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- ✅ 사진 업로드 (누적 추가 + 미리보기 + 확대보기) -->
+                        <div class="mb-4">
+                            <h6 class="fw-black mb-3 text-secondary">장비 사진 (최대 10장)</h6>
+                            <p class="small text-muted mb-2">※ 첫 번째 사진이 메인으로 노출됩니다.</p>
+
+                            <div class="d-flex flex-wrap gap-2" id="previewWrap"></div>
+
+                            <div class="mt-3 d-grid">
+                                <button type="button" class="btn btn-outline-primary" id="btnAddPhoto">
+                                    <i class="bi bi-plus-circle me-1"></i> 사진 추가(촬영/앨범)
+                                </button>
+                            </div>
+
+                            <div class="small mt-2 text-primary fw-bold" id="fileCount"></div>
+
+                            <!-- 실제 전송되는 input (하나만 유지, files를 누적해서 넣음) -->
+                            <input type="file" id="imagesInput" name="images" class="d-none" accept="image/*" multiple>
+                        </div>
+
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-bold">수정 비밀번호</label>
+                            <input type="password" name="password" class="form-control" placeholder="수정/삭제 시 필요합니다." required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold">매물 등록하기</button>
+                            <a href="/" class="btn btn-link text-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ 확대보기 모달(부트스트랩 모달) -->
+<div class="modal fade" id="imgModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">사진 보기</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <div class="modal-body p-2 text-center">
+        <img id="modalImg" src="" style="max-width:100%; height:auto; border-radius:12px;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+    const MAX_FILES = 10;
+
+    const btn = document.getElementById('btnAddPhoto');
+    const input = document.getElementById('imagesInput');
+    const wrap = document.getElementById('previewWrap');
+    const countEl = document.getElementById('fileCount');
+
+    // ✅ 누적 파일 저장소 (핵심: DataTransfer로 files 누적)
+    const dt = new DataTransfer();
+
+    function updateCount() {
+        countEl.innerText = dt.files.length ? `✅ 현재 ${dt.files.length}장 선택됨 (최대 ${MAX_FILES}장)` : '';
+    }
+
+    function openModal(src) {
+        const img = document.getElementById('modalImg');
+        img.src = src;
+
+        // 부트스트랩 모달이 로드되어 있는 경우
+        if (window.bootstrap && bootstrap.Modal) {
+            const modalEl = document.getElementById('imgModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        } else {
+            // 혹시 모달이 없으면 새탭으로
+            window.open(src, '_blank');
+        }
+    }
+
+    function addPreview(file, src) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.width = '92px';
+        img.style.height = '92px';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '12px';
+        img.style.cursor = 'pointer';
+        img.style.border = '1px solid #ddd';
+        img.title = '탭하면 확대';
+
+        img.addEventListener('click', () => openModal(src));
+        wrap.appendChild(img);
+    }
+
+    btn.addEventListener('click', () => input.click());
+
+    input.addEventListener('change', () => {
+        const files = Array.from(input.files || []);
+        if (!files.length) return;
+
+        for (const f of files) {
+            if (dt.files.length >= MAX_FILES) break;
+            dt.items.add(f);
+
+            const reader = new FileReader();
+            reader.onload = (e) => addPreview(f, e.target.result);
+            reader.readAsDataURL(f);
+        }
+
+        // ✅ 실제 input.files를 "누적된 dt.files"로 덮어씌움 (리셋 방지)
+        input.files = dt.files;
+
+        // ✅ 같은 파일 다시 선택 가능하도록 input value 초기화
+        input.value = '';
+
+        if (dt.files.length >= MAX_FILES) {
+            updateCount();
+            countEl.innerText += " (최대치 도달)";
+            return;
+        }
+        updateCount();
+    });
+
+    updateCount();
+})();
+</script>
+{% endblock %}

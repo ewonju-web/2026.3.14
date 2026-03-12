@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+    <h2 class="section-title mb-4">
+        {% if LANG == 'en' %}My Chats{% else %}내 채팅{% endif %}
+    </h2>
+    {% if room_list_data %}
+    <div class="list-group list-group-flush">
+        {% for item in room_list_data %}
+        <a href="{% url 'chat_room_detail' item.room.pk %}" class="list-group-item list-group-item-action d-flex gap-3 align-items-start py-3 border-0 border-bottom" style="background: var(--gn-card); color: var(--gn-text);">
+            <div class="flex-grow-1 min-width-0">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold">{{ item.other.username }} <span class="badge bg-secondary text-white opacity-75" style="font-size: 0.65rem; font-weight: 500;">{% if item.other_role == 'seller' %}{% if LANG == 'en' %}Seller{% else %}판매자{% endif %}{% else %}{% if LANG == 'en' %}Buyer{% else %}구매자{% endif %}{% endif %}</span></span>
+                    <span class="text-muted small">{{ item.last_at|date:"m/d H:i" }}</span>
+                </div>
+                <p class="small text-muted mb-1 text-truncate">
+                    {{ item.subject }}
+                </p>
+                {# 최근 메시지: XSS 방지 위해 |safe 사용 금지 #}
+                <p class="small mb-0 text-truncate">{% if item.last_message %}{{ item.last_message }}{% else %}{% if LANG == 'en' %}Start the conversation{% else %}대화를 시작해보세요{% endif %}{% endif %}</p>
+            </div>
+            {% if item.unread_count > 0 %}
+            <span class="badge bg-danger rounded-pill">{{ item.unread_count }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-3 p-5 text-center">
+        <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3 mb-0">{% if LANG == 'en' %}No chats yet. Start from an item detail page with &quot;Chat with seller&quot;.{% else %}아직 채팅이 없습니다. 매물 상세에서 &#39;채팅으로 문의하기&#39;를 눌러 시작하세요.{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

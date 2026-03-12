@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="container py-2 py-md-4 d-flex flex-column gn-chat-room-wrap" style="max-width: 720px; min-height: calc(100vh - 120px); padding-bottom: env(safe-area-inset-bottom, 0);">
+    <div class="card border-0 shadow-sm rounded-3 flex-grow-1 d-flex flex-column overflow-hidden mb-0 gn-chat-card">
+        <div class="card-header d-flex align-items-center gap-2 py-3" style="background: var(--gn-card); border-color: var(--gn-border);">
+            <a href="{% url 'chat_room_list' %}" class="btn btn-sm btn-outline-secondary rounded-circle p-1"><i class="bi bi-arrow-left"></i></a>
+            <div class="flex-grow-1 min-width-0">
+                <div class="fw-bold">{{ other.username }}</div>
+                {% if room.equipment_id %}
+                <a href="{% url 'equipment_detail' room.equipment.pk %}" class="small text-decoration-none text-muted">
+                    {{ room.equipment.model_name|default:room.equipment.get_equipment_type_display }} · {{ room.equipment.listing_price|floatformat:0|intcomma }}만원
+                </a>
+                {% elif room.soil_post_id %}
+                <a href="{% url 'soil_detail' room.soil_post.pk %}" class="small text-decoration-none text-muted">
+                    {{ room.soil_post.title }}
+                </a>
+                {% elif room.job_post_id %}
+                <a href="{% url 'job_detail' room.job_post.pk %}" class="small text-decoration-none text-muted">
+                    {{ room.job_post.title }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body flex-grow-1 overflow-auto py-3 gn-chat-messages" style="max-height: 55vh;">
+            {% for msg in messages %}
+            <div class="d-flex mb-2 {% if msg.sender_id == user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                <div class="rounded-3 px-3 py-2 {% if msg.sender_id == user.id %}text-end{% endif %}" style="max-width: 75%; {% if msg.sender_id == user.id %}background: var(--gn-accent); color: #0f172a;{% else %}background: var(--gn-border); color: var(--gn-text);{% endif %} border-radius: 12px;">
+                    <div class="small text-muted mb-0">{% if msg.sender_id == user.id %}{% if LANG == 'en' %}Me{% else %}나{% endif %}{% else %}{{ msg.sender.username }}{% endif %}</div>
+                    {# XSS 방지: 채팅 메시지는 절대 |safe 사용 금지, 기본 escape 유지 #}
+                    <div class="mb-0" style="white-space: pre-wrap;">{{ msg.message }}</div>
+                    <div class="small opacity-75">{{ msg.created_at|date:"m/d H:i" }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center small">{% if LANG == 'en' %}Send a message.{% else %}메시지를 입력해 보세요.{% endif %}</p>
+            {% endfor %}
+        </div>
+        <div class="card-footer border-top py-3 gn-chat-input-wrap" style="background: var(--gn-card); border-color: var(--gn-border); position: sticky; bottom: 0; z-index: 10; padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));">
+            <form method="post" action="" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="text" name="message" class="form-control rounded-3" placeholder="{% if LANG == 'en' %}Type a message...{% else %}메시지를 입력하세요{% endif %}" maxlength="1000" required autocomplete="off">
+                <button type="submit" class="btn rounded-3 text-dark fw-bold" style="background: var(--gn-accent); min-width: 70px;">{% if LANG == 'en' %}Send{% else %}전송{% endif %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+  .gn-chat-room-wrap { overflow: hidden; }
+  @media (max-width: 767px) {
+    .gn-chat-card { min-height: 0; display: flex; flex-direction: column; }
+    .gn-chat-messages { flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+    .gn-chat-input-wrap { flex-shrink: 0; }
+  }
+</style>
+<script>
+(function(){
+  var messagesEl = document.querySelector('.gn-chat-messages');
+  if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+})();
+</script>
+{% endblock %}

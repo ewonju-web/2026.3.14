@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/jobs.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 640px;">
+    <h2 class="section-title mb-4">{% if mode == 'edit' %}구인구직 수정{% else %}구인구직 글쓰기{% endif %}</h2>
+    {% if messages %}
+    <div class="alert alert-danger py-2 small mb-3">{% for m in messages %}{{ m }}{% endfor %}</div>
+    {% endif %}
+
+    <div class="mb-4">
+        <p class="small mb-2" style="color: var(--gn-muted);">어떤 글을 쓰시나요?</p>
+        <div class="d-flex gap-2 job-form-tabs">
+            <button type="button" class="btn flex-grow-1 py-3 rounded-3 border-2 job-form-tab job-form-tab-hire {% if not job or job.job_type != 'SEEKING' %}active{% endif %}" id="btn-hire" onclick="toggleForm('hire')">
+                <span class="d-block fw-bold job-form-tab-title">사람 구해요</span>
+                <span class="small job-form-tab-sub">채용·구인</span>
+            </button>
+            <button type="button" class="btn flex-grow-1 py-3 rounded-3 border-2 job-form-tab job-form-tab-seek {% if job and job.job_type == 'SEEKING' %}active{% endif %}" id="btn-seek" onclick="toggleForm('seek')">
+                <span class="d-block fw-bold job-form-tab-title">일자리 구해요</span>
+                <span class="small job-form-tab-sub">구직</span>
+            </button>
+        </div>
+    </div>
+    <style>
+    .job-form-tab { transition: background .2s, border-color .2s, color .2s; }
+    .job-form-tab-title { font-size: 1.05rem; }
+    .job-form-tab-sub { opacity: .9; }
+    .job-form-tab-hire.active { border-color: #0d6efd !important; background: rgba(13, 110, 253, 0.2); color: #fff; }
+    .job-form-tab-hire:not(.active) { border-color: var(--gn-border); background: var(--gn-card); color: #e2e8f0; }
+    .job-form-tab-hire:not(.active) .job-form-tab-sub { color: var(--gn-muted); }
+    .job-form-tab-seek.active { border-color: #198754 !important; background: rgba(25, 135, 84, 0.25); color: #fff; }
+    .job-form-tab-seek:not(.active) { border-color: var(--gn-border); background: var(--gn-card); color: #e2e8f0; }
+    .job-form-tab-seek:not(.active) .job-form-tab-sub { color: var(--gn-muted); }
+    </style>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-body p-4">
+            <form method="post" id="job-form" action="{% if mode == 'edit' %}{% url 'job_edit' job.pk %}{% else %}{% url 'job_create' %}{% endif %}">
+                {% csrf_token %}
+                <input type="hidden" name="job_mode" id="id_job_mode" value="{% if job and job.job_type == 'SEEKING' %}seek{% else %}hire{% endif %}">
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">제목</label>
+                    <input type="text" name="title" class="form-control form-control-lg" placeholder="예: 06W 기사님 모십니다" required style="border-radius: 12px;" value="{% if job %}{{ job.title }}{% endif %}">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">지역 <span class="text-danger">*</span></label>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <select name="region_sido" id="form-region-sido" class="form-select" required style="border-radius: 10px;">
+                                {% for val, label in sido_choices %}
+                                <option value="{{ val }}" {% if job and job.region_sido == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <select name="region_sigungu" id="form-region-sigungu" class="form-select" required style="border-radius: 10px;">
+                                <option value="">시/군/구 선택</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-hire {% if job and job.job_type == 'SEEKING' %}d-none{% endif %}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">근무 지역(상세)</label>
+                            <input type="text" name="location" class="form-control" placeholder="동·읍·면 등" style="border-radius: 10px;" value="{% if job %}{{ job.location }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">주경력(장비)</label>
+                            <input type="text" name="machine" class="form-control" placeholder="예: 06W, 텐" style="border-radius: 10px;" value="{% if job %}{{ job.equipment_type }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">제출서류</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check-label d-flex align-items-center gap-2">
+                                <input type="checkbox" name="doc_resident" class="form-check-input" value="1" {% if not job or job.doc_resident %}checked{% endif %}> 주민등록등본
+                            </label>
+                            <label class="form-check-label d-flex align-items-center gap-2">
+                                <input type="checkbox" name="doc_license" class="form-check-input" value="1" {% if not job or job.doc_license %}checked{% endif %}> 면허증 사본
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">모집인원</label>
+                            <div class="input-group" style="border-radius: 10px;">
+                                <input type="number" name="recruit_count" class="form-control" min="1" max="999" placeholder="명" value="{% if job and job.recruit_count %}{{ job.recruit_count }}{% endif %}">
+                                <span class="input-group-text bg-transparent border-start-0">명</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">마감</label>
+                            <select name="deadline_type" id="id_deadline_type" class="form-select mb-2" style="border-radius: 10px;">
+                                <option value="UNTIL_FILLED" {% if not job or job.deadline_type != 'DATE' %}selected{% endif %}>채용시까지</option>
+                                <option value="DATE" {% if job and job.deadline_type == 'DATE' %}selected{% endif %}>날짜 지정</option>
+                            </select>
+                            <input type="date" name="deadline" id="id_deadline_date" class="form-control {% if not job or job.deadline_type != 'DATE' %}d-none{% endif %}" style="border-radius: 10px;" value="{% if job and job.deadline %}{{ job.deadline|date:'Y-m-d' }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">회사정보</label>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <input type="text" name="company_name" class="form-control" placeholder="회사명" style="border-radius: 10px;" value="{% if job %}{{ job.company_name }}{% endif %}">
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="company_address" class="form-control" placeholder="주소" style="border-radius: 10px;" value="{% if job %}{{ job.company_address }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">경력</label>
+                            <input type="text" name="exp" class="form-control" placeholder="경력·신입" style="border-radius: 10px;" value="{% if job %}{{ job.experience }}{% endif %}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">급여</label>
+                            <input type="text" name="pay" class="form-control" placeholder="급여 협의" style="border-radius: 10px;" value="{% if job %}{{ job.pay }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-seek {% if not job or job.job_type != 'SEEKING' %}d-none{% endif %}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">희망 지역</label>
+                            <input type="text" name="seek_location" class="form-control" placeholder="희망 지역" style="border-radius: 10px;" value="{% if job %}{{ job.location }}{% endif %}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">주경력(장비)</label>
+                            <input type="text" name="seek_machine" class="form-control" placeholder="예: 06W 10년" style="border-radius: 10px;" value="{% if job %}{{ job.equipment_type }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">작성자 / 연락처</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" name="writer" class="form-control" placeholder="이름" style="border-radius: 10px;" value="{% if job %}{{ job.writer_display }}{% endif %}">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="contact" class="form-control" placeholder="010-0000-0000" style="border-radius: 10px;" value="{% if job %}{{ job.contact }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">상세 내용</label>
+                    <textarea name="content" class="form-control" rows="5" placeholder="근무 조건, 장비, 연락 방법 등을 적어주세요." style="border-radius: 12px;">{% if job %}{{ job.content|default:'' }}{% endif %}</textarea>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="submit" class="gn-job-btn gn-job-btn-primary flex-grow-1" style="min-height: 48px; font-size: 1rem;">{% if mode == 'edit' %}수정하기{% else %}등록하기{% endif %}</button>
+                    <a href="{% if mode == 'edit' %}{% url 'job_detail' job.pk %}{% else %}{% url 'job_list' %}{% endif %}" class="gn-job-btn gn-job-btn-outline">취소</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    var SIGUNGU_MAP = {{ sigungu_map_json|safe }};
+    var currentSigungu = '{% if job and job.region_sigungu %}{{ job.region_sigungu|escapejs }}{% endif %}';
+    var sidoEl = document.getElementById('form-region-sido');
+    var sigunguEl = document.getElementById('form-region-sigungu');
+    function fillSigungu(sido) {
+        if (!sigunguEl) return;
+        sigunguEl.innerHTML = '<option value="">시/군/구 선택</option>';
+        var list = SIGUNGU_MAP[sido];
+        if (list) {
+            list.forEach(function(name) {
+                var opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                if (name === currentSigungu) opt.selected = true;
+                sigunguEl.appendChild(opt);
+            });
+        }
+    }
+    if (sidoEl && sigunguEl) {
+        fillSigungu(sidoEl.value);
+        sidoEl.addEventListener('change', function() {
+            currentSigungu = '';
+            fillSigungu(this.value);
+        });
+    }
+})();
+function toggleForm(type) {
+    var hire = document.querySelectorAll('.form-hire');
+    var seek = document.querySelectorAll('.form-seek');
+    var btnHire = document.getElementById('btn-hire');
+    var btnSeek = document.getElementById('btn-seek');
+    var input = document.getElementById('id_job_mode');
+    if (type === 'hire') {
+        hire.forEach(function(el){ el.classList.remove('d-none'); });
+        seek.forEach(function(el){ el.classList.add('d-none'); });
+        if (btnHire) btnHire.classList.add('active');
+        if (btnSeek) btnSeek.classList.remove('active');
+        if (input) input.value = 'hire';
+    } else {
+        hire.forEach(function(el){ el.classList.add('d-none'); });
+        seek.forEach(function(el){ el.classList.remove('d-none'); });
+        if (btnSeek) btnSeek.classList.add('active');
+        if (btnHire) btnHire.classList.remove('active');
+        if (input) input.value = 'seek';
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('id_job_mode');
+    if (input && input.value === 'seek') toggleForm('seek');
+    var deadlineType = document.getElementById('id_deadline_type');
+    var deadlineDate = document.getElementById('id_deadline_date');
+    if (deadlineType && deadlineDate) {
+        function toggleDeadlineDate() {
+            deadlineDate.classList.toggle('d-none', deadlineType.value !== 'DATE');
+        }
+        toggleDeadlineDate();
+        deadlineType.addEventListener('change', toggleDeadlineDate);
+    }
+});
+</script>
+{% endblock %}

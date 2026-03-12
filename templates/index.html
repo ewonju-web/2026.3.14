@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0"><span style="color: #FFB800;">|</span> 최신 매물</h4>
+
+    </div>
+
+    <div class="row g-3 g-md-4 mb-5">
+        {% for equipment in equipments %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden position-relative" style="transition: 0.3s;">
+                <div style="height: 160px; background-color: #f8f9fa;">
+                    {% if equipment.images.all %}
+                        <img src="{{ equipment.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 준비중</div>
+                    {% endif %}
+                </div>
+                <div class="card-body p-3">
+                    <p class="text-muted mb-1" style="font-size: 0.75rem;">{{ equipment.manufacturer }}</p>
+                    <h6 class="fw-bold mb-2 text-truncate" style="font-size: 0.95rem;">{{ equipment.model_name }}</h6>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-danger fw-bold" style="font-size: 1.05rem;">{{ equipment.listing_price|floatformat:0|intcomma }}만원</span>
+                        <span class="badge bg-light text-dark fw-normal">{{ equipment.year_manufactured }}년</span>
+                    </div>
+                </div>
+                <a href="{% url 'equipment-detail' equipment.pk %}" class="stretched-link"></a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 border rounded-4 bg-light">
+            <p class="text-muted m-0">등록된 매물이 없습니다.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr class="my-5" style="border-top: 1px dashed #ddd;">
+
+    <div class="mb-5">
+        <h5 class="fw-bold mb-4"><i class="bi bi-youtube text-danger"></i> 굴삭기나라 TV 최신영상</h5>
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <div class="shadow-sm rounded-4 overflow-hidden">
+                    <div class="ratio ratio-16x9">
+                        <iframe src="https://www.youtube.com/embed/videoseries?list=PLm278VnZ6B9Z4Hsc62wR3r-3L0H1S9n-x" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 d-none d-md-block">
+                <div class="shadow-sm rounded-4 overflow-hidden">
+                    <div class="ratio ratio-16x9">
+                        <iframe src="https://www.youtube.com/embed/videoseries?list=PLm278VnZ6B9Z4Hsc62wR3r-3L0H1S9n-x" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 d-none d-md-block">
+                <div class="shadow-sm rounded-4 overflow-hidden">
+                    <div class="ratio ratio-16x9">
+                        <iframe src="https://www.youtube.com/embed/videoseries?list=PLm278VnZ6B9Z4Hsc62wR3r-3L0H1S9n-x" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

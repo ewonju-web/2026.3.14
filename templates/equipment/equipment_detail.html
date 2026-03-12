@@ -1,0 +1,621 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="container-fluid px-md-5 py-4 gn-detail-page">
+  <!-- PC: 2컬럼 (왼쪽 사진 / 오른쪽 정보+버튼) -->
+  <div class="row g-4 gn-detail-top">
+    <!-- 왼쪽(65~70%): 메인 이미지 + 썸네일 한 줄 -->
+    <div class="col-12 col-lg-8 gn-detail-left">
+      <div class="card gn-card-sharp gn-detail-photo-card" style="border-radius: 10px; overflow: hidden;">
+        {% if equipment.images.all %}
+          <div class="position-relative bg-dark bg-opacity-10" style="min-height: 380px;">
+            <img id="detailMainImg"
+                 src="{{ equipment.images.first.image.url }}"
+                 class="img-fluid w-100 cursor-pointer"
+                 style="max-height: 420px; object-fit: contain; cursor: zoom-in;"
+                 data-bs-toggle="modal" data-bs-target="#lightboxModal"
+                 data-lightbox-index="0"
+                 data-lightbox-src="{{ equipment.images.first.image.url }}"
+                 alt="{{ equipment.model_name }}">
+            <span class="position-absolute bottom-0 end-0 m-2 badge bg-dark bg-opacity-75 py-2 px-3 small">
+              <i class="bi bi-zoom-in me-1"></i>클릭하면 크게 보기
+            </span>
+          </div>
+          {% if equipment.images.all|length > 1 %}
+          <div class="gn-detail-thumbs p-2 border-top bg-light d-flex gap-2 overflow-x-auto flex-nowrap">
+            {% for image in equipment.images.all %}
+            <button type="button"
+                    class="p-0 border rounded flex-shrink-0 detail-thumb {% if forloop.first %}border-primary{% endif %}"
+                    style="width: 72px; height: 72px; overflow: hidden; {% if forloop.first %}border-width: 2px !important;{% endif %}"
+                    data-src="{{ image.image.url }}"
+                    data-index="{{ forloop.counter0 }}"
+                    aria-label="사진 {{ forloop.counter }}">
+              <img src="{{ image.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+            </button>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% else %}
+          <div class="bg-light p-5 text-center" style="min-height: 300px;">
+            <i class="bi bi-camera text-muted fs-1"></i>
+            <p class="text-muted mt-2 mb-0">등록된 사진이 없습니다.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 오른쪽(30~35%): 개인/팝니다/가격/기본정보/버튼(연락처→채팅→찜→복사) -->
+    <div class="col-12 col-lg-4 gn-detail-right">
+      <div class="card gn-card-sharp gn-card-light p-4" style="border-radius: 10px;">
+        <p class="mb-2 gn-seller-type">{% if author_is_dealer %}매매상{% else %}개인{% endif %}</p>
+        <div class="d-flex align-items-center flex-wrap mb-3 gn-status-row">
+          <span class="badge px-3 py-2 text-white gn-status-badge">
+            {% if equipment.is_sold %}판매완료{% else %}팝니다{% endif %}
+          </span>
+          {% if equipment.manufacturer %}
+          <span class="gn-status-maker ms-2">
+            제조사: {{ equipment.manufacturer }}
+          </span>
+          {% endif %}
+          {% if equipment.vehicle_number %}
+          <span class="badge badge-verified ms-2 px-2 py-1">번호등록</span>
+          {% endif %}
+        </div>
+
+        <div class="mb-4">
+          <div class="gn-price-label mb-1">판매금액</div>
+          <div class="gn-price-value">{{ equipment.listing_price|floatformat:0|intcomma }} 만원</div>
+        </div>
+
+        <h6 class="gn-section-heading mb-2">기본 정보</h6>
+        <table class="table table-sm table-borderless mb-3 align-middle gn-spec-table">
+          <tbody>
+            <tr>
+              <td class="spec-label">기종</td>
+              <td class="spec-value">{{ equipment.get_equipment_type_display|default:"-" }}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">제조사</td>
+              <td class="spec-value">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% else %}모름{% endif %}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">모델명</td>
+              <td class="spec-value spec-value-model">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">연식</td>
+              <td class="spec-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">가동시간</td>
+              <td class="spec-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }} HR{% else %}모름{% endif %}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">매물등록일</td>
+              <td class="spec-value">{{ equipment.created_at|date:"Y-m-d" }}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">위치</td>
+              <td class="spec-value">{% if equipment.current_location %}{{ equipment.current_location }}{% else %}모름{% endif %}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">차량번호</td>
+              <td class="spec-value">{% if equipment.vehicle_number %}{{ equipment.vehicle_number }}{% else %}모름{% endif %}</td>
+            </tr>
+            <tr>
+              <td class="spec-label">판매자</td>
+              <td class="spec-value">{{ author_display|default:"-" }}</td>
+            </tr>
+            {% if author_phone %}
+            <tr>
+              <td class="spec-label">연락처</td>
+              <td class="spec-value fw-bold">{{ author_phone }}</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+
+        <!-- CTA 버튼: 연락처 → 채팅하기 → 찜하기 → 링크복사 (거래 흐름 순) -->
+        <div class="d-grid gap-2">
+          {% if author_phone %}
+          <a href="tel:{{ author_phone|cut:'-'|cut:' ' }}" class="btn gn-btn-primary py-3 fw-bold">
+            <i class="bi bi-telephone-fill me-2"></i> 전화 상담하기
+          </a>
+          {% else %}
+          <button class="btn gn-btn-secondary py-3 fw-bold" disabled>
+            <i class="bi bi-telephone-fill me-2"></i> 연락처 정보 없음
+          </button>
+          {% endif %}
+
+          {% if user.is_authenticated and equipment.author and equipment.author_id != user.id %}
+          <a href="{% url 'equipment_chat_start' equipment.pk %}" class="btn gn-btn-primary w-100 py-3 fw-bold">
+            <i class="bi bi-chat-dots-fill me-2"></i>{% if LANG == 'en' %}Chat with seller{% else %}채팅으로 문의하기{% endif %}
+          </a>
+          {% elif not user.is_authenticated %}
+          <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn gn-btn-primary w-100 py-3 fw-bold">
+            <i class="bi bi-chat-dots-fill me-2"></i>{% if LANG == 'en' %}Chat with seller{% else %}채팅으로 문의하기{% endif %}
+          </a>
+          {% else %}
+          <button class="btn gn-btn-secondary py-3 fw-bold" disabled>
+            <i class="bi bi-chat-dots me-2"></i>{% if LANG == 'en' %}My listing{% else %}내 매물입니다{% endif %}
+          </button>
+          {% endif %}
+
+          {% if user.is_authenticated %}
+          <a href="{% url 'toggle_equipment_favorite' equipment.pk %}?next={{ request.get_full_path|urlencode }}" class="btn gn-btn-wishlist w-100 py-2">
+            <i class="bi bi-heart{% if is_favorited %}-fill{% endif %}"></i> {% if is_favorited %}찜 해제{% else %}찜하기{% endif %}
+          </a>
+          {% endif %}
+
+          <button type="button" class="btn gn-btn-secondary py-2"
+                  onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href); this.innerText='링크 복사 완료';">
+            <i class="bi bi-share me-2"></i> 매물 링크 복사
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 설명: 2컬럼 아래 전체 폭(왼쪽 정렬) -->
+  <div class="gn-detail-desc-section mt-4">
+    <div class="card gn-card-sharp gn-card-light p-4" style="border-radius: 10px;">
+      <h5 class="gn-section-heading mb-3">상세 설명</h5>
+      <div class="gn-detail-desc">{% if equipment.description %}{{ equipment.description }}{% else %}내용이 없습니다.{% endif %}</div>
+    </div>
+  </div>
+
+  {% if finance_limit or finance_monthly_60 %}
+  <!-- 금융 예상 한도 / 월 납입액 (상세 설명 아래) -->
+  <div class="mt-4">
+    <div class="gn-finance-card card gn-card-sharp" style="border-radius: 10px;">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+          <div class="gn-finance-title">이 장비 금융 가능 금액 (예상)</div>
+          <span class="badge gn-badge-preparing">유료 금융상품 연동 준비중</span>
+        </div>
+        <div class="row g-3 mb-2">
+          {% if finance_limit %}
+          <div class="col-12 col-md-6">
+            <div class="gn-finance-label">예상 한도 (최대)</div>
+            <div class="gn-finance-limit">{{ finance_limit|floatformat:0|intcomma }} <span class="gn-finance-unit">만원</span></div>
+          </div>
+          {% endif %}
+          {% if finance_monthly_60 %}
+          <div class="col-12 col-md-6">
+            <div class="gn-finance-label">예상 월 납입액 (60개월 기준)</div>
+            <div class="gn-finance-monthly">{{ finance_monthly_60|floatformat:0|intcomma }} <span class="gn-finance-unit">만원</span></div>
+          </div>
+          {% endif %}
+        </div>
+        <p class="gn-finance-note">연 7.0% / 60개월 원리금 균등상환을 가정한 단순 예시입니다. 실제 승인 한도와 금리는 제휴 금융사 심사 결과에 따라 달라질 수 있습니다.</p>
+        <button type="button" class="btn gn-btn-trust w-100 fw-bold py-2" disabled>한도 조회하기 (준비중)</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 사진 보기 (2컬럼 아래 전체 폭) -->
+  {% if equipment.images.all %}
+  <div class="row mt-4">
+    <div class="col-12">
+      <h5 class="fw-bold mb-3" style="border-left: 4px solid #c00; padding-left: 12px;">사진 보기</h5>
+      <div class="row g-3">
+        {% for image in equipment.images.all %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="{{ image.image.url }}" target="_blank" rel="noopener" class="d-block gn-card-sharp rounded overflow-hidden bg-light" style="border: 1px solid #D1D5DB; box-shadow: 0 1px 4px rgba(0,0,0,.08);">
+            <img src="{{ image.image.url }}" class="img-fluid w-100" style="max-height: 360px; object-fit: contain;" alt="{{ equipment.model_name }} {{ forloop.counter }}">
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 비슷한 기종·년식 시세 -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card gn-card-sharp gn-card-dark rounded-3 overflow-hidden">
+        <div class="card-body p-4">
+          <h5 class="gn-section-heading gn-section-heading-accent mb-4">비슷한 기종·년식 시세</h5>
+          <p class="gn-dark-desc small mb-4">같은 제조사, 이 매물 년식 ±2년 내 매물 기준 (판매완료 제외)</p>
+          {% if similar_stats.cnt and similar_stats.cnt > 0 %}
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3 gn-stat-box text-center">
+                <div class="gn-stat-label">비슷한 매물</div>
+                <div class="gn-stat-value">{{ similar_stats.cnt }}건</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3 gn-stat-box text-center">
+                <div class="gn-stat-label">최저가</div>
+                <div class="gn-stat-value gn-stat-min">{{ similar_stats.price_min|floatformat:0|intcomma }}만원</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3 gn-stat-box text-center">
+                <div class="gn-stat-label">최고가</div>
+                <div class="gn-stat-value gn-stat-max">{{ similar_stats.price_max|floatformat:0|intcomma }}만원</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3 gn-stat-box text-center">
+                <div class="gn-stat-label">평균 시세</div>
+                <div class="gn-stat-value gn-stat-avg">{{ similar_stats.price_avg|floatformat:0|intcomma }}만원</div>
+              </div>
+            </div>
+          </div>
+          {% if similar_list %}
+          <h6 class="fw-bold mb-3">비슷한 매물 보기</h6>
+          <div class="row g-3">
+            {% for other in similar_list %}
+            <div class="col-6 col-lg-4">
+              <a href="{% url 'equipment_detail' other.pk %}" class="text-decoration-none">
+                <div class="card border h-100 gn-similar-item-card">
+                  <div style="height: 100px; background: #e2e8f0;">
+                    {% if other.images.all %}
+                    <img src="{{ other.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                    {% else %}
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                    {% endif %}
+                  </div>
+                  <div class="card-body p-2">
+                    <div class="gn-similar-title fw-bold text-truncate small">{{ other.model_name }}</div>
+                    <div class="gn-similar-price fw-bold">{{ other.listing_price|floatformat:0|intcomma }}만원</div>
+                    <div class="gn-similar-year small">{{ other.year_manufactured }}년</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% else %}
+          <p class="gn-dark-desc mb-0">같은 제조사·비슷한 년식의 다른 매물이 없어 시세를 산출할 수 없습니다.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 사진 확대 모달 -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen p-0">
+    <div class="modal-content bg-black border-0">
+      <div class="modal-body p-0 d-flex align-items-center justify-content-center position-relative overflow-auto">
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3 z-2" data-bs-dismiss="modal" aria-label="닫기"></button>
+        <a href="#" id="lightboxOriginalLink" target="_blank" rel="noopener" class="position-absolute top-0 start-0 m-3 btn btn-outline-light btn-sm z-2">
+          <i class="bi bi-arrows-fullscreen me-1"></i>원본 크기로 보기
+        </a>
+        {% if equipment.images.all|length > 1 %}
+        <button type="button" class="btn btn-outline-light btn-lg position-absolute start-0 top-50 translate-middle-y m-3 z-2 rounded-circle opacity-75" id="lightboxPrev" aria-label="이전">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <button type="button" class="btn btn-outline-light btn-lg position-absolute end-0 top-50 translate-middle-y m-3 z-2 rounded-circle opacity-75" id="lightboxNext" aria-label="다음">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <span class="position-absolute bottom-0 start-50 translate-middle-x mb-3 text-white-50 small z-2" id="lightboxCounter">1 / {{ equipment.images.all|length }}</span>
+        {% endif %}
+        <img src="" class="img-fluid" id="lightboxImg" style="max-width: 100%; max-height: 95vh; width: auto; height: auto;" alt="확대 보기">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var images = [{% for image in equipment.images.all %}'{{ image.image.url|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+  var total = images.length;
+  var currentIndex = 0;
+  var lastClickedIndex = 0;
+
+  function showLightbox(index) {
+    if (total === 0) return;
+    if (index < 0) index = total - 1;
+    if (index >= total) index = 0;
+    currentIndex = index;
+    var img = document.getElementById('lightboxImg');
+    var link = document.getElementById('lightboxOriginalLink');
+    if (img) img.src = images[currentIndex] || '';
+    if (link) link.href = images[currentIndex] || '#';
+    var counter = document.getElementById('lightboxCounter');
+    if (counter) counter.textContent = (currentIndex + 1) + ' / ' + total;
+  }
+
+  document.querySelectorAll('[data-lightbox-index]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var idx = parseInt(el.getAttribute('data-lightbox-index'), 10);
+      if (!isNaN(idx)) lastClickedIndex = idx;
+    }, true);
+  });
+
+  var modalEl = document.getElementById('lightboxModal');
+  if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', function() { currentIndex = lastClickedIndex; showLightbox(currentIndex); });
+  }
+  var prevBtn = document.getElementById('lightboxPrev');
+  var nextBtn = document.getElementById('lightboxNext');
+  if (prevBtn) prevBtn.addEventListener('click', function() { showLightbox(currentIndex - 1); });
+  if (nextBtn) nextBtn.addEventListener('click', function() { showLightbox(currentIndex + 1); });
+  document.addEventListener('keydown', function(e) {
+    if (!modalEl || !document.body.classList.contains('modal-open')) return;
+    if (e.key === 'ArrowLeft') { showLightbox(currentIndex - 1); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { showLightbox(currentIndex + 1); e.preventDefault(); }
+  });
+
+  // 썸네일 클릭 시 메인 이미지 변경
+  document.querySelectorAll('.detail-thumb').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var src = this.getAttribute('data-src');
+      var idx = parseInt(this.getAttribute('data-index'), 10);
+      var mainImg = document.getElementById('detailMainImg');
+      if (mainImg && src) {
+        mainImg.src = src;
+        mainImg.setAttribute('data-lightbox-index', idx);
+        mainImg.setAttribute('data-lightbox-src', src);
+      }
+      document.querySelectorAll('.detail-thumb').forEach(function(b) { b.classList.remove('border-primary'); b.style.borderWidth = '1px'; });
+      this.classList.add('border-primary'); this.style.borderWidth = '2px';
+    });
+  });
+})();
+</script>
+<style>
+  /* ----- 1. 박스(카드) 테두리·입체감: 선명한 테두리 + 그림자 + 간격 ----- */
+  .gn-detail-page .gn-card-sharp {
+    border: 1px solid #D1D5DB !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  }
+  .gn-detail-page .gn-card-dark {
+    border: 1px solid #374151 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+  }
+  .gn-detail-top { margin-bottom: 0.5rem; }
+  .gn-detail-desc-section { width: 100%; margin-top: 1.5rem !important; }
+  .gn-card-light {
+    background-color: #FFFFFF !important;
+    color: #111827 !important;
+  }
+
+  .gn-detail-thumbs { white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  #detailMainImg:hover { opacity: 0.98; }
+
+  .badge-verified {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: #374151;
+    color: #fff;
+    border: 1px solid #4B5563;
+  }
+
+  /* ----- 2. 글씨: 흰 배경은 #111827, 연한 회색 금지. 핵심 정보 800 ----- */
+  .gn-section-heading {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #111827 !important;
+    letter-spacing: -0.5px;
+  }
+  .gn-section-heading-accent {
+    border-left: 4px solid var(--gn-accent, #e8a317);
+    padding-left: 12px;
+  }
+  .gn-seller-type {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #111827 !important;
+    letter-spacing: -0.5px;
+  }
+  .gn-status-row {
+    gap: 0.25rem;
+  }
+  .gn-status-badge {
+    background: #c00;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .gn-status-maker {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827 !important;
+  }
+  .gn-spec-table {
+    font-size: 0.95rem;
+    letter-spacing: -0.5px;
+  }
+  .gn-spec-table .spec-label {
+    width: 5.5rem;
+    color: #111827 !important;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .gn-spec-table .spec-value {
+    color: #111827 !important;
+    font-weight: 700;
+  }
+  .gn-spec-table .spec-value.spec-value-model {
+    font-size: 1.08rem;
+    font-weight: 800;
+    color: #111827 !important;
+  }
+  .gn-detail-desc {
+    font-size: 0.95rem;
+    color: #111827 !important;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    letter-spacing: -0.5px;
+  }
+  .gn-price-label {
+    font-size: 0.875rem;
+    color: #111827 !important;
+    font-weight: 700;
+  }
+  .gn-price-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #111827 !important;
+    letter-spacing: -0.5px;
+  }
+
+  /* ----- 3. 금융 섹션: 네이비/검정 대비, 단위 폰트 +2px·진하게 ----- */
+  .gn-finance-card {
+    background: linear-gradient(135deg, #e0f2fe, #dbeafe 45%, #eff6ff) !important;
+    border: 1px solid #D1D5DB !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  }
+  .gn-finance-title {
+    font-weight: 800;
+    color: #1E3A8A !important;
+    font-size: 1rem;
+  }
+  .gn-finance-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1E3A8A !important;
+    margin-bottom: 0.25rem;
+  }
+  .gn-finance-limit, .gn-finance-monthly {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1E3A8A !important;
+    letter-spacing: -0.5px;
+  }
+  .gn-finance-unit {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1E3A8A !important;
+  }
+  .gn-finance-note {
+    font-size: 0.85rem;
+    color: #1F2937 !important;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 1rem !important;
+  }
+  .gn-badge-preparing {
+    font-size: 0.75rem;
+    font-weight: 700;
+    background-color: #FEF3C7 !important;
+    color: #92400E !important;
+    border: 1px solid #D97706;
+  }
+
+  /* ----- 4. 버튼: WCAG 4.5:1 대비, 폰트 사이즈 확대 ----- */
+  .gn-btn-primary, .gn-btn-trust, .gn-btn-secondary, .gn-btn-wishlist {
+    font-size: 1rem !important;
+    letter-spacing: -0.5px;
+    min-height: 48px;
+  }
+  .gn-btn-primary {
+    background: #F59E0B !important;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    font-weight: 800;
+  }
+  .gn-btn-primary:hover {
+    background: #D97706 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+  }
+  .gn-btn-trust {
+    background: #2563EB !important;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    font-weight: 800;
+  }
+  /* 보조 버튼(연락처 없음, 내 매물, 링크 복사): 가독성·세련됨 강화 */
+  .gn-btn-secondary {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+    border: 1px solid #6B7280 !important;
+    border-radius: 10px;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+  .gn-btn-secondary:hover:not(:disabled) {
+    background: #F9FAFB !important;
+    color: #111827 !important;
+    border-color: #4B5563 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+  .gn-btn-secondary:disabled {
+    background: #E5E7EB !important;
+    color: #111827 !important;
+    border-color: #9CA3AF !important;
+    opacity: 1;
+  }
+  .gn-btn-wishlist {
+    background: transparent !important;
+    color: #EF4444 !important;
+    border: 2px solid #EF4444 !important;
+    border-radius: 10px;
+    font-weight: 800;
+  }
+  .gn-btn-wishlist:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #EF4444 !important;
+    border-color: #EF4444 !important;
+  }
+
+  /* ----- 5. 다크 영역: 검정 배경 시 순백/밝은 노랑 ----- */
+  .gn-card-dark .card-body { background: #1F2937 !important; }
+  .gn-card-dark .gn-section-heading,
+  .gn-card-dark .gn-section-heading-accent {
+    color: #F9FAFB !important;
+  }
+  .gn-card-dark .gn-section-heading-accent {
+    border-left-color: #FDE047;
+  }
+  .gn-dark-desc {
+    color: #E5E7EB !important;
+    font-weight: 600;
+  }
+  .gn-stat-box {
+    background: #374151 !important;
+    border: 1px solid #4B5563;
+  }
+  .gn-stat-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #E5E7EB !important;
+  }
+  .gn-stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #FFFFFF !important;
+  }
+  .gn-stat-min { color: #93C5FD !important; }
+  .gn-stat-max { color: #FCA5A5 !important; }
+  .gn-stat-avg { color: #FDE047 !important; }
+
+  .gn-similar-item-card .card-body {
+    background: #1F2937 !important;
+    border: 1px solid #374151;
+  }
+  .gn-similar-item-card {
+    border: 1px solid #374151 !important;
+    background: #1F2937 !important;
+  }
+  .gn-similar-title {
+    color: #FFFFFF !important;
+    font-weight: 800;
+  }
+  .gn-similar-price {
+    color: #FDE047 !important;
+    font-weight: 800;
+  }
+  .gn-similar-year {
+    color: #9CA3AF;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}

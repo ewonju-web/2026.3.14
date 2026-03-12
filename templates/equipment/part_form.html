@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="mx-auto" style="max-width: 700px;">
+        <h2 class="section-title mb-4">부품/어태치먼트 등록</h2>
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">사진 (여러 장 선택 가능)</label>
+                        <input type="file" name="images" id="id_part_images" class="form-control" multiple accept="image/*">
+                        <div id="part-image-previews" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-lg py-3 fw-bold text-dark" style="background: var(--gn-accent); border-radius: 12px;">등록하기</button>
+                        <a href="{% url 'part_list' %}" class="btn btn-outline-secondary" style="border-radius: 12px;">취소</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function() {
+  var input = document.getElementById('id_part_images');
+  var container = document.getElementById('part-image-previews');
+  if (!input || !container) return;
+  var files = [];
+  function syncInput() { var dt = new DataTransfer(); files.forEach(function(f) { dt.items.add(f); }); input.files = dt.files; }
+  function remove(i) { files.splice(i, 1); render(); syncInput(); }
+  function render() {
+    container.innerHTML = '';
+    files.forEach(function(file, i) {
+      var wrap = document.createElement('div');
+      wrap.className = 'position-relative';
+      wrap.style.cssText = 'width:80px; height:80px;';
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.className = 'rounded border';
+      img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0';
+      btn.style.cssText = 'padding:0 4px; line-height:1; font-size:12px;';
+      btn.textContent = '×';
+      btn.onclick = function() { remove(i); };
+      wrap.appendChild(img); wrap.appendChild(btn); container.appendChild(wrap);
+    });
+  }
+  input.addEventListener('change', function() {
+    for (var i = 0; i < this.files.length; i++) files.push(this.files[i]);
+    render();
+    syncInput();
+  });
+})();
+</script>
+{% endblock %}

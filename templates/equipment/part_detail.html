@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4 mb-5">
+        <div class="col-md-7">
+            <div class="main-image-container mb-3 shadow-sm border rounded overflow-hidden" style="background: #f8f9fa;">
+                {% if part.images.all %}
+                    <img src="{{ part.images.first.image.url }}" id="partDisplay" class="img-fluid w-100" style="height: 400px; object-fit: contain;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center" style="height: 400px;">사진이 없습니다.</div>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2 overflow-auto pb-2">
+                {% for img in part.images.all %}
+                <img src="{{ img.image.url }}" class="img-thumbnail" style="width: 80px; height: 60px; cursor: pointer; object-fit: cover;" onclick="document.getElementById('partDisplay').src=this.src">
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="p-4 border shadow-sm bg-white" style="border-radius: 15px; height: 100%;">
+                <div class="mb-3">
+                    <span class="badge bg-warning text-dark">{{ part.get_category_display }}</span>
+                    <span class="badge bg-danger">중고부품</span>
+                </div>
+                <h2 class="fw-bold mb-1">{{ part.title }}</h2>
+                <h4 class="text-danger fw-bold mb-4">{{ part.price }}</h4>
+
+                <div class="row g-2 mb-4 border-top pt-3 text-muted">
+                    <div class="col-6"><strong>호환:</strong> {% if part.compatibility %}{{ part.compatibility }}{% else %}-{% endif %}</div>
+                    <div class="col-6"><strong>지역:</strong> {% if part.location %}{{ part.location }} <a href="https://map.naver.com/v5/search/{{ part.location|urlencode }}" target="_blank" rel="noopener" class="small"><i class="bi bi-geo-alt"></i></a>{% else %}-{% endif %}</div>
+                </div>
+                {% if user.is_authenticated %}
+                <div class="mb-3">
+                  <a href="{% url 'toggle_part_favorite' part.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-outline-danger w-100 py-2" style="border-radius: 12px;">
+                    <i class="bi bi-heart{% if is_favorited %}-fill{% endif %}"></i> {% if is_favorited %}찜 해제{% else %}찜하기{% endif %}
+                  </a>
+                </div>
+                {% endif %}
+
+                <div class="d-grid gap-2 mb-3">
+                    <a href="https://pf.kakao.com/_xxxx" target="_blank" class="btn btn-lg fw-bold" style="background-color: #FEE500; color: #000; border-radius: 12px; border: none;">
+                        <i class="bi bi-chat-fill me-2"></i>카카오톡 상담하기
+                    </a>
+                </div>
+
+                <div class="p-3 bg-light text-center border" style="border-radius: 12px;">
+                    <h4 class="fw-bold mb-1 text-primary"><i class="bi bi-telephone-fill"></i> {% if part.contact %}{{ part.contact }}{% else %}미기재{% endif %}</h4>
+                    <p class="mb-0 small text-muted">부품 문의라고 말씀해 주세요.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container text-center">
+        <div class="mx-auto text-start bg-white p-4 p-md-5 rounded shadow-sm" style="max-width: 900px; line-height: 1.8;">
+            <h4 class="fw-bold border-bottom pb-3 mb-4">부품 상세 설명</h4>
+            <p style="white-space: pre-line;">{% if part.description %}{{ part.description }}{% else %}설명 없음{% endif %}</p>
+            
+            {% for img in part.images.all %}
+            <img src="{{ img.image.url }}" class="img-fluid mt-4 rounded w-100" alt="상세사진">
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+  <div class="mx-auto" style="max-width: 700px;">
+    <div class="card border-0 shadow-sm p-4 rounded-3">
+      <h5 class="fw-bold mb-3"><i class="bi bi-chat-dots"></i> 문의/댓글 ({{ comments|length }})</h5>
+      <ul class="list-group list-group-flush mb-4">
+        {% for c in comments %}
+        <li class="list-group-item px-0">
+          <span class="fw-bold small">{% if c.author %}{{ c.author.username }}{% else %}{{ c.author_name|default:"익명" }}{% endif %}</span>
+          <span class="text-muted small ms-2">{{ c.created_at|date:"Y-m-d H:i" }}</span>
+          <p class="mb-0 mt-1">{{ c.content }}</p>
+        </li>
+        {% empty %}
+        <li class="list-group-item px-0 text-muted">아직 문의가 없습니다.</li>
+        {% endfor %}
+      </ul>
+      <form method="post">
+        {% csrf_token %}
+        {% if not user.is_authenticated %}
+        <input type="text" name="comment_author_name" class="form-control mb-2" placeholder="이름 (선택)" maxlength="50" style="border-radius:10px;">
+        {% endif %}
+        <textarea name="comment_content" class="form-control mb-2" rows="2" placeholder="문의 내용을 입력하세요." required style="border-radius:10px;"></textarea>
+        <button type="submit" class="btn btn-primary" style="border-radius:10px;">등록</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
