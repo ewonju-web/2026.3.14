@@ -303,14 +303,16 @@
   box-shadow: 0 14px 34px rgba(37, 99, 235, 0.7);
 }
 .gn-job-btn-outline {
-  background: rgba(15, 23, 42, 0.1);
-  color: #dbeafe;
-  border-color: rgba(96, 165, 250, 0.9);
+  background: #ffffff;
+  color: #111827;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 .gn-job-btn-outline:hover {
-  background: rgba(15, 23, 42, 0.7);
-  border-color: rgba(191, 219, 254, 0.95);
-  color: #eff6ff;
+  background: #f3f4f6;
+  border-color: #94a3b8;
+  color: #111827;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
 }
 .job-top-row .gn-job-btn-outline {
   background: rgba(15,23,42,0.35);
@@ -337,6 +339,39 @@
   background: linear-gradient(135deg, #ef4444, #b91c1c);
 }
 .gn-job-list-action .gn-job-btn { min-height: 36px; padding: 0 0.75rem; font-size: 0.8125rem; }
+
+/* 구인구직 수정/삭제 버튼 (목록 + 상세 공통) */
+.btn.gn-btn-edit,
+.btn.gn-btn-delete {
+  min-height: 32px;
+  padding: 0.26rem 0.78rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  border-width: 1px !important;
+  border-style: solid !important;
+  background: #f8fafc !important;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.1;
+}
+.btn.gn-btn-edit {
+  color: #2563eb !important;
+  border-color: #93c5fd !important;
+}
+.btn.gn-btn-edit:hover {
+  background: #eff6ff !important;
+  border-color: #60a5fa !important;
+  color: #1d4ed8 !important;
+}
+.btn.gn-btn-delete {
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+}
+.btn.gn-btn-delete:hover {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
 
 /* 모바일: 액션 버튼 sticky */
 @media (max-width: 767.98px) {

@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load i18n_extras %}
 
 {% block content %}
 <div class="container py-4">
-    <h2 class="section-title">마이페이지</h2>
+    <h2 class="section-title">{{ LANG|tr:"mypage_title" }}</h2>
     <div class="gn-profile-card mb-4">
         <div class="gn-profile-card-inner">
             <div class="gn-profile-header">
@@ -14,17 +15,17 @@
                 </div>
             </div>
             <div class="gn-profile-actions">
-                <a href="{% url 'index' %}" class="gn-profile-btn gn-profile-btn-home"><i class="bi bi-house me-1"></i>홈</a>
-                <a href="{% url 'chat_room_list' %}" class="gn-profile-btn gn-profile-btn-chat"><i class="bi bi-chat-dots me-1"></i>채팅</a>
+                <a href="{% url 'index' %}" class="gn-profile-btn gn-profile-btn-home"><i class="bi bi-house me-1"></i>{{ LANG|tr:"mobile_home" }}</a>
+                <a href="{% url 'chat_room_list' %}" class="gn-profile-btn gn-profile-btn-chat"><i class="bi bi-chat-dots me-1"></i>{{ LANG|tr:"nav_chat" }}</a>
                 <form action="{% url 'logout' %}" method="post" class="gn-profile-btn-form">
                     {% csrf_token %}
-                    <button type="submit" class="gn-profile-btn gn-profile-btn-logout">로그아웃</button>
+                    <button type="submit" class="gn-profile-btn gn-profile-btn-logout">{{ LANG|tr:"nav_logout" }}</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <h5 class="fw-bold mb-3"><i class="bi bi-heart-fill text-danger"></i> 찜한 매물</h5>
+    <h5 class="fw-bold mb-3"><i class="bi bi-heart-fill text-danger"></i> {{ LANG|tr:"mypage_favorites" }}</h5>
     {% if fav_equipments or fav_parts %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
         {% for e in fav_equipments %}
@@ -64,8 +65,8 @@
 
     <hr class="my-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h5 class="fw-bold mb-0">내가 올린 매물</h5>
-        <a href="{% url 'equipment_create' %}" class="btn text-white fw-bold gn-my-listings-register" style="background: var(--gn-accent); border-radius: 10px; min-height: 42px; padding: 0.4rem 1rem;">매물 등록</a>
+        <h5 class="fw-bold mb-0">{{ LANG|tr:"mypage_my_listings" }}</h5>
+        <a href="{% url 'equipment_create' %}" class="btn text-white fw-bold gn-my-listings-register" style="background: var(--gn-accent); border-radius: 10px; min-height: 42px; padding: 0.4rem 1rem;">{{ LANG|tr:"nav_register" }}</a>
     </div>
 
             {% if my_equipments %}
@@ -90,8 +91,8 @@
                             <td>{{ e.listing_price|floatformat:0|intcomma }}만원</td>
                             <td class="text-muted small">{{ e.created_at|date:"Y-m-d" }}</td>
                             <td>
-                                <a class="btn btn-primary btn-sm rounded-2 gn-btn-edit" href="{% url 'equipment_edit' e.pk %}">수정</a>
-                                <a class="btn btn-danger btn-sm rounded-2 gn-btn-delete" href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}">삭제</a>
+                                <a class="btn btn-sm rounded-pill gn-btn-edit" href="{% url 'equipment_edit' e.pk %}"><i class="bi bi-pencil me-1"></i>수정</a>
+                                <a class="btn btn-sm rounded-pill gn-btn-delete" href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}"><i class="bi bi-trash me-1"></i>삭제</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -101,6 +102,11 @@
             {% else %}
                 <p class="text-muted">아직 등록한 매물이 없습니다.</p>
             {% endif %}
+
+            <hr class="mt-5">
+            <div class="d-flex justify-content-end">
+                <a href="{% url 'account_delete' %}" class="text-danger small text-decoration-underline">{{ LANG|tr:"account_delete" }}</a>
+            </div>
 </div>
 <style>
   /* 마이페이지 상단 프로필 카드 (고급 카드형) */
@@ -209,35 +215,45 @@
     .gn-my-listings-table th { font-size: 0.8rem; padding: 0.5rem 0.35rem; }
     .gn-my-listings-table td { font-size: 0.875rem; padding: 0.5rem 0.35rem; }
   }
-  /* 수정/삭제 버튼: 높이·간격 통일, 다크테마에 맞게 */
+  /* 수정/삭제 버튼: 참고 이미지 톤(연한 외곽선 + 둥근 pill + 아이콘) */
   .gn-my-listings-table .gn-btn-edit,
   .gn-my-listings-table .gn-btn-delete {
-    min-height: 36px;
-    padding: 0.35rem 0.75rem;
+    min-height: 32px;
+    padding: 0.26rem 0.78rem;
     font-weight: 600;
-    border: none;
+    font-size: 0.82rem;
+    border-width: 1px;
+    border-style: solid;
+    background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.1;
   }
   .gn-my-listings-table .gn-btn-edit {
-    background: #2563eb;
-    color: #fff;
+    color: #2563eb;
+    border-color: #93c5fd;
   }
   .gn-my-listings-table .gn-btn-edit:hover {
-    background: #1d4ed8;
-    color: #fff;
+    background: #eff6ff;
+    border-color: #60a5fa;
+    color: #1d4ed8;
   }
   .gn-my-listings-table .gn-btn-delete {
-    background: #dc2626;
-    color: #fff;
+    color: #dc2626;
+    border-color: #fecaca;
   }
   .gn-my-listings-table .gn-btn-delete:hover {
-    background: #b91c1c;
-    color: #fff;
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #b91c1c;
   }
   .gn-my-listings-table td:last-child {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.35rem;
     align-items: center;
+    justify-content: flex-end;
+    white-space: nowrap;
   }
 </style>
 {% endblock %}

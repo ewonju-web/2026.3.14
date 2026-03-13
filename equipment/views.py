@@ -12,7 +12,20 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from .models import Equipment, JobPost, Part, EquipmentImage, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment
+from soil.models import SoilPost
 from .forms import EquipmentForm, EquipmentEditForm
+
+
+def _build_location_text(current_location: str, region_sido: str, region_sigungu: str) -> str:
+    """현재 위치가 비어있으면 시/도(+시/군/구)로 위치 문자열을 구성한다."""
+    text = (current_location or '').strip()
+    if text:
+        return text
+    sido = (region_sido or '').strip()
+    sigungu = (region_sigungu or '').strip()
+    if sido and sigungu:
+        return f"{sido} {sigungu}"
+    return sido or ''
 
 
 # [1] 메인 페이지 (키워드 + 정렬만)
@@ -205,6 +218,30 @@ def my_page(request):
         'fav_equipments': fav_equipments,
         'fav_parts': fav_parts,
     })
+
+
+@login_required(login_url='/login/')
+def account_delete(request):
+    """
+    회원 탈퇴: 본인 계정 완전 삭제.
+    - GET: 확인 페이지
+    - POST: 로그아웃 후 User 삭제, 메인으로 이동
+    """
+    user = request.user
+
+    if request.method != 'POST':
+        return render(request, 'registration/account_delete_confirm.html', {'user_obj': user})
+
+    # 본인 작성 매물/부품/구인구직/흙 글 삭제
+    Equipment.objects.filter(author=user).delete()
+    Part.objects.filter(author=user).delete()
+    JobPost.objects.filter(author=user).delete()
+    SoilPost.objects.filter(author=user).delete()
+
+    username = user.username
+    user.delete()
+    messages.success(request, f'"{username}" 계정이 탈퇴 처리되었습니다.')
+    return redirect('index')
 
 
 # [3] 구인구직 관련
@@ -563,6 +600,9 @@ def equipment_detail(request, pk):
 
 
 def equipment_create(request):
+    from .region_choices import SIDO_CHOICES, SIGUNGU_MAP
+    import json
+
     if not request.user.is_authenticated:
         return redirect('login')
 
@@ -576,6 +616,11 @@ def equipment_create(request):
             else:
                 obj = form.save(commit=False)
                 obj.author = request.user
+                obj.current_location = _build_location_text(
+                    obj.current_location,
+                    obj.region_sido,
+                    obj.region_sigungu,
+                )
                 obj.save()
                 for f in image_files:
                     EquipmentImage.objects.create(equipment=obj, image=f)
@@ -583,10 +628,18 @@ def equipment_create(request):
     else:
         form = EquipmentForm(initial={'equipment_type': 'excavator'})
 
-    return render(request, 'equipment/equipment_form.html', {'form': form, 'mode': 'create'})
+    return render(request, 'equipment/equipment_form.html', {
+        'form': form,
+        'mode': 'create',
+        'sido_choices': SIDO_CHOICES,
+        'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+    })
 
 
 def equipment_edit(request, pk):
+    from .region_choices import SIDO_CHOICES, SIGUNGU_MAP
+    import json
+
     obj = get_object_or_404(Equipment, pk=pk)
 
     if not request.user.is_authenticated:
@@ -604,14 +657,26 @@ def equipment_edit(request, pk):
             if not has_existing and (not image_files or len(image_files) < 1):
                 form.add_error(None, ValidationError('허위 매물 방지를 위해 사진을 최소 1장 이상 등록해주세요.'))
             else:
-                form.save()
+                obj = form.save(commit=False)
+                obj.current_location = _build_location_text(
+                    obj.current_location,
+                    obj.region_sido,
+                    obj.region_sigungu,
+                )
+                obj.save()
                 for f in image_files:
                     EquipmentImage.objects.create(equipment=obj, image=f)
                 return redirect('equipment_detail', obj.pk)
     else:
         form = EquipmentEditForm(instance=obj)
 
-    return render(request, 'equipment/equipment_form.html', {'form': form, 'mode': 'edit', 'equipment': obj})
+    return render(request, 'equipment/equipment_form.html', {
+        'form': form,
+        'mode': 'edit',
+        'equipment': obj,
+        'sido_choices': SIDO_CHOICES,
+        'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+    })
 
 
 def equipment_delete(request, pk):

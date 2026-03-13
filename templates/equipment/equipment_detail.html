@@ -5,14 +5,14 @@
   <!-- PC: 2컬럼 (왼쪽 사진 / 오른쪽 정보+버튼) -->
   <div class="row g-4 gn-detail-top">
     <!-- 왼쪽(65~70%): 메인 이미지 + 썸네일 한 줄 -->
-    <div class="col-12 col-lg-8 gn-detail-left">
+    <div class="col-12 col-lg-9 gn-detail-left">
       <div class="card gn-card-sharp gn-detail-photo-card" style="border-radius: 10px; overflow: hidden;">
         {% if equipment.images.all %}
-          <div class="position-relative bg-dark bg-opacity-10" style="min-height: 380px;">
+          <div class="position-relative bg-dark bg-opacity-10 gn-detail-main-wrap">
             <img id="detailMainImg"
                  src="{{ equipment.images.first.image.url }}"
-                 class="img-fluid w-100 cursor-pointer"
-                 style="max-height: 420px; object-fit: contain; cursor: zoom-in;"
+                 class="img-fluid w-100 cursor-pointer gn-detail-main-img"
+                 style="cursor: zoom-in;"
                  data-bs-toggle="modal" data-bs-target="#lightboxModal"
                  data-lightbox-index="0"
                  data-lightbox-src="{{ equipment.images.first.image.url }}"
@@ -45,7 +45,7 @@
     </div>
 
     <!-- 오른쪽(30~35%): 개인/팝니다/가격/기본정보/버튼(연락처→채팅→찜→복사) -->
-    <div class="col-12 col-lg-4 gn-detail-right">
+    <div class="col-12 col-lg-3 gn-detail-right">
       <div class="card gn-card-sharp gn-card-light p-4" style="border-radius: 10px;">
         <p class="mb-2 gn-seller-type">{% if author_is_dealer %}매매상{% else %}개인{% endif %}</p>
         <div class="d-flex align-items-center flex-wrap mb-3 gn-status-row">
@@ -96,7 +96,7 @@
             </tr>
             <tr>
               <td class="spec-label">위치</td>
-              <td class="spec-value">{% if equipment.current_location %}{{ equipment.current_location }}{% else %}모름{% endif %}</td>
+              <td class="spec-value">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td>
             </tr>
             <tr>
               <td class="spec-label">차량번호</td>
@@ -156,56 +156,55 @@
     </div>
   </div>
 
-  <!-- 상세 설명: 2컬럼 아래 전체 폭(왼쪽 정렬) -->
-  <div class="gn-detail-desc-section mt-4">
-    <div class="card gn-card-sharp gn-card-light p-4" style="border-radius: 10px;">
-      <h5 class="gn-section-heading mb-3">상세 설명</h5>
-      <div class="gn-detail-desc">{% if equipment.description %}{{ equipment.description }}{% else %}내용이 없습니다.{% endif %}</div>
-    </div>
-  </div>
-
-  {% if finance_limit or finance_monthly_60 %}
-  <!-- 금융 예상 한도 / 월 납입액 (상세 설명 아래) -->
-  <div class="mt-4">
-    <div class="gn-finance-card card gn-card-sharp" style="border-radius: 10px;">
-      <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
-          <div class="gn-finance-title">이 장비 금융 가능 금액 (예상)</div>
-          <span class="badge gn-badge-preparing">유료 금융상품 연동 준비중</span>
-        </div>
-        <div class="row g-3 mb-2">
-          {% if finance_limit %}
-          <div class="col-12 col-md-6">
-            <div class="gn-finance-label">예상 한도 (최대)</div>
-            <div class="gn-finance-limit">{{ finance_limit|floatformat:0|intcomma }} <span class="gn-finance-unit">만원</span></div>
-          </div>
-          {% endif %}
-          {% if finance_monthly_60 %}
-          <div class="col-12 col-md-6">
-            <div class="gn-finance-label">예상 월 납입액 (60개월 기준)</div>
-            <div class="gn-finance-monthly">{{ finance_monthly_60|floatformat:0|intcomma }} <span class="gn-finance-unit">만원</span></div>
-          </div>
-          {% endif %}
-        </div>
-        <p class="gn-finance-note">연 7.0% / 60개월 원리금 균등상환을 가정한 단순 예시입니다. 실제 승인 한도와 금리는 제휴 금융사 심사 결과에 따라 달라질 수 있습니다.</p>
-        <button type="button" class="btn gn-btn-trust w-100 fw-bold py-2" disabled>한도 조회하기 (준비중)</button>
+  <!-- 상세 설명 + 금융 예상 금액: PC 5:5, 모바일 세로 -->
+  <div class="row mt-4 g-3 g-lg-4 align-items-stretch gn-detail-mid-cards">
+    <div class="{% if finance_limit or finance_monthly_60 %}col-12 col-lg-6{% else %}col-12{% endif %}">
+      <div class="card gn-card-sharp gn-card-light p-4 h-100" style="border-radius: 10px;">
+        <h5 class="gn-section-heading mb-3">상세 설명</h5>
+        <div class="gn-detail-desc">{% if equipment.description %}{{ equipment.description }}{% else %}내용이 없습니다.{% endif %}</div>
       </div>
     </div>
+
+    {% if finance_limit or finance_monthly_60 %}
+    <div class="col-12 col-lg-6">
+      <div class="gn-finance-card card gn-card-sharp h-100" style="border-radius: 10px;">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+            <div class="gn-finance-title">이 장비 금융 가능 금액 (예상)</div>
+            <span class="badge gn-badge-preparing">유료 금융상품 연동 준비중</span>
+          </div>
+          <div class="row g-3 mb-2">
+            {% if finance_limit %}
+            <div class="col-12 col-md-6">
+              <div class="gn-finance-label">예상 한도 (최대)</div>
+              <div class="gn-finance-limit">{{ finance_limit|floatformat:0|intcomma }} <span class="gn-finance-unit">만원</span></div>
+            </div>
+            {% endif %}
+            {% if finance_monthly_60 %}
+            <div class="col-12 col-md-6">
+              <div class="gn-finance-label">예상 월 납입액 (60개월 기준)</div>
+              <div class="gn-finance-monthly">{{ finance_monthly_60|floatformat:0|intcomma }} <span class="gn-finance-unit">만원</span></div>
+            </div>
+            {% endif %}
+          </div>
+          <p class="gn-finance-note">연 7.0% / 60개월 원리금 균등상환을 가정한 단순 예시입니다. 실제 승인 한도와 금리는 제휴 금융사 심사 결과에 따라 달라질 수 있습니다.</p>
+          <button type="button" class="btn gn-btn-trust w-100 fw-bold py-2" disabled>한도 조회하기 (준비중)</button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
 
   <!-- 사진 보기 (2컬럼 아래 전체 폭) -->
   {% if equipment.images.all %}
   <div class="row mt-4">
     <div class="col-12">
       <h5 class="fw-bold mb-3" style="border-left: 4px solid #c00; padding-left: 12px;">사진 보기</h5>
-      <div class="row g-3">
+      <div class="gn-detail-photo-stack">
         {% for image in equipment.images.all %}
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="{{ image.image.url }}" target="_blank" rel="noopener" class="d-block gn-card-sharp rounded overflow-hidden bg-light" style="border: 1px solid #D1D5DB; box-shadow: 0 1px 4px rgba(0,0,0,.08);">
-            <img src="{{ image.image.url }}" class="img-fluid w-100" style="max-height: 360px; object-fit: contain;" alt="{{ equipment.model_name }} {{ forloop.counter }}">
-          </a>
-        </div>
+        <a href="{{ image.image.url }}" target="_blank" rel="noopener" class="d-block gn-detail-photo-item gn-card-sharp rounded overflow-hidden">
+          <img src="{{ image.image.url }}" class="img-fluid w-100" alt="{{ equipment.model_name }} {{ forloop.counter }}">
+        </a>
         {% endfor %}
       </div>
     </div>
@@ -381,6 +380,21 @@
 
   .gn-detail-thumbs { white-space: nowrap; -webkit-overflow-scrolling: touch; }
   #detailMainImg:hover { opacity: 0.98; }
+  .gn-detail-main-wrap {
+    min-height: 380px;
+  }
+  .gn-detail-main-img {
+    max-height: 420px;
+    object-fit: contain;
+  }
+  @media (min-width: 992px) {
+    .gn-detail-main-wrap {
+      min-height: 620px;
+    }
+    .gn-detail-main-img {
+      max-height: 700px;
+    }
+  }
 
   .badge-verified {
     display: inline-block;
@@ -616,6 +630,31 @@
   .gn-similar-year {
     color: #9CA3AF;
     font-weight: 600;
+  }
+
+  /* 상세 하단 사진: 큰 사이즈로 1장씩 세로 나열 */
+  .gn-detail-photo-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .gn-detail-photo-item {
+    border: 1px solid #D1D5DB;
+    background: #F8FAFC;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    padding: 0.5rem;
+  }
+  .gn-detail-photo-item img {
+    width: 100%;
+    max-height: 920px;
+    object-fit: contain;
+    display: block;
+    background: #FFFFFF;
+  }
+  @media (max-width: 767.98px) {
+    .gn-detail-photo-item img {
+      max-height: 620px;
+    }
   }
 </style>
 {% endblock %}

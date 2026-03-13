@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load i18n_extras %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="section-title">{{ LANG|tr:"account_delete" }}</h2>
+
+    <div class="card border-danger-subtle shadow-sm mb-4" style="border-radius: 14px;">
+        <div class="card-body">
+            <h5 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ LANG|tr:"account_delete_confirm" }}</h5>
+            <p class="mb-2">회원 탈퇴를 진행하면 <strong>{{ user_obj.username }}</strong> 계정으로 더 이상 로그인할 수 없습니다.</p>
+            <p class="mb-2">이미 등록하신 매물, 채팅 기록 등은 서비스 운영 기록을 위해 일부가 남을 수 있습니다.</p>
+            <p class="text-muted small mb-0">※ 탈퇴 후에는 계정을 복구할 수 없습니다. 신중히 진행해 주세요.</p>
+        </div>
+    </div>
+
+    <form method="post" class="d-flex flex-wrap gap-2">
+        {% csrf_token %}
+        <a href="{% url 'my_page' %}" class="btn btn-outline-secondary px-4">{{ LANG|tr:"account_delete_cancel" }}</a>
+        <button type="submit" class="btn btn-danger px-4">{{ LANG|tr:"account_delete_submit" }}</button>
+    </form>
+</div>
+{% endblock %}
+

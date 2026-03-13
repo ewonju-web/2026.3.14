@@ -7,9 +7,12 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-# 운영 서버에서는 DEBUG=False 권장 (에러 시 내부 정보 노출 방지)
-DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in ("1", "true", "yes")
+# 운영 서버에서는 DJANGO_DEBUG=false를 명시하세요.
+# 로컬 개발 편의를 위해 환경변수가 없으면 DEBUG=True로 동작합니다.
+DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = ['211.110.140.201', 's2022.co.kr', 'www.s2022.co.kr', '127.0.0.1', 'localhost']
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     'equipment.apps.EquipmentConfig',

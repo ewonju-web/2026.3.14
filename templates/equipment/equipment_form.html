@@ -118,14 +118,16 @@
                         <label class="form-label fw-bold">장비중량 (지게차)</label>
                         <select id="fk-weight-class-select" class="form-select">
                             <option value="">선택</option>
-                            <option value="FORK_1_5">1.5톤</option>
-                            <option value="FORK_2_5">2.5톤</option>
+                            <option value="FORK_LE_1">1 ton 이하</option>
+                            <option value="FORK_LE_2">2 ton 이하</option>
                             <option value="FORK_LE_3">3톤 이하</option>
+                            <option value="FORK_LE_4">4 ton 이하</option>
+                            <option value="FORK_LE_5">5 ton 이하</option>
                             <option value="FORK_LE_7">7톤 이하</option>
                             <option value="FORK_LE_10">10톤 이하</option>
-                            <option value="FORK_LE_15">15톤 이하</option>
-                            <option value="FORK_LE_20">20톤 이하</option>
-                            <option value="FORK_LE_30">30톤 이상</option>
+                            <option value="FORK_LE_16">16 ton 이하</option>
+                            <option value="FORK_LE_25">25 ton 이하</option>
+                            <option value="FORK_ETC">기타</option>
                         </select>
                     </div>
                     <div class="col-md-4 d-none" id="fk-mast-type-wrapper">
@@ -213,6 +215,35 @@
     </div>
 </div>
 <style>
+  /* 매물등록 폼 가독성: 라벨/입력창/테두리 대비 강화 */
+  #equipment-form .form-label {
+    color: #111827;
+    font-weight: 700;
+  }
+  #equipment-form .form-control,
+  #equipment-form .form-select,
+  #equipment-form .input-group-text {
+    color: #111827;
+    border-color: #94a3b8;
+    background: #ffffff;
+  }
+  #equipment-form .form-control::placeholder {
+    color: #6b7280;
+    opacity: 1;
+  }
+  #equipment-form .form-control:focus,
+  #equipment-form .form-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.2);
+    color: #0f172a;
+  }
+  #equipment-form .form-text {
+    color: #4b5563 !important;
+  }
+  #equipment-form .text-muted.small {
+    color: #4b5563 !important;
+  }
+
   /* 기종 버튼: 정렬·간격·폭 통일 */
   .gn-equipment-type-btns {
     display: flex;

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static i18n_extras %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/jobs.css' %}?v=5">
 {% endblock %}
@@ -29,7 +29,7 @@
                     <div class="gn-job-simple-row"><span class="gn-job-dt">모집인원</span><span class="gn-job-dd"> : {% if job.recruit_count %}{{ job.recruit_count }}명{% else %}—{% endif %}</span></div>
                     <div class="gn-job-simple-row"><span class="gn-job-dt">마감</span><span class="gn-job-dd"> : {% if job.deadline_type == 'DATE' and job.deadline %}{{ job.deadline|date:"Y-m-d" }}{% else %}채용시까지{% endif %}</span></div>
                     <div class="gn-job-simple-row"><span class="gn-job-dt">담당자</span><span class="gn-job-dd"> : {{ job.writer_display|default:"—" }}</span></div>
-                    <div class="gn-job-simple-row"><span class="gn-job-dt">전화번호</span><span class="gn-job-dd"> : {% if job.contact %}<a href="tel:{{ job.contact }}" class="text-decoration-none">{{ job.contact }}</a>{% else %}—{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">전화번호</span><span class="gn-job-dd"> : {% if job.contact %}<a href="tel:{{ job.contact }}" class="text-decoration-none">{{ job.contact|format_phone }}</a>{% else %}—{% endif %}</span></div>
                     {% if job.company_address %}<div class="gn-job-simple-row"><span class="gn-job-dt">주소</span><span class="gn-job-dd"> : {{ job.company_address }}</span></div>{% endif %}
                 </div>
                 {% else %}
@@ -38,7 +38,7 @@
                     <div class="gn-job-simple-row"><span class="gn-job-dt">지역</span><span class="gn-job-dd"> : {% if job.region_sido or job.region_sigungu %}{{ job.region_sido|default:'' }} {{ job.region_sigungu|default:'' }}{% if job.location %} {{ job.location }}{% endif %}{% else %}{{ job.location|default:"—" }}{% endif %}</span></div>
                     <div class="gn-job-simple-row"><span class="gn-job-dt">경력</span><span class="gn-job-dd"> : {{ job.experience|default:"—" }}</span></div>
                     <div class="gn-job-simple-row"><span class="gn-job-dt">작성자</span><span class="gn-job-dd"> : {{ job.writer_display|default:"—" }}</span></div>
-                    <div class="gn-job-simple-row"><span class="gn-job-dt">연락처</span><span class="gn-job-dd"> : {% if job.contact %}<a href="tel:{{ job.contact }}" class="text-decoration-none">{{ job.contact }}</a>{% else %}—{% endif %}</span></div>
+                    <div class="gn-job-simple-row"><span class="gn-job-dt">연락처</span><span class="gn-job-dd"> : {% if job.contact %}<a href="tel:{{ job.contact }}" class="text-decoration-none">{{ job.contact|format_phone }}</a>{% else %}—{% endif %}</span></div>
                     <div class="gn-job-simple-row"><span class="gn-job-dt">등록일</span><span class="gn-job-dd"> : {{ job.created_at|date:"Y-m-d" }}</span></div>
                 </div>
                 {% endif %}
@@ -81,13 +81,17 @@
                 <div class="card-body">
                     <div class="gn-job-actions-inner">
                         <div class="d-flex flex-column align-items-start gap-2">
-                            <a href="{% url 'job_list' %}" class="gn-job-cta-btn gn-job-cta-small">사직</a>
                             <a href="{% url 'job_list' %}" class="gn-job-cta-btn gn-job-cta-list"><i class="bi bi-list-ul me-2"></i>목록</a>
                         </div>
                         {% if user.is_authenticated and job.author_id == user.id %}
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="{% url 'job_edit' job.pk %}" class="gn-job-cta-btn gn-job-cta-edit"><i class="bi bi-pencil me-2"></i>수정</a>
-                            <a href="{% url 'job_delete' job.pk %}" class="gn-job-cta-btn gn-job-cta-delete"><i class="bi bi-trash me-2"></i>삭제</a>
+                            <a href="{% url 'job_edit' job.pk %}" class="btn btn-sm rounded-pill gn-btn-edit">
+                                <i class="bi bi-pencil me-1"></i>수정
+                            </a>
+                            <a href="{% url 'job_delete' job.pk %}" class="btn btn-sm rounded-pill gn-btn-delete"
+                               onclick="return confirm('정말 삭제하시겠습니까?');">
+                                <i class="bi bi-trash me-1"></i>삭제
+                            </a>
                         </div>
                         {% endif %}
                     </div>

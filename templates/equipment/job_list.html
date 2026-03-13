@@ -87,8 +87,14 @@
     .job-list-card .job-title { font-size: 1.08rem; font-weight: 700; color: #1a1a1a; line-height: 1.5; }
     .job-list-card .job-meta { font-size: 0.95rem; color: #555; line-height: 1.5; margin-top: 4px; }
     .job-list-card .table td { padding-top: 14px !important; padding-bottom: 14px !important; vertical-align: middle !important; }
-    .job-list-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-    .job-list-actions a, .job-list-actions .gn-job-btn { white-space: nowrap; }
+    .job-list-actions {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 6px;
+        justify-content: flex-end;
+        align-items: center;
+    }
+    .job-list-actions a { white-space: nowrap; }
 </style>
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
@@ -158,10 +164,13 @@
                         </td>
                         <td class="text-end align-middle" onclick="event.stopPropagation();">
                             <div class="job-list-actions job-list-action">
-                                <a href="{% url 'job_detail' job.pk %}" class="gn-job-btn gn-job-btn-outline">보기</a>
                                 {% if user.is_authenticated and job.author_id == user.id %}
-                                <a href="{% url 'job_edit' job.pk %}" class="gn-job-btn gn-job-btn-edit">수정</a>
-                                <a href="{% url 'job_delete' job.pk %}" class="gn-job-btn gn-job-btn-delete" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+                                <a href="{% url 'job_edit' job.pk %}" class="btn btn-sm rounded-pill gn-btn-edit">
+                                    <i class="bi bi-pencil me-1"></i>수정
+                                </a>
+                                <a href="{% url 'job_delete' job.pk %}" class="btn btn-sm rounded-pill gn-btn-delete" onclick="return confirm('정말 삭제하시겠습니까?');">
+                                    <i class="bi bi-trash me-1"></i>삭제
+                                </a>
                                 {% endif %}
                             </div>
                         </td>
