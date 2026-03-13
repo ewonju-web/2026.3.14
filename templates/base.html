@@ -944,6 +944,7 @@
           }
         }
 
+<<<<<<< HEAD
         function translateTextNode(node) {
           if (!node || node.nodeType !== 3) return;
           var rawText = node.nodeValue || "";
@@ -1004,6 +1005,23 @@
             translateTextNode(textNode);
             textNode = walker.nextNode();
           }
+=======
+        function applyTranslations() {
+          var selector = [
+            "button",
+            "a.btn",
+            "a.gn-job-btn",
+            "a.gn-profile-btn",
+            "a[role='button']",
+            "input[type='submit']",
+            "input[type='button']",
+            ".gn-job-btn",
+            ".gn-profile-btn",
+            ".gn-mobile-filter-bar .btn",
+            ".gn-my-listings-table .btn"
+          ].join(",");
+          document.querySelectorAll(selector).forEach(replaceTextInElement);
+>>>>>>> world/main
         }
 
         // 즉시 1회 + 렌더 완료 시점들에서 재시도
