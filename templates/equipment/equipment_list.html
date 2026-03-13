@@ -54,7 +54,7 @@
                         </div>
                     </div>
                     <!-- PC: 기종 밑에 바로 상세검색바 (PC에서만 항상 표시) -->
-                    <div class="collapse gn-pc-advanced-filters gn-pc-filters-below-category {% if filter_category == 'forklift' %}gn-pc-advanced-filters-forklift{% endif %} mt-2 p-2 rounded border bg-light {% if request.GET.expand == '1' or filter_maker or filter_sub_type or filter_weight_class or filter_year_min or filter_year_max or filter_mast_type %}show{% endif %}" id="gnPcAdvancedFilters">
+                    <div class="collapse gn-pc-advanced-filters gn-pc-filters-below-category {% if filter_category == 'forklift' %}gn-pc-advanced-filters-forklift{% endif %} p-2 rounded border bg-light {% if request.GET.expand == '1' or filter_maker or filter_sub_type or filter_weight_class or filter_year_min or filter_year_max or filter_mast_type %}show{% endif %}" id="gnPcAdvancedFilters">
                         {% if filter_category == 'excavator' or filter_category == 'forklift' or filter_category == '' %}
                         <div class="gn-pc-advanced-filters-row d-flex flex-wrap align-items-end gap-2">
                             <div class="gn-pc-filter-item">
@@ -473,7 +473,7 @@
                             <tr><td class="gn-list-label">기종</td><td class="gn-list-value">{{ equipment.get_equipment_type_display|default:"-" }}</td></tr>
                             <tr><td class="gn-list-label">제조사</td><td class="gn-list-value text-truncate">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% else %}모름{% endif %}</td></tr>
                             <tr><td class="gn-list-label">연식</td><td class="gn-list-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td></tr>
-                            <tr><td class="gn-list-label">위치</td><td class="gn-list-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% else %}모름{% endif %}</td></tr>
+                            <tr><td class="gn-list-label">위치</td><td class="gn-list-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
                         </tbody>
                     </table>
                     <p class="mb-0 mt-1 text-end d-flex align-items-center justify-content-end gap-1 flex-wrap">
@@ -519,7 +519,7 @@
                         {% endif %}
                         <div class="flex-grow-1 min-width-0">
                             <span class="fw-bold text-truncate d-block">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</span>
-                            <span class="small text-muted">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %} {% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년{% endif %} · {% if equipment.current_location %}{{ equipment.current_location }}{% else %}모름{% endif %}</span>
+                            <span class="small text-muted">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %} {% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년{% endif %} · {% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</span>
                         </div>
                         <span class="fw-bold text-danger flex-shrink-0">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
                     </a>
@@ -550,7 +550,7 @@
                             <tr><td class="gn-pc-card-label" style="width: 2.5rem;">기종</td><td class="gn-pc-card-value">{{ equipment.get_equipment_type_display|default:"-" }}</td></tr>
                             <tr><td class="gn-pc-card-label" style="width: 2.5rem;">제조사</td><td class="gn-pc-card-value text-truncate">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% else %}모름{% endif %}</td></tr>
                             <tr><td class="gn-pc-card-label">연식</td><td class="gn-pc-card-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td></tr>
-                            <tr><td class="gn-pc-card-label">위치</td><td class="gn-pc-card-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% else %}모름{% endif %}</td></tr>
+                            <tr><td class="gn-pc-card-label">위치</td><td class="gn-pc-card-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
                         </tbody>
                     </table>
                     <p class="mb-0 mt-1 mt-md-2 text-end d-flex align-items-center justify-content-end gap-1 flex-wrap">
@@ -601,7 +601,7 @@
                     {% endif %}
                     <div class="flex-grow-1 min-width-0">
                         <span class="fw-bold d-block">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</span>
-                        <span class="small text-muted">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %} {% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년{% endif %} · {% if equipment.current_location %}{{ equipment.current_location }}{% else %}모름{% endif %}</span>
+                        <span class="small text-muted">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %} {% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년{% endif %} · {% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</span>
                     </div>
                     <span class="fw-bold text-danger flex-shrink-0">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
                 </a>
@@ -870,12 +870,13 @@
   @media (min-width: 768px) {
     .gn-pc-advanced-filters.gn-pc-filters-below-category {
       display: block !important;
+      margin-top: 1.65rem !important;
     }
     .gn-pc-advanced-filters {
       margin-left: -1.8cm;
       margin-right: -1.8cm;
       width: calc(100% + 3.6cm);
-      margin-top: 0.85rem !important;
+      margin-top: 1.65rem !important;
       padding-left: 1.1rem;
       padding-right: 1.1rem;
       padding-top: 0.9rem;

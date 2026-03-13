@@ -90,8 +90,8 @@
                             <td>{{ e.listing_price|floatformat:0|intcomma }}만원</td>
                             <td class="text-muted small">{{ e.created_at|date:"Y-m-d" }}</td>
                             <td>
-                                <a class="btn btn-primary btn-sm rounded-2 gn-btn-edit" href="{% url 'equipment_edit' e.pk %}">수정</a>
-                                <a class="btn btn-danger btn-sm rounded-2 gn-btn-delete" href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}">삭제</a>
+                                <a class="btn btn-sm rounded-pill gn-btn-edit" href="{% url 'equipment_edit' e.pk %}"><i class="bi bi-pencil me-1"></i>수정</a>
+                                <a class="btn btn-sm rounded-pill gn-btn-delete" href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}"><i class="bi bi-trash me-1"></i>삭제</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -209,35 +209,45 @@
     .gn-my-listings-table th { font-size: 0.8rem; padding: 0.5rem 0.35rem; }
     .gn-my-listings-table td { font-size: 0.875rem; padding: 0.5rem 0.35rem; }
   }
-  /* 수정/삭제 버튼: 높이·간격 통일, 다크테마에 맞게 */
+  /* 수정/삭제 버튼: 참고 이미지 톤(연한 외곽선 + 둥근 pill + 아이콘) */
   .gn-my-listings-table .gn-btn-edit,
   .gn-my-listings-table .gn-btn-delete {
-    min-height: 36px;
-    padding: 0.35rem 0.75rem;
+    min-height: 32px;
+    padding: 0.26rem 0.78rem;
     font-weight: 600;
-    border: none;
+    font-size: 0.82rem;
+    border-width: 1px;
+    border-style: solid;
+    background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.1;
   }
   .gn-my-listings-table .gn-btn-edit {
-    background: #2563eb;
-    color: #fff;
+    color: #2563eb;
+    border-color: #93c5fd;
   }
   .gn-my-listings-table .gn-btn-edit:hover {
-    background: #1d4ed8;
-    color: #fff;
+    background: #eff6ff;
+    border-color: #60a5fa;
+    color: #1d4ed8;
   }
   .gn-my-listings-table .gn-btn-delete {
-    background: #dc2626;
-    color: #fff;
+    color: #dc2626;
+    border-color: #fecaca;
   }
   .gn-my-listings-table .gn-btn-delete:hover {
-    background: #b91c1c;
-    color: #fff;
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #b91c1c;
   }
   .gn-my-listings-table td:last-child {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.35rem;
     align-items: center;
+    justify-content: flex-end;
+    white-space: nowrap;
   }
 </style>
 {% endblock %}

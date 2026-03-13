@@ -47,7 +47,7 @@
                     <table class="table spec-table border">
                         <tr><th>연식</th><td>{{ equipment.year_manufactured|default:"-" }}년식</td></tr>
                         <tr><th>가동시간</th><td>{{ equipment.operating_hours|default:"미기재" }} h</td></tr>
-                        <tr><th>지역</th><td>{{ equipment.current_location|default:"-" }}</td></tr>
+                        <tr><th>지역</th><td>{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}-{% endif %}</td></tr>
                         <tr><th>판매자</th><td>{% if equipment.author %}{{ equipment.author.username }}{% else %}미등록{% endif %}</td></tr>
                     </table>
 

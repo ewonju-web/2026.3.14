@@ -1,0 +1,108 @@
+from django import template
+
+register = template.Library()
+
+
+I18N = {
+    "ko": {
+        "lang_label": "한국어",
+        "nav_market": "중고매물",
+        "nav_jobs": "구인구직",
+        "nav_attachment": "어태치먼트",
+        "nav_youtube": "굴삭기 유튜브",
+        "nav_parts_as": "부품/AS",
+        "nav_soil": "흙 받으실분",
+        "nav_chat": "채팅",
+        "nav_mypage": "마이페이지",
+        "nav_login": "로그인",
+        "nav_logout": "로그아웃",
+        "nav_signup": "회원가입",
+        "nav_register": "매물등록",
+        "mobile_home": "홈",
+        "mobile_listings": "매물",
+        "mobile_jobs": "구인구직",
+        "mobile_my": "마이",
+        "service_all": "전체 서비스",
+        "service_trade": "장비 거래",
+        "service_menu": "서비스",
+        "service_market_home": "중고매물 홈",
+    },
+    "en": {
+        "lang_label": "English",
+        "nav_market": "Listings",
+        "nav_jobs": "Jobs",
+        "nav_attachment": "Attachments",
+        "nav_youtube": "Excavator YouTube",
+        "nav_parts_as": "Parts/AS",
+        "nav_soil": "Soil Wanted",
+        "nav_chat": "Chats",
+        "nav_mypage": "My Page",
+        "nav_login": "Login",
+        "nav_logout": "Logout",
+        "nav_signup": "Sign Up",
+        "nav_register": "Post Listing",
+        "mobile_home": "Home",
+        "mobile_listings": "Listings",
+        "mobile_jobs": "Jobs",
+        "mobile_my": "My",
+        "service_all": "All Services",
+        "service_trade": "Equipment Trade",
+        "service_menu": "Services",
+        "service_market_home": "Listings Home",
+    },
+    "ru": {
+        "lang_label": "Русский",
+        "nav_market": "Объявления",
+        "nav_jobs": "Работа",
+        "nav_attachment": "Навесное",
+        "nav_youtube": "YouTube экскаваторов",
+        "nav_parts_as": "Запчасти/Сервис",
+        "nav_soil": "Нужен грунт",
+        "nav_chat": "Чаты",
+        "nav_mypage": "Моя страница",
+        "nav_login": "Войти",
+        "nav_logout": "Выйти",
+        "nav_signup": "Регистрация",
+        "nav_register": "Добавить объявление",
+        "mobile_home": "Главная",
+        "mobile_listings": "Объявления",
+        "mobile_jobs": "Работа",
+        "mobile_my": "Мой",
+        "service_all": "Все сервисы",
+        "service_trade": "Техника",
+        "service_menu": "Сервисы",
+        "service_market_home": "Главная объявлений",
+    },
+    "vi": {
+        "lang_label": "Tiếng Việt",
+        "nav_market": "Tin đăng",
+        "nav_jobs": "Việc làm",
+        "nav_attachment": "Phụ kiện",
+        "nav_youtube": "YouTube máy xúc",
+        "nav_parts_as": "Phụ tùng/AS",
+        "nav_soil": "Cần nhận đất",
+        "nav_chat": "Chat",
+        "nav_mypage": "Trang của tôi",
+        "nav_login": "Đăng nhập",
+        "nav_logout": "Đăng xuất",
+        "nav_signup": "Đăng ký",
+        "nav_register": "Đăng bán",
+        "mobile_home": "Trang chủ",
+        "mobile_listings": "Tin đăng",
+        "mobile_jobs": "Việc làm",
+        "mobile_my": "Của tôi",
+        "service_all": "Tất cả dịch vụ",
+        "service_trade": "Giao dịch thiết bị",
+        "service_menu": "Dịch vụ",
+        "service_market_home": "Trang tin đăng",
+    },
+}
+
+
+@register.filter(name="tr")
+def translate(lang_code, key):
+    lang = (lang_code or "ko").strip().lower()
+    if lang not in I18N:
+        lang = "ko"
+    return I18N.get(lang, I18N["ko"]).get(key, I18N["ko"].get(key, key))
+

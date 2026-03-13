@@ -26,13 +26,55 @@
     <style>
     .job-form-tab { transition: background .2s, border-color .2s, color .2s; }
     .job-form-tab-title { font-size: 1.05rem; }
-    .job-form-tab-sub { opacity: .9; }
-    .job-form-tab-hire.active { border-color: #0d6efd !important; background: rgba(13, 110, 253, 0.2); color: #fff; }
-    .job-form-tab-hire:not(.active) { border-color: var(--gn-border); background: var(--gn-card); color: #e2e8f0; }
-    .job-form-tab-hire:not(.active) .job-form-tab-sub { color: var(--gn-muted); }
-    .job-form-tab-seek.active { border-color: #198754 !important; background: rgba(25, 135, 84, 0.25); color: #fff; }
-    .job-form-tab-seek:not(.active) { border-color: var(--gn-border); background: var(--gn-card); color: #e2e8f0; }
-    .job-form-tab-seek:not(.active) .job-form-tab-sub { color: var(--gn-muted); }
+    .job-form-tab-sub { opacity: 1; }
+    .job-form-tab-hire.active {
+      border-color: #2563eb !important;
+      background: #dbeafe;
+      color: #1e3a8a;
+    }
+    .job-form-tab-hire:not(.active) {
+      border-color: #cbd5e1;
+      background: #ffffff;
+      color: #0f172a;
+    }
+    .job-form-tab-hire:not(.active) .job-form-tab-sub { color: #475569; }
+    .job-form-tab-seek.active {
+      border-color: #059669 !important;
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .job-form-tab-seek:not(.active) {
+      border-color: #cbd5e1;
+      background: #ffffff;
+      color: #0f172a;
+    }
+    .job-form-tab-seek:not(.active) .job-form-tab-sub { color: #475569; }
+
+    /* 구인구직 글쓰기 가독성 개선 */
+    #job-form .form-label {
+      color: #111827;
+      font-weight: 700;
+    }
+    #job-form .form-control,
+    #job-form .form-select,
+    #job-form .input-group-text {
+      color: #111827;
+      border-color: #94a3b8;
+      background: #ffffff;
+    }
+    #job-form .form-control::placeholder { color: #6b7280; opacity: 1; }
+    #job-form .form-control:focus,
+    #job-form .form-select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.2);
+      color: #0f172a;
+    }
+    #job-form .input-group-text {
+      font-weight: 600;
+      color: #334155;
+    }
+    #job-form .form-check-label { color: #111827; font-weight: 600; }
+    #job-form .form-check-input { border-color: #94a3b8; }
     </style>
 
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">

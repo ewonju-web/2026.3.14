@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+{% load i18n_extras %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,6 +35,17 @@
             flex-direction: column;
         }
         main { flex: 1; }
+        /* 본문 폭 통일: 메뉴바(.container)와 동일한 폭으로 맞춤 */
+        main .container-fluid {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 576px) { main .container-fluid { max-width: 540px; } }
+        @media (min-width: 768px) { main .container-fluid { max-width: 720px; } }
+        @media (min-width: 992px) { main .container-fluid { max-width: 960px; } }
+        @media (min-width: 1200px) { main .container-fluid { max-width: 1140px; } }
+        @media (min-width: 1400px) { main .container-fluid { max-width: 1320px; } }
 
         /* Navbar */
         .navbar-gn {
@@ -510,29 +522,31 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">중고매물</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'job_list' %}">구인구직</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'part_list' %}">어태치먼트</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'excavator_info' %}">굴삭기 유튜브</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'parts_as' %}">부품/AS</a></li>
-                    <li class="nav-item"><a class="nav-link soil-nav" href="{% url 'soil_list' %}">흙 받으실분</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">{{ LANG|tr:"nav_market" }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'job_list' %}">{{ LANG|tr:"nav_jobs" }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'part_list' %}">{{ LANG|tr:"nav_attachment" }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'excavator_info' %}">{{ LANG|tr:"nav_youtube" }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'parts_as' %}">{{ LANG|tr:"nav_parts_as" }}</a></li>
+                    <li class="nav-item"><a class="nav-link soil-nav" href="{% url 'soil_list' %}">{{ LANG|tr:"nav_soil" }}</a></li>
                 </ul>
                 <div class="d-flex align-items-center gap-2">
                     <div class="dropdown">
-                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="언어">{% if request.session.lang == 'en' %}EN{% else %}한국어{% endif %}</button>
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="언어">{{ LANG|tr:"lang_label" }}</button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{% url 'set_language' %}?lang=ko&amp;next={{ request.get_full_path|urlencode }}">한국어</a></li>
                             <li><a class="dropdown-item" href="{% url 'set_language' %}?lang=en&amp;next={{ request.get_full_path|urlencode }}">English</a></li>
+                            <li><a class="dropdown-item" href="{% url 'set_language' %}?lang=ru&amp;next={{ request.get_full_path|urlencode }}">Русский</a></li>
+                            <li><a class="dropdown-item" href="{% url 'set_language' %}?lang=vi&amp;next={{ request.get_full_path|urlencode }}">Tiếng Việt</a></li>
                         </ul>
                     </div>
                     {% if user.is_authenticated %}
-                        <a href="{% url 'chat_room_list' %}" class="nav-link d-none d-md-inline-block"><i class="bi bi-chat-dots me-1"></i>채팅{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
+                        <a href="{% url 'chat_room_list' %}" class="nav-link d-none d-md-inline-block"><i class="bi bi-chat-dots me-1"></i>{{ LANG|tr:"nav_chat" }}{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
                         <a href="{% url 'my_page' %}" class="nav-link d-none d-md-inline-block"><strong>{{ user.username }}</strong>님</a>
-                        <a href="{% url 'equipment_create' %}" class="btn btn-accent btn-sm">매물등록</a>
-                        <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">로그아웃</a>
+                        <a href="{% url 'equipment_create' %}" class="btn btn-accent btn-sm">{{ LANG|tr:"nav_register" }}</a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">{{ LANG|tr:"nav_logout" }}</a>
                     {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">로그인</a>
-                        <a href="{% url 'signup' %}" class="btn btn-accent btn-sm">회원가입</a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">{{ LANG|tr:"nav_login" }}</a>
+                        <a href="{% url 'signup' %}" class="btn btn-accent btn-sm">{{ LANG|tr:"nav_signup" }}</a>
                     {% endif %}
                 </div>
             </div>
@@ -542,16 +556,18 @@
     <!-- 햄버거 메뉴: 전체 서비스 (모바일, 다크) -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="gnServiceMenu" aria-labelledby="gnServiceMenuLabel" style="background: var(--gn-card); color: var(--gn-text);">
         <div class="offcanvas-header border-bottom" style="border-color: var(--gn-border)!important;">
-            <h5 class="offcanvas-title fw-bold" id="gnServiceMenuLabel">전체 서비스</h5>
+            <h5 class="offcanvas-title fw-bold" id="gnServiceMenuLabel">{{ LANG|tr:"service_all" }}</h5>
             <div class="d-flex align-items-center gap-2">
                 <a href="{% url 'set_language' %}?lang=ko&amp;next={{ request.get_full_path|urlencode }}" class="btn btn-sm {% if LANG == 'ko' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">한국어</a>
                 <a href="{% url 'set_language' %}?lang=en&amp;next={{ request.get_full_path|urlencode }}" class="btn btn-sm {% if LANG == 'en' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">EN</a>
+                <a href="{% url 'set_language' %}?lang=ru&amp;next={{ request.get_full_path|urlencode }}" class="btn btn-sm {% if LANG == 'ru' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">RU</a>
+                <a href="{% url 'set_language' %}?lang=vi&amp;next={{ request.get_full_path|urlencode }}" class="btn btn-sm {% if LANG == 'vi' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">VI</a>
             </div>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="닫기"></button>
         </div>
         <div class="offcanvas-body px-0 pt-2 pb-3">
             <div>
-                <div class="gn-service-section-title">장비 거래</div>
+                <div class="gn-service-section-title">{{ LANG|tr:"service_trade" }}</div>
                 <div class="gn-service-grid">
                     <a href="{% url 'index' %}?category=excavator" class="gn-service-item">
                         <div class="gn-service-item-icon"><i class="bi bi-truck-front-fill"></i></div>
@@ -591,19 +607,19 @@
             <hr class="my-2" style="border-color: var(--gn-border); opacity: .4;">
 
             <div class="px-3">
-                <div class="gn-service-section-title">서비스</div>
+                <div class="gn-service-section-title">{{ LANG|tr:"service_menu" }}</div>
                 <div class="list-group list-group-flush">
-                    <a href="{% url 'index' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-house me-2"></i>중고매물 홈</a>
-                    <a href="{% url 'job_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-briefcase me-2"></i>구인구직</a>
+                    <a href="{% url 'index' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-house me-2"></i>{{ LANG|tr:"service_market_home" }}</a>
+                    <a href="{% url 'job_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-briefcase me-2"></i>{{ LANG|tr:"nav_jobs" }}</a>
                     <a href="{% url 'excavator_info' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-youtube me-2"></i>굴삭기 유튜브/정보</a>
                     <a href="{% url 'parts_as' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-gear me-2"></i>부품/AS 부품점</a>
                     <a href="{% url 'soil_list' %}" class="list-group-item list-group-item-action soil-nav-mobile" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-droplet-half me-2"></i>흙 받으실분</a>
                     {% if user.is_authenticated %}
-                    <a href="{% url 'chat_room_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-chat-dots me-2"></i>채팅{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
-                    <a href="{% url 'my_page' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-person me-2"></i>마이페이지</a>
-                    <a href="{% url 'logout' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-right me-2"></i>로그아웃</a>
+                    <a href="{% url 'chat_room_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-chat-dots me-2"></i>{{ LANG|tr:"nav_chat" }}{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
+                    <a href="{% url 'my_page' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-person me-2"></i>{{ LANG|tr:"nav_mypage" }}</a>
+                    <a href="{% url 'logout' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-right me-2"></i>{{ LANG|tr:"nav_logout" }}</a>
                     {% else %}
-                    <a href="{% url 'login' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-in-right me-2"></i>로그인</a>
+                    <a href="{% url 'login' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-in-right me-2"></i>{{ LANG|tr:"nav_login" }}</a>
                     {% endif %}
                 </div>
             </div>
@@ -612,10 +628,10 @@
 
     <!-- 모바일 하단 네비 (카테고리 선택 시 유지) -->
     <nav class="gn-mobile-bottom">
-        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i class="bi bi-house-fill nav-icon"></i>홈</a>
-        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}"><i class="bi bi-grid nav-icon"></i>매물</a>
-        <a href="{% url 'job_list' %}"><i class="bi bi-briefcase nav-icon"></i>구인구직</a>
-        <a href="{% url 'my_page' %}"><i class="bi bi-person nav-icon"></i>마이</a>
+        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i class="bi bi-house-fill nav-icon"></i>{{ LANG|tr:"mobile_home" }}</a>
+        <a href="{% url 'index' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}"><i class="bi bi-grid nav-icon"></i>{{ LANG|tr:"mobile_listings" }}</a>
+        <a href="{% url 'job_list' %}"><i class="bi bi-briefcase nav-icon"></i>{{ LANG|tr:"mobile_jobs" }}</a>
+        <a href="{% url 'my_page' %}"><i class="bi bi-person nav-icon"></i>{{ LANG|tr:"mobile_my" }}</a>
     </nav>
 
     <main>{% block content %}{% endblock %}</main>
@@ -661,6 +677,162 @@
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (function () {
+        var lang = "{{ request.session.lang|default:'ko' }}";
+        if (!lang || lang === "ko") return;
+
+        var dictionaries = {
+          en: {
+            "로그인": "Login",
+            "로그아웃": "Logout",
+            "회원가입": "Sign Up",
+            "매물등록": "Post Listing",
+            "매물 등록": "Post Listing",
+            "글쓰기": "Post",
+            "등록": "Register",
+            "등록하기": "Submit",
+            "수정": "Edit",
+            "수정하기": "Update",
+            "수정 저장": "Save Changes",
+            "삭제": "Delete",
+            "삭제하기": "Delete",
+            "취소": "Cancel",
+            "저장": "Save",
+            "검색": "Search",
+            "조회하기": "Apply Filters",
+            "검색초기화": "Reset Filters",
+            "더보기": "Load More",
+            "전화 상담하기": "Call Seller",
+            "연락처 정보 없음": "No Contact Info",
+            "내 매물입니다": "My Listing",
+            "채팅으로 문의하기": "Chat with Seller",
+            "찜하기": "Add Favorite",
+            "찜 해제": "Remove Favorite",
+            "매물 링크 복사": "Copy Link",
+            "한도 조회하기 (준비중)": "Check Limit (Soon)"
+          },
+          ru: {
+            "로그인": "Войти",
+            "로그아웃": "Выйти",
+            "회원가입": "Регистрация",
+            "매물등록": "Добавить объявление",
+            "매물 등록": "Добавить объявление",
+            "글쓰기": "Опубликовать",
+            "등록": "Регистрация",
+            "등록하기": "Отправить",
+            "수정": "Изменить",
+            "수정하기": "Обновить",
+            "수정 저장": "Сохранить",
+            "삭제": "Удалить",
+            "삭제하기": "Удалить",
+            "취소": "Отмена",
+            "저장": "Сохранить",
+            "검색": "Поиск",
+            "조회하기": "Применить",
+            "검색초기화": "Сбросить",
+            "더보기": "Показать еще",
+            "전화 상담하기": "Позвонить продавцу",
+            "연락처 정보 없음": "Нет контактов",
+            "내 매물입니다": "Моё объявление",
+            "채팅으로 문의하기": "Написать продавцу",
+            "찜하기": "В избранное",
+            "찜 해제": "Убрать из избранного",
+            "매물 링크 복사": "Копировать ссылку",
+            "한도 조회하기 (준비중)": "Проверка лимита (скоро)"
+          },
+          vi: {
+            "로그인": "Đăng nhập",
+            "로그아웃": "Đăng xuất",
+            "회원가입": "Đăng ký",
+            "매물등록": "Đăng bán",
+            "매물 등록": "Đăng bán",
+            "글쓰기": "Đăng bài",
+            "등록": "Đăng ký",
+            "등록하기": "Gửi",
+            "수정": "Sửa",
+            "수정하기": "Cập nhật",
+            "수정 저장": "Lưu thay đổi",
+            "삭제": "Xóa",
+            "삭제하기": "Xóa",
+            "취소": "Hủy",
+            "저장": "Lưu",
+            "검색": "Tìm kiếm",
+            "조회하기": "Áp dụng",
+            "검색초기화": "Đặt lại",
+            "더보기": "Xem thêm",
+            "전화 상담하기": "Gọi người bán",
+            "연락처 정보 없음": "Không có liên hệ",
+            "내 매물입니다": "Tin của tôi",
+            "채팅으로 문의하기": "Nhắn tin cho người bán",
+            "찜하기": "Yêu thích",
+            "찜 해제": "Bỏ yêu thích",
+            "매물 링크 복사": "Sao chép liên kết",
+            "한도 조회하기 (준비중)": "Kiểm tra hạn mức (sắp có)"
+          }
+        };
+
+        var dict = dictionaries[lang] || {};
+        if (!Object.keys(dict).length) return;
+
+        function normalize(s) {
+          return (s || "").replace(/\s+/g, " ").trim();
+        }
+
+        function replaceTextInElement(el) {
+          if (!el) return;
+
+          if (el.tagName === "INPUT") {
+            var t = (el.type || "").toLowerCase();
+            if (t === "submit" || t === "button") {
+              var v = normalize(el.value);
+              if (dict[v]) el.value = dict[v];
+            }
+            return;
+          }
+
+          var nodes = Array.prototype.slice.call(el.childNodes || []);
+          var hasTextNode = false;
+          nodes.forEach(function (node) {
+            if (node.nodeType !== 3) return;
+            hasTextNode = true;
+            var raw = normalize(node.nodeValue);
+            if (!raw) return;
+            if (dict[raw]) {
+              node.nodeValue = node.nodeValue.replace(node.nodeValue.trim(), dict[raw]);
+            }
+          });
+
+          if (!hasTextNode) {
+            var whole = normalize(el.textContent);
+            if (dict[whole]) el.textContent = dict[whole];
+          }
+        }
+
+        function applyTranslations() {
+          var selector = [
+            "button",
+            "a.btn",
+            "a.gn-job-btn",
+            "a.gn-profile-btn",
+            "a[role='button']",
+            "input[type='submit']",
+            "input[type='button']",
+            ".gn-job-btn",
+            ".gn-profile-btn",
+            ".gn-mobile-filter-bar .btn",
+            ".gn-my-listings-table .btn"
+          ].join(",");
+          document.querySelectorAll(selector).forEach(replaceTextInElement);
+        }
+
+        // 즉시 1회 + 렌더 완료 시점들에서 재시도
+        applyTranslations();
+        document.addEventListener("DOMContentLoaded", applyTranslations);
+        window.addEventListener("load", applyTranslations);
+        setTimeout(applyTranslations, 300);
+      })();
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -15,9 +15,9 @@ from .models import ChatRoom, ChatMessage
 
 @require_GET
 def set_language(request):
-    """세션에 언어(ko/en) 저장 후 next(검증된 경우만) 또는 referer/홈으로 리다이렉트."""
+    """세션에 언어(ko/en/ru/vi) 저장 후 안전한 URL로 리다이렉트."""
     lang = request.GET.get('lang', 'ko')
-    if lang not in ('ko', 'en'):
+    if lang not in ('ko', 'en', 'ru', 'vi'):
         lang = 'ko'
     request.session['lang'] = lang
     next_url = (request.GET.get('next') or '').strip()
