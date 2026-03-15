@@ -1,0 +1,22 @@
+# Nginx 예시 설정 (사이트 활성화: sudo ln -s /var/www/gulsakgi-nara/deploy/nginx.conf.example /etc/nginx/sites-available/gulsakgi && sudo ln -sf /etc/nginx/sites-available/gulsakgi /etc/nginx/sites-enabled/)
+# 211.110.140.201 또는 도메인(s2022.co.kr)용
+
+server {
+    listen 80;
+    server_name 211.110.140.201 s2022.co.kr www.s2022.co.kr;
+    client_max_body_size 50M;
+
+    location /static/ {
+        alias /var/www/gulsakgi-nara/staticfiles/;
+    }
+    location /media/ {
+        alias /var/www/gulsakgi-nara/media/;
+    }
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -3,17 +3,92 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.db.models import Q, Min, Max, Avg, Count
+from django.db.models import Q, Min, Max, Avg, Count, F
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from .models import Equipment, JobPost, Part, EquipmentImage, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment
+from .models import Equipment, JobPost, Part, EquipmentImage, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, Profile
 from soil.models import SoilPost
 from .forms import EquipmentForm, EquipmentEditForm
+from .premium_utils import (
+    is_user_premium,
+    get_free_listing_count,
+    FREE_LISTING_LIMIT,
+    get_premium_user_ids,
+    get_premium_equipment_rotation,
+    get_premium_equipment_sidebar,
+)
+
+
+def _image_hash_from_upload(uploaded_file):
+    """업로드 파일 내용으로 MD5 해시 (동일 사진 재업로드 감지)."""
+    import hashlib
+    try:
+        uploaded_file.seek(0)
+        return hashlib.md5(uploaded_file.read()).hexdigest()
+    except Exception:
+        return ""
+
+
+def _image_hash_from_equipment(equipment):
+    """매물 대표 사진(첫 번째) 해시 (삭제 시 로그용)."""
+    import hashlib
+    first = equipment.images.first()
+    if not first or not first.image:
+        return ""
+    try:
+        with first.image.open("rb") as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except Exception:
+        return ""
+
+
+def _get_profile_phone_verified(user):
+    """휴대폰 본인인증 여부. Profile 없으면 생성 후 False."""
+    if not user or not user.is_authenticated:
+        return False
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        profile = Profile.objects.create(user=user)
+    return getattr(profile, 'phone_verified', False)
+
+
+def _user_has_social_account(user):
+    """소셜(카카오/네이버 등) 로그인으로 가입·연동된 계정인지 여부. 아이디/비밀번호만 쓰는 회원은 False."""
+    if not user or not user.is_authenticated:
+        return False
+    try:
+        from allauth.socialaccount.models import SocialAccount
+        return SocialAccount.objects.filter(user=user).exists()
+    except Exception:
+        return False
+
+
+def _require_phone_verified(request, next_url=None):
+    """
+    매물 등록·유료 결제 등 전 휴대폰 인증 필수.
+    단, 아이디/비밀번호로 가입한 회원(소셜 연동 없음)은 본인인증 생략.
+    인증 필요하고 안 됐으면 redirect 응답 반환, 통과 시 None.
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+    # 아이디·비밀번호로만 가입한 회원은 본인인증 불필요
+    if not _user_has_social_account(request.user):
+        return None
+    if _get_profile_phone_verified(request.user):
+        return None
+    from urllib.parse import quote
+    from django.urls import reverse
+    next_path = next_url or request.get_full_path()
+    return redirect(reverse('phone_verify') + '?next=' + quote(next_path, safe=''))
 
 
 def _build_location_text(current_location: str, region_sido: str, region_sigungu: str) -> str:
@@ -31,7 +106,9 @@ def _build_location_text(current_location: str, region_sido: str, region_sigungu
 # [1] 메인 페이지 (키워드 + 정렬만)
 def index(request):
     query = (request.GET.get('q', '') or '').strip()
-    sort = request.GET.get('sort', 'new')
+    sort = (request.GET.get('sort', '') or 'new').strip().lower()
+    if sort not in ('price_asc', 'price_desc', 'year_desc', 'new'):
+        sort = 'new'
     filter_category = (request.GET.get('category', '') or '').strip().lower()  # excavator, forklift, dump, loader, etc
 
     # 상세 검색용 파라미터 (굴삭기/지게차 전용)
@@ -47,7 +124,7 @@ def index(request):
 
     # 목록/검색: NORMAL만 노출(EXPIRED_HIDDEN 제외). 상세 직접 URL은 별도 허용.
     equipment_list = Equipment.objects.visible()
-    valid_categories = ('excavator', 'forklift', 'dump', 'loader', 'attachment', 'etc')
+    valid_categories = ('excavator', 'forklift', 'dump', 'loader', 'crane', 'attachment', 'other')
     if filter_category in valid_categories:
         equipment_list = equipment_list.filter(equipment_type=filter_category)
 
@@ -105,17 +182,47 @@ def index(request):
             equipment_list = equipment_list.filter(weight_class=weight_class)
         if mast_type:
             equipment_list = equipment_list.filter(mast_type=mast_type)
+    # 덤프트럭: 제조사(maker)는 위에서 적용됨, 톤수는 코드 정확 일치
+    elif filter_category == 'dump':
+        if weight_class:
+            equipment_list = equipment_list.filter(weight_class=weight_class)
+    # 로더/크레인/어태치먼트/기타: 중량 자유 입력(icontains)
+    elif filter_category in ('loader', 'crane', 'attachment', 'other'):
+        if weight_class:
+            equipment_list = equipment_list.filter(weight_class__icontains=weight_class)
 
+    # 정렬: price_asc / price_desc / year_desc / new(기본, 끌어올리기 반영)
     if sort == 'price_asc':
         equipment_list = equipment_list.order_by('listing_price')
     elif sort == 'price_desc':
         equipment_list = equipment_list.order_by('-listing_price')
+    elif sort == 'year_desc':
+        equipment_list = equipment_list.order_by('-year_manufactured')
     else:
-        equipment_list = equipment_list.order_by('-created_at')
+        equipment_list = equipment_list.annotate(
+            effective_order=Coalesce(F('last_bumped_at'), F('created_at'))
+        ).order_by('-effective_order')
+
+    # 검색 상단 우선 노출: 유료 회원 매물을 목록 상단에 배치
+    premium_author_ids = set(get_premium_user_ids())
+    equipment_list = list(equipment_list)
+    equipment_list = [e for e in equipment_list if e.author_id in premium_author_ids] + [
+        e for e in equipment_list if e.author_id not in premium_author_ids
+    ]
+    premium_author_ids = list(premium_author_ids)  # 템플릿에서 프리미엄 배지용
 
     favorited_ids = set()
     if request.user.is_authenticated:
         favorited_ids = set(EquipmentFavorite.objects.filter(user=request.user).values_list('equipment_id', flat=True))
+
+    # 유료 회원 매물: 첫 화면 로테이션(캐러셀 슬라이드당 6건, 여러 슬라이드 자동 순환), 우측 고정 배너용
+    premium_rotation_list = get_premium_equipment_rotation(limit=18)
+    premium_rotation_chunks = [
+        premium_rotation_list[i : i + 6]
+        for i in range(0, len(premium_rotation_list), 6)
+        if premium_rotation_list[i : i + 6]
+    ]
+    premium_sidebar_list = get_premium_equipment_sidebar(limit=6)
 
     # 더보기 목록: 21번째부터 per_page개 (40 또는 80)
     try:
@@ -126,14 +233,24 @@ def index(request):
         list_per_page = 40
     slice_rest = f"20:{20 + list_per_page}"  # "20:60" or "20:100"
 
-    return render(request, 'equipment/equipment_list.html', {
+    # 정렬 링크에서 기존 GET 파라미터 유지용 (sort 제외)
+    get_copy = request.GET.copy()
+    if 'sort' in get_copy:
+        get_copy.pop('sort')
+    index_query_base = get_copy.urlencode()
+
+    return render(request, 'equipment/index.html', {
         'equipment_list': equipment_list,
         'list_per_page': list_per_page,
         'slice_rest': slice_rest,
         'query': query,
         'sort': sort,
-        'filter_category': filter_category if filter_category in ('excavator', 'forklift', 'dump', 'loader', 'attachment', 'etc') else '',
+        'filter_category': filter_category if filter_category in valid_categories else '',
         'favorited_equipment_ids': favorited_ids,
+        'premium_rotation_list': premium_rotation_list,
+        'premium_rotation_chunks': premium_rotation_chunks,
+        'premium_sidebar_list': premium_sidebar_list,
+        'premium_author_ids': premium_author_ids,
         # 상세 검색 상태 유지용
         'filter_maker': maker,
         'filter_sub_type': sub_type,
@@ -144,6 +261,7 @@ def index(request):
         'filter_region_sido': region_sido,
         'filter_region_sigungu': region_sigungu,
         'filter_mast_type': mast_type,
+        'index_query_base': index_query_base,
     })
 
 
@@ -157,14 +275,30 @@ def user_login(request):
         password = request.POST.get('password') or ''
         if not username or not password:
             messages.error(request, '아이디와 비밀번호를 입력하세요.')
-            return render(request, 'registration/login.html')
+            next_url = request.GET.get('next', '')
+            from urllib.parse import quote
+            _base = '/accounts/{}/login/'
+            return render(request, 'registration/login.html', {
+                'next_url': next_url,
+                'kakao_login_url': _base.format('kakao') + ('?next=' + quote(next_url) if next_url else ''),
+                'naver_login_url': _base.format('naver') + ('?next=' + quote(next_url) if next_url else ''),
+            })
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             next_url = request.GET.get('next') or 'index'
             return redirect(next_url)
         messages.error(request, '아이디 또는 비밀번호가 올바르지 않습니다.')
-    return render(request, 'registration/login.html')
+    next_url = request.GET.get('next') or request.POST.get('next', '') or ''
+    from urllib.parse import quote
+    _base = '/accounts/{}/login/'
+    kakao_login_url = _base.format('kakao') + ('?next=' + quote(next_url) if next_url else '')
+    naver_login_url = _base.format('naver') + ('?next=' + quote(next_url) if next_url else '')
+    return render(request, 'registration/login.html', {
+        'next_url': next_url,
+        'kakao_login_url': kakao_login_url,
+        'naver_login_url': naver_login_url,
+    })
 
 
 def user_logout(request):
@@ -172,11 +306,164 @@ def user_logout(request):
     return redirect('index')
 
 
+def join_choice(request):
+    """회원가입 진입: 휴대폰 입력 → 기존 회원인지 확인 → 기존 전환 또는 신규 가입 안내."""
+    if request.user.is_authenticated:
+        return redirect('my_page')
+    # 회원가입 흐름에서는 이름 매칭 안 함 (legacy 전환 전용 세션 제거)
+    if 'legacy_convert_name' in request.session:
+        del request.session['legacy_convert_name']
+        request.session.modified = True
+    from urllib.parse import quote
+    _base = '/accounts/{}/login/'
+    context = {
+        'kakao_signup_url': _base.format('kakao'),
+        'naver_signup_url': _base.format('naver'),
+    }
+    return render(request, 'registration/join_choice.html', context)
+
+
+def phone_send(request):
+    """인증번호 발송. POST phone → 6자리 발송, 재발송 30초 제한. JSON."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+    phone_raw = (request.POST.get('phone') or '').strip()
+    phone_norm = _normalize_phone(phone_raw)
+    if not phone_norm or len(phone_norm) < 10:
+        return JsonResponse({'ok': False, 'error': '휴대폰 번호를 정확히 입력해 주세요.'})
+    from .phone_verify_service import send_code
+    success, err = send_code(phone_norm)
+    if not success:
+        return JsonResponse({'ok': False, 'error': err})
+    return JsonResponse({'ok': True})
+
+
+def legacy_convert_send_code(request):
+    """기존 회원 전환: 이름+휴대폰 저장 후 인증번호 발송. POST name, phone. JSON."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+    name = (request.POST.get('name') or '').strip()
+    phone_raw = (request.POST.get('phone') or '').strip()
+    phone_norm = _normalize_phone(phone_raw)
+    if not phone_norm or len(phone_norm) < 10:
+        return JsonResponse({'ok': False, 'error': '휴대폰 번호를 정확히 입력해 주세요.'})
+    request.session['legacy_convert_name'] = name or ''
+    request.session.modified = True
+    from .phone_verify_service import send_code
+    success, err = send_code(phone_norm)
+    if not success:
+        return JsonResponse({'ok': False, 'error': err})
+    return JsonResponse({'ok': True})
+
+
+def phone_verify(request):
+    """인증번호 검증. POST phone, code → 성공 시 session['verified_phone'] 설정. 5회 초과 시 실패. JSON."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+    phone_raw = (request.POST.get('phone') or '').strip()
+    code = (request.POST.get('code') or '').strip()
+    phone_norm = _normalize_phone(phone_raw)
+    if not phone_norm or len(phone_norm) < 10:
+        return JsonResponse({'ok': False, 'error': '휴대폰 번호를 입력해 주세요.'})
+    if not code or len(code) != 6:
+        return JsonResponse({'ok': False, 'error': '인증번호 6자리를 입력해 주세요.'})
+    from .phone_verify_service import verify_code
+    success, err = verify_code(phone_norm, code)
+    if not success:
+        return JsonResponse({'ok': False, 'error': err})
+    request.session['verified_phone'] = phone_norm  # 하이픈 제거 후 저장
+    request.session.modified = True
+    return JsonResponse({'ok': True})
+
+
+def join_check(request):
+    """인증 완료된 휴대폰(session)으로 기존 회원 여부 확인. POST 없이 session 기반. JSON.
+    session에 legacy_convert_name 있으면 이름(first_name)도 일치할 때만 기존 회원으로 인정."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+    phone_norm = request.session.get('verified_phone')
+    if not phone_norm:
+        return JsonResponse({'ok': False, 'error': '휴대폰 인증을 먼저 완료해 주세요.'})
+    import secrets
+    legacy_name = (request.session.get('legacy_convert_name') or '').strip()
+    profiles = Profile.objects.filter(legacy_member_id__isnull=False).select_related('user')
+    profile = None
+    for p in profiles:
+        if _normalize_phone(p.phone) != phone_norm:
+            continue
+        if legacy_name:
+            fn = (getattr(p.user, 'first_name', None) or '').strip()
+            if fn and legacy_name and fn != legacy_name:
+                continue
+        profile = p
+        break
+    if profile is None:
+        return JsonResponse({'ok': True, 'found': False})
+    temp_password = secrets.token_urlsafe(8)[:10]
+    profile.user.set_password(temp_password)
+    profile.user.save(update_fields=['password'])
+    # 기존 회원 전환 시 로그인 후 legacy_convert에서 phone_verified 처리
+    return JsonResponse({
+        'ok': True,
+        'found': True,
+        'legacy_username': profile.user.username,
+        'temp_password': temp_password,
+    })
+
+
+def _normalize_phone(s):
+    """숫자만 추출 (010-1234-5678 → 01012345678)."""
+    if not s:
+        return ''
+    import re
+    return re.sub(r'\D', '', str(s))
+
+
+def legacy_convert_intro(request):
+    """기존 회원 전환: 이름+휴대폰 → 인증번호 확인 → 기존 정보 조회 → 로그인 후 정식 전환."""
+    if request.user.is_authenticated and request.user.username.startswith('legacy_'):
+        return redirect('legacy_convert')
+    if request.user.is_authenticated:
+        return redirect('my_page')
+    from urllib.parse import quote
+    login_url = '/login/?next=' + quote('/account/convert/')
+    return render(request, 'registration/legacy_convert_intro.html', {'login_url': login_url})
+
+
+def signup_choices(request):
+    """신규 회원가입: 카카오/네이버/일반 선택 (필요 시점에만 휴대폰 인증·사업자·유료)."""
+    if request.user.is_authenticated:
+        return redirect('my_page')
+    from urllib.parse import quote
+    next_url = request.GET.get('next', '') or ''
+    _base = '/accounts/{}/login/'
+    kakao_signup_url = _base.format('kakao') + ('?next=' + quote(next_url) if next_url else '')
+    naver_signup_url = _base.format('naver') + ('?next=' + quote(next_url) if next_url else '')
+    return render(request, 'registration/signup_choices.html', {
+        'kakao_signup_url': kakao_signup_url,
+        'naver_signup_url': naver_signup_url,
+    })
+
+
 def signup(request):
     if request.method == "POST":
         form = UserSignupForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            verified_phone = request.session.pop('verified_phone', None)
+            if verified_phone:
+                try:
+                    profile = Profile.objects.get(user=user)
+                    profile.phone = verified_phone
+                    profile.phone_verified = True
+                    profile.phone_verified_at = timezone.now()
+                    profile.save(update_fields=['phone', 'phone_verified', 'phone_verified_at'])
+                except Profile.DoesNotExist:
+                    Profile.objects.create(user=user, phone=verified_phone, phone_verified=True, phone_verified_at=timezone.now())
             return redirect("login")
     else:
         form = UserSignupForm()
@@ -213,11 +500,123 @@ def my_page(request):
     my_equipments = Equipment.objects.filter(author=request.user).order_by('-created_at')
     fav_equipments = Equipment.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
     fav_parts = Part.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
+    is_legacy_user = request.user.username.startswith('legacy_')
     return render(request, 'registration/my_page.html', {
         'my_equipments': my_equipments,
         'fav_equipments': fav_equipments,
         'fav_parts': fav_parts,
+        'is_legacy_user': is_legacy_user,
     })
+
+
+@login_required(login_url='/login/')
+def verify_phone_page(request):
+    """
+    휴대폰 본인인증 페이지. 매물 등록·유료 결제 전 필수.
+    실제 인증 API(네이버/카카오/나이스 등) 연동 전까지는 안내 페이지.
+    DEBUG 시 ?test=1 로 테스트 인증 가능.
+    """
+    if _get_profile_phone_verified(request.user):
+        next_url = request.GET.get('next', '').strip()
+        if next_url and url_has_allowed_host_and_scheme(next_url, request.get_host()):
+            return redirect(next_url)
+        return redirect('my_page')
+
+    if request.method == 'POST':
+        phone = (request.POST.get('phone') or '').strip()
+        # DEBUG 시 테스트 인증 (실서비스에서는 제거 또는 비활성화)
+        next_url = (request.POST.get('next') or request.GET.get('next') or '').strip()
+        if getattr(settings, 'DEBUG', False) and request.GET.get('test'):
+            try:
+                profile = Profile.objects.get(user=request.user)
+                profile.phone = phone or profile.phone
+                profile.phone_verified = True
+                profile.phone_verified_at = timezone.now()
+                profile.save()
+                messages.success(request, '휴대폰 인증이 완료되었습니다. (테스트 모드)')
+                if next_url and url_has_allowed_host_and_scheme(next_url, request.get_host()):
+                    return redirect(next_url)
+                return redirect('my_page')
+            except Profile.DoesNotExist:
+                Profile.objects.create(user=request.user, phone=phone or '', phone_verified=True, phone_verified_at=timezone.now())
+                messages.success(request, '휴대폰 인증이 완료되었습니다. (테스트 모드)')
+                if next_url and url_has_allowed_host_and_scheme(next_url, request.get_host()):
+                    return redirect(next_url)
+                return redirect('my_page')
+        messages.info(request, '본인인증 API 연동 후 이용 가능합니다. 문의: 관리자.')
+    next_url = request.GET.get('next', '')
+    try:
+        profile = Profile.objects.get(user=request.user)
+        phone = profile.phone or ''
+    except Profile.DoesNotExist:
+        phone = ''
+    return render(request, 'registration/phone_verify.html', {
+        'next_url': next_url,
+        'debug': getattr(settings, 'DEBUG', False),
+        'phone': phone,
+    })
+
+
+@login_required(login_url='/login/')
+def legacy_convert(request):
+    """
+    이관 회원(legacy_* 아이디) 정식 회원 전환: 새 아이디·이메일·비밀번호 설정.
+    회원가입 인증에서 온 경우 session['verified_phone'] → Profile.phone_verified 처리.
+    """
+    user = request.user
+    if not user.username.startswith('legacy_'):
+        messages.info(request, '이미 정식 회원이거나 전환 대상이 아닙니다.')
+        return redirect('my_page')
+    verified_phone = request.session.pop('verified_phone', None)
+    if verified_phone:
+        try:
+            profile = Profile.objects.get(user=user)
+            profile.phone = verified_phone  # 하이픈 제거된 번호 저장
+            profile.phone_verified = True
+            profile.phone_verified_at = timezone.now()
+            profile.save(update_fields=['phone', 'phone_verified', 'phone_verified_at'])
+        except Profile.DoesNotExist:
+            Profile.objects.create(user=user, phone=verified_phone, phone_verified=True, phone_verified_at=timezone.now())
+
+    if request.method == 'POST':
+        new_username = (request.POST.get('new_username') or '').strip()
+        email = (request.POST.get('email') or '').strip()
+        password1 = request.POST.get('password1') or ''
+        password2 = request.POST.get('password2') or ''
+
+        errors = []
+        if not new_username:
+            errors.append('새 로그인 아이디를 입력하세요.')
+        elif new_username.startswith('legacy_'):
+            errors.append('새 아이디는 legacy_ 로 시작할 수 없습니다.')
+        elif User.objects.filter(username=new_username).exclude(pk=user.pk).exists():
+            errors.append('이미 사용 중인 아이디입니다.')
+        if not email:
+            errors.append('이메일을 입력하세요.')
+        if len(password1) < 8:
+            errors.append('비밀번호는 8자 이상이어야 합니다.')
+        elif password1 != password2:
+            errors.append('비밀번호가 일치하지 않습니다.')
+
+        if errors:
+            for msg in errors:
+                messages.error(request, msg)
+            return render(request, 'registration/legacy_convert.html', {
+                'new_username': new_username,
+                'email': email,
+            })
+
+        user.username = new_username
+        user.email = email
+        user.set_password(password1)
+        user.save()
+        # 비밀번호 변경 후 세션 유지 (Django는 비밀번호 바뀌면 세션 무효화할 수 있음)
+        from django.contrib.auth import update_session_auth_hash
+        update_session_auth_hash(request, user)
+        messages.success(request, '정식 회원 전환이 완료되었습니다. 새 아이디로 로그인해 이용해 주세요.')
+        return redirect('my_page')
+
+    return render(request, 'registration/legacy_convert.html', {})
 
 
 @login_required(login_url='/login/')
@@ -292,6 +691,10 @@ def job_detail(request, pk):
 def job_create(request):
     from .region_choices import SIDO_CHOICES, SIGUNGU_MAP
     import json
+    redirect_resp = _require_phone_verified(request)
+    if redirect_resp:
+        messages.info(request, '구인·구직 글 등록을 위해 휴대폰 본인인증이 필요합니다.')
+        return redirect_resp
     if request.method == "POST":
         title = (request.POST.get("title") or "").strip()
         writer = (request.POST.get("writer") or "익명").strip()
@@ -534,6 +937,7 @@ def equipment_detail(request, pk):
 
     author_phone = None
     author_is_dealer = False
+    author_is_premium = False
     author_display = None
     if equipment.author:
         try:
@@ -541,9 +945,13 @@ def equipment_detail(request, pk):
             if profile:
                 author_phone = getattr(profile, 'phone', None)
                 author_is_dealer = getattr(profile, 'user_type', None) == 'DEALER'
+                author_is_premium = getattr(profile, 'is_premium_active', False) or (
+                    equipment.author_id in set(get_premium_user_ids())
+                )
                 author_display = getattr(profile, 'company_name', None) or equipment.author.get_full_name() or equipment.author.username
             else:
                 author_display = equipment.author.get_full_name() or equipment.author.username
+                author_is_premium = equipment.author_id in set(get_premium_user_ids())
         except Exception:
             author_display = equipment.author.username if equipment.author else None
 
@@ -585,17 +993,47 @@ def equipment_detail(request, pk):
     )
     similar_list = list(similar_qs.order_by('-created_at')[:6])
 
+    # 우측 고정 배너: 유료 회원 매물 명함
+    premium_sidebar_list = get_premium_equipment_sidebar(limit=6)
+
+    # 이 판매자의 다른 매물 6개 미리보기 (본문 제외)
+    author_other_listings = []
+    if equipment.author_id:
+        author_other_listings = list(
+            Equipment.objects.visible()
+            .filter(author_id=equipment.author_id, is_sold=False)
+            .exclude(pk=equipment.pk)
+            .order_by('-created_at')[:6]
+        )
+
+    # 끌어올리기: 본인 매물 + 유료회원 + 주 1회 제한
+    can_bump = False
+    next_bump_at = None
+    if request.user.is_authenticated and equipment.author_id == request.user.id and author_is_premium:
+        from datetime import timedelta
+        now = timezone.now()
+        week_ago = now - timedelta(days=7)
+        if not equipment.last_bumped_at or equipment.last_bumped_at <= week_ago:
+            can_bump = True
+        else:
+            next_bump_at = equipment.last_bumped_at + timedelta(days=7)
+
     return render(request, 'equipment/equipment_detail.html', {
         'equipment': equipment,
         'is_favorited': is_favorited,
         'comments': comments,
         'author_phone': author_phone,
         'author_is_dealer': author_is_dealer,
+        'author_is_premium': author_is_premium,
         'author_display': author_display,
         'similar_stats': similar_stats,
         'similar_list': similar_list,
         'finance_limit': finance_limit,
         'finance_monthly_60': finance_monthly_60,
+        'premium_sidebar_list': premium_sidebar_list,
+        'author_other_listings': author_other_listings,
+        'can_bump': can_bump,
+        'next_bump_at': next_bump_at,
     })
 
 
@@ -605,15 +1043,65 @@ def equipment_create(request):
 
     if not request.user.is_authenticated:
         return redirect('login')
+    redirect_resp = _require_phone_verified(request)
+    if redirect_resp:
+        messages.info(request, '매물 등록을 위해 휴대폰 본인인증이 필요합니다.')
+        return redirect_resp
 
     if request.method == 'POST':
         form = EquipmentForm(request.POST)
         if form.is_valid():
+            # 무료 회원: 10건 초과 시 등록 불가 (유료 전환 유도)
+            if not is_user_premium(request.user):
+                current_count = get_free_listing_count(request.user)
+                if current_count >= FREE_LISTING_LIMIT:
+                    messages.error(
+                        request,
+                        f'무료 회원은 한 달에 매물을 {FREE_LISTING_LIMIT}건까지만 등록할 수 있습니다. '
+                        '이번 달 한도를 모두 사용했습니다. 삭제 후 다시 올려도 당월 건수에 포함되며, 다음 달부터 새로 등록할 수 있습니다.'
+                    )
+                    return render(request, 'equipment/equipment_form.html', {
+                        'form': form,
+                        'mode': 'create',
+                        'sido_choices': SIDO_CHOICES,
+                        'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+                        'free_listing_count': current_count,
+                        'free_listing_limit': FREE_LISTING_LIMIT,
+                        'is_premium': False,
+                    })
             # 허위 매물 방지: 사진 최소 1장 필수
             image_files = request.FILES.getlist('images')
             if not image_files or len(image_files) < 1:
                 form.add_error(None, ValidationError('허위 매물 방지를 위해 사진을 최소 1장 이상 등록해주세요.'))
             else:
+                # 무료회원 재등록 제한: 동일 모델/동일 사진 30일 이내 재업로드 차단
+                if not is_user_premium(request.user):
+                    model_name = (form.cleaned_data.get('model_name') or '').strip()
+                    first_hash = _image_hash_from_upload(image_files[0])
+                    from datetime import timedelta
+                    since = timezone.now() - timedelta(days=30)
+                    if DeletedListingLog.objects.filter(
+                        user=request.user,
+                        deleted_at__gte=since,
+                    ).filter(
+                        Q(model_name=model_name) | (Q(image_hash=first_hash) if first_hash else Q(pk=-1))
+                    ).exists():
+                        messages.error(
+                            request,
+                            '동일한 매물(같은 모델·같은 사진)은 삭제 후 30일이 지나야 다시 등록할 수 있습니다. '
+                            '유료 회원은 끌어올리기로 상단 노출을 이용해 주세요.'
+                        )
+                        return render(request, 'equipment/equipment_form.html', {
+                            'form': form,
+                            'mode': 'create',
+                            'sido_choices': SIDO_CHOICES,
+                            'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+                            'free_listing_count': get_free_listing_count(request.user),
+                            'free_listing_limit': FREE_LISTING_LIMIT,
+                            'is_premium': False,
+                        })
+                # 해시 계산으로 읽은 첫 이미지 포인터 초기화 (저장 시 사용)
+                image_files[0].seek(0)
                 obj = form.save(commit=False)
                 obj.author = request.user
                 obj.current_location = _build_location_text(
@@ -628,11 +1116,15 @@ def equipment_create(request):
     else:
         form = EquipmentForm(initial={'equipment_type': 'excavator'})
 
+    free_count = get_free_listing_count(request.user) if request.user.is_authenticated else 0
     return render(request, 'equipment/equipment_form.html', {
         'form': form,
         'mode': 'create',
         'sido_choices': SIDO_CHOICES,
         'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+        'free_listing_count': free_count,
+        'free_listing_limit': FREE_LISTING_LIMIT,
+        'is_premium': is_user_premium(request.user),
     })
 
 
@@ -694,9 +1186,48 @@ def equipment_delete(request, pk):
         redirect_to = next_url
     else:
         redirect_to = reverse('my_page')
+    # 무료회원 삭제 시 재등록 제한용 로그 (동일 사진/모델 재업로드 감지)
+    if not is_user_premium(request.user):
+        try:
+            img_hash = _image_hash_from_equipment(equipment)
+            DeletedListingLog.objects.create(
+                user=request.user,
+                model_name=(equipment.model_name or '').strip(),
+                image_hash=img_hash or '',
+            )
+        except Exception:
+            pass
     equipment.delete()
     messages.success(request, '매물이 삭제되었습니다.')
     return redirect(redirect_to)
+
+
+def equipment_bump(request, pk):
+    """끌어올리기 — 유료회원만 주 1회. 매물을 목록 상단(최신순)으로 올림."""
+    equipment = get_object_or_404(Equipment, pk=pk)
+    if not request.user.is_authenticated:
+        messages.info(request, '로그인 후 이용해 주세요.')
+        return redirect('login')
+    if equipment.author_id != request.user.id:
+        messages.error(request, '본인 매물만 끌어올릴 수 있습니다.')
+        return redirect('equipment_detail', pk=pk)
+    if not is_user_premium(request.user):
+        messages.error(request, '끌어올리기는 유료 회원만 이용할 수 있습니다.')
+        return redirect('equipment_detail', pk=pk)
+    now = timezone.now()
+    from datetime import timedelta
+    week_ago = now - timedelta(days=7)
+    if equipment.last_bumped_at and equipment.last_bumped_at > week_ago:
+        next_at = equipment.last_bumped_at + timedelta(days=7)
+        messages.warning(
+            request,
+            f'끌어올리기는 주 1회만 가능합니다. 다음 이용 가능: {next_at.strftime("%Y-%m-%d %H:%M")}'
+        )
+        return redirect('equipment_detail', pk=pk)
+    equipment.last_bumped_at = now
+    equipment.save(update_fields=['last_bumped_at'])
+    messages.success(request, '끌어올리기가 완료되었습니다. 최신순 목록 상단에 노출됩니다.')
+    return redirect('equipment_detail', pk=pk)
 
 
 def toggle_equipment_favorite(request, pk):
@@ -708,6 +1239,29 @@ def toggle_equipment_favorite(request, pk):
         fav.delete()
     next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or 'index'
     return redirect(next_url)
+
+
+def author_listings(request, user_id):
+    """이 회원이 올린 모든 매물 보기 — 유료 회원 전용."""
+    author_user = get_object_or_404(User, pk=user_id)
+    if not request.user.is_authenticated:
+        messages.info(request, '로그인 후 이용해 주세요.')
+        return redirect('login')
+    if not is_user_premium(request.user):
+        return render(request, 'equipment/premium_required.html', {
+            'title': '이 회원 매물 전체 보기',
+            'message': '유료 회원만 다른 판매자의 매물을 한꺼번에 볼 수 있습니다. 유료 전환 후 이용해 주세요.',
+            'author_display': author_user.get_full_name() or author_user.username,
+        })
+    listings = list(Equipment.objects.visible().filter(author_id=user_id).order_by('-created_at'))
+    favorited_ids = set()
+    if request.user.is_authenticated:
+        favorited_ids = set(EquipmentFavorite.objects.filter(user=request.user).values_list('equipment_id', flat=True))
+    return render(request, 'equipment/author_listings.html', {
+        'author_user': author_user,
+        'listings': listings,
+        'favorited_equipment_ids': favorited_ids,
+    })
 
 
 # [5] 부품 관련
@@ -768,6 +1322,10 @@ def toggle_part_favorite(request, pk):
 def part_create(request):
     if not request.user.is_authenticated:
         return redirect('login')
+    redirect_resp = _require_phone_verified(request)
+    if redirect_resp:
+        messages.info(request, '부품 매물 등록을 위해 휴대폰 본인인증이 필요합니다.')
+        return redirect_resp
 
     if request.method == "POST":
         title = (request.POST.get("title") or "").strip()

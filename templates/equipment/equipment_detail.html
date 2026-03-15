@@ -2,6 +2,11 @@
 {% load humanize %}
 {% block content %}
 <div class="container-fluid px-md-5 py-4 gn-detail-page">
+  <div class="mb-3">
+    <a href="{% url 'index' %}{% if equipment.equipment_type %}?category={{ equipment.equipment_type }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>목록으로 가기
+    </a>
+  </div>
   <!-- PC: 2컬럼 (왼쪽 사진 / 오른쪽 정보+버튼) -->
   <div class="row g-4 gn-detail-top">
     <!-- 왼쪽(65~70%): 메인 이미지 + 썸네일 한 줄 -->
@@ -44,115 +49,156 @@
       </div>
     </div>
 
-    <!-- 오른쪽(30~35%): 개인/팝니다/가격/기본정보/버튼(연락처→채팅→찜→복사) -->
+    <!-- 오른쪽: 판매자 프로필 · 가격·기본정보 · 다른 매물 미리보기 · 문의 CTA · 명함 배너 -->
     <div class="col-12 col-lg-3 gn-detail-right">
-      <div class="card gn-card-sharp gn-card-light p-4" style="border-radius: 10px;">
-        <p class="mb-2 gn-seller-type">{% if author_is_dealer %}매매상{% else %}개인{% endif %}</p>
-        <div class="d-flex align-items-center flex-wrap mb-3 gn-status-row">
-          <span class="badge px-3 py-2 text-white gn-status-badge">
-            {% if equipment.is_sold %}판매완료{% else %}팝니다{% endif %}
+      <!-- 1. 판매자 프로필 카드 + 프리미엄 회원 배지 -->
+      <div class="card gn-card-sharp gn-card-light mb-3 p-3" style="border-radius: 10px;">
+        <h6 class="small text-muted text-uppercase mb-2">판매자</h6>
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+          <span class="fw-bold fs-6">{{ author_display|default:"-" }}</span>
+          <span class="badge {% if author_is_dealer %}bg-primary{% else %}bg-secondary{% endif %} px-2 py-1">
+            {% if author_is_dealer %}매매상{% else %}개인{% endif %}
           </span>
-          {% if equipment.manufacturer %}
-          <span class="gn-status-maker ms-2">
-            제조사: {{ equipment.manufacturer }}
-          </span>
-          {% endif %}
-          {% if equipment.vehicle_number %}
-          <span class="badge badge-verified ms-2 px-2 py-1">번호등록</span>
+          {% if author_is_premium %}
+          <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-star-fill small"></i> 프리미엄</span>
           {% endif %}
         </div>
+        {% if author_phone %}
+        <p class="mb-0 small"><i class="bi bi-telephone me-1"></i><a href="tel:{{ author_phone|cut:'-'|cut:' ' }}" class="text-decoration-none fw-bold">{{ author_phone }}</a></p>
+        {% endif %}
+      </div>
 
-        <div class="mb-4">
-          <div class="gn-price-label mb-1">판매금액</div>
+      <!-- 2. 현재 매물: 상태 + 판매금액 + 기본 정보 -->
+      <div class="card gn-card-sharp gn-card-light p-3 mb-3" style="border-radius: 10px;">
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+          <span class="badge px-3 py-2 text-white gn-status-badge">{% if equipment.is_sold %}판매완료{% else %}팝니다{% endif %}</span>
+          {% if equipment.manufacturer %}<span class="small text-muted">제조사 {{ equipment.manufacturer }}</span>{% endif %}
+          {% if equipment.vehicle_number %}<span class="badge badge-verified px-2 py-1">번호등록</span>{% endif %}
+        </div>
+        <div class="mb-3">
+          <div class="gn-price-label small text-muted mb-0">판매금액</div>
           <div class="gn-price-value">{{ equipment.listing_price|floatformat:0|intcomma }} 만원</div>
         </div>
-
-        <h6 class="gn-section-heading mb-2">기본 정보</h6>
-        <table class="table table-sm table-borderless mb-3 align-middle gn-spec-table">
+        <h6 class="gn-section-heading mb-2 small">기본 정보</h6>
+        <table class="table table-sm table-borderless mb-0 align-middle gn-spec-table small">
           <tbody>
-            <tr>
-              <td class="spec-label">기종</td>
-              <td class="spec-value">{{ equipment.get_equipment_type_display|default:"-" }}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">제조사</td>
-              <td class="spec-value">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% else %}모름{% endif %}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">모델명</td>
-              <td class="spec-value spec-value-model">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">연식</td>
-              <td class="spec-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">가동시간</td>
-              <td class="spec-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }} HR{% else %}모름{% endif %}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">매물등록일</td>
-              <td class="spec-value">{{ equipment.created_at|date:"Y-m-d" }}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">위치</td>
-              <td class="spec-value">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">차량번호</td>
-              <td class="spec-value">{% if equipment.vehicle_number %}{{ equipment.vehicle_number }}{% else %}모름{% endif %}</td>
-            </tr>
-            <tr>
-              <td class="spec-label">판매자</td>
-              <td class="spec-value">{{ author_display|default:"-" }}</td>
-            </tr>
-            {% if author_phone %}
-            <tr>
-              <td class="spec-label">연락처</td>
-              <td class="spec-value fw-bold">{{ author_phone }}</td>
-            </tr>
-            {% endif %}
+            <tr><td class="spec-label">기종</td><td class="spec-value">{{ equipment.get_equipment_type_display|default:"-" }}</td></tr>
+            <tr><td class="spec-label">모델명</td><td class="spec-value spec-value-model">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</td></tr>
+            <tr><td class="spec-label">연식</td><td class="spec-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td></tr>
+            <tr><td class="spec-label">가동시간</td><td class="spec-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }} HR{% else %}모름{% endif %}</td></tr>
+            <tr><td class="spec-label">위치</td><td class="spec-value">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
           </tbody>
         </table>
+        {% if equipment.author_id %}
+        <p class="mt-2 mb-0 small">
+          <a href="{% url 'author_listings' equipment.author_id %}" class="text-primary text-decoration-none fw-bold">
+            <i class="bi bi-grid-3x3-gap me-1"></i>이 판매자의 전체 매물 보기
+          </a>
+          <span class="d-block text-muted" style="font-size: 0.7rem;">(유료 회원 전용)</span>
+        </p>
+        {% endif %}
+      </div>
 
-        <!-- CTA 버튼: 연락처 → 채팅하기 → 찜하기 → 링크복사 (거래 흐름 순) -->
+      <!-- 3. 이 판매자의 다른 매물 6개 미리보기 -->
+      {% if author_other_listings %}
+      <div class="card gn-card-sharp gn-card-light p-3 mb-3" style="border-radius: 10px;">
+        <h6 class="gn-section-heading mb-2 small">이 판매자의 다른 매물</h6>
+        <div class="row g-2">
+          {% for eq in author_other_listings %}
+          <div class="col-6">
+            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none rounded overflow-hidden border" style="background: #f8fafc;">
+              <div class="position-relative" style="height: 56px;">
+                {% if eq.images.first %}
+                <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                {% else %}
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                {% endif %}
+              </div>
+              <div class="p-1 small">
+                <div class="fw-bold text-truncate" style="color: var(--gn-text); font-size: 0.7rem;">{{ eq.model_name|default:"-" }}</div>
+                <div class="text-danger fw-bold" style="font-size: 0.7rem;">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 4. 문의하기 / 전화걸기 / 카톡상담 -->
+      <div class="card gn-card-sharp gn-card-light p-3 mb-3" style="border-radius: 10px;">
+        <h6 class="small text-muted text-uppercase mb-2">문의하기</h6>
         <div class="d-grid gap-2">
           {% if author_phone %}
-          <a href="tel:{{ author_phone|cut:'-'|cut:' ' }}" class="btn gn-btn-primary py-3 fw-bold">
-            <i class="bi bi-telephone-fill me-2"></i> 전화 상담하기
+          <a href="tel:{{ author_phone|cut:'-'|cut:' ' }}" class="btn gn-btn-primary py-2 fw-bold">
+            <i class="bi bi-telephone-fill me-2"></i> 전화 걸기
           </a>
           {% else %}
-          <button class="btn gn-btn-secondary py-3 fw-bold" disabled>
-            <i class="bi bi-telephone-fill me-2"></i> 연락처 정보 없음
-          </button>
+          <button class="btn gn-btn-secondary py-2 fw-bold" disabled><i class="bi bi-telephone-fill me-2"></i> 연락처 없음</button>
           {% endif %}
-
           {% if user.is_authenticated and equipment.author and equipment.author_id != user.id %}
-          <a href="{% url 'equipment_chat_start' equipment.pk %}" class="btn gn-btn-primary w-100 py-3 fw-bold">
-            <i class="bi bi-chat-dots-fill me-2"></i>{% if LANG == 'en' %}Chat with seller{% else %}채팅으로 문의하기{% endif %}
+          <a href="{% url 'equipment_chat_start' equipment.pk %}" class="btn btn-success py-2 fw-bold text-white">
+            <i class="bi bi-chat-dots-fill me-2"></i> 카톡·채팅 문의
           </a>
           {% elif not user.is_authenticated %}
-          <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn gn-btn-primary w-100 py-3 fw-bold">
-            <i class="bi bi-chat-dots-fill me-2"></i>{% if LANG == 'en' %}Chat with seller{% else %}채팅으로 문의하기{% endif %}
+          <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-success py-2 fw-bold text-white">
+            <i class="bi bi-chat-dots-fill me-2"></i> 카톡·채팅 문의
           </a>
           {% else %}
-          <button class="btn gn-btn-secondary py-3 fw-bold" disabled>
-            <i class="bi bi-chat-dots me-2"></i>{% if LANG == 'en' %}My listing{% else %}내 매물입니다{% endif %}
-          </button>
+          <button class="btn gn-btn-secondary py-2 fw-bold" disabled><i class="bi bi-chat-dots me-2"></i> 내 매물</button>
           {% endif %}
-
           {% if user.is_authenticated %}
-          <a href="{% url 'toggle_equipment_favorite' equipment.pk %}?next={{ request.get_full_path|urlencode }}" class="btn gn-btn-wishlist w-100 py-2">
+          <a href="{% url 'toggle_equipment_favorite' equipment.pk %}?next={{ request.get_full_path|urlencode }}" class="btn gn-btn-wishlist py-2">
             <i class="bi bi-heart{% if is_favorited %}-fill{% endif %}"></i> {% if is_favorited %}찜 해제{% else %}찜하기{% endif %}
           </a>
           {% endif %}
-
-          <button type="button" class="btn gn-btn-secondary py-2"
-                  onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href); this.innerText='링크 복사 완료';">
-            <i class="bi bi-share me-2"></i> 매물 링크 복사
+          <button type="button" class="btn gn-btn-secondary py-2" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href); this.innerText='✓ 링크 복사 완료';">
+            <i class="bi bi-share me-2"></i> 링크 복사
           </button>
         </div>
       </div>
+
+      <!-- 5. 끌어올리기 (본인+유료) -->
+      {% if can_bump %}
+      <div class="card gn-card-sharp border-warning mb-3 p-3" style="border-radius: 10px;">
+        <form method="post" action="{% url 'equipment_bump' equipment.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">
+            <i class="bi bi-arrow-up-circle me-2"></i>끌어올리기 (주 1회)
+          </button>
+        </form>
+        <p class="small text-muted mb-0 mt-1">목록 최신순 상단 노출</p>
+      </div>
+      {% elif next_bump_at %}
+      <p class="small text-muted mb-3">다음 끌어올리기: {{ next_bump_at|date:"m/d H:i" }}</p>
+      {% endif %}
+      <!-- 우측 고정: 유료회원 매물 명함 (스크롤 시 따라다님) -->
+      {% if premium_sidebar_list %}
+      <div class="mt-3 gn-detail-premium-sidebar">
+        <div class="card border shadow-sm">
+          <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
+            <i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물
+          </div>
+          <div class="card-body p-2">
+            {% for eq in premium_sidebar_list %}
+            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none border-bottom mb-2 pb-2 {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden" style="width: 48px; height: 48px; background: #e2e8f0;">
+                  {% if eq.images.first %}
+                  <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold small">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                </div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -277,6 +323,13 @@
       </div>
     </div>
   </div>
+
+  <!-- 하단: 목록으로 가기 (사진·내용 다 본 후) -->
+  <div class="mt-4 mb-3 text-center">
+    <a href="{% url 'index' %}{% if equipment.equipment_type %}?category={{ equipment.equipment_type }}{% endif %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>목록으로 가기
+    </a>
+  </div>
 </div>
 
 <!-- 사진 확대 모달 -->
@@ -373,6 +426,7 @@
   }
   .gn-detail-top { margin-bottom: 0.5rem; }
   .gn-detail-desc-section { width: 100%; margin-top: 1.5rem !important; }
+  .gn-detail-premium-sidebar { position: sticky; top: 1rem; }
   .gn-card-light {
     background-color: #FFFFFF !important;
     color: #111827 !important;

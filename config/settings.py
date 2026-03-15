@@ -15,6 +15,7 @@ if DEBUG:
     ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
+    'django.contrib.sites',  # allauth 필수
     'equipment.apps.EquipmentConfig',
     'soil.apps.SoilConfig',
     'chat',
@@ -29,6 +30,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
+    # 소셜 로그인 (카카오/네이버) — 로그인 편의용, 매물/결제 전 휴대폰 인증 별도 필수
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.kakao',
+    'allauth.socialaccount.providers.naver',
 ]
 
 MIDDLEWARE = [
@@ -45,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -82,6 +90,38 @@ DATABASES = {
     }
 }
 
+# django-allauth: 소셜 로그인 = 로그인 편의, 휴대폰 인증 = 거래/결제 신뢰 (별도 필수)
+SITE_ID = 1
+# 운영 도메인 (소셜 로그인 콜백·관리자 "사이트 보기" 등). .env 에 SITE_DOMAIN 으로 덮어쓰기
+SITE_DOMAIN = os.getenv('SITE_DOMAIN', 's2022.co.kr')
+SITE_NAME = os.getenv('SITE_NAME', '굴삭기나라')
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+# 카카오/네이버 키는 Admin > Sites > Social applications 에서 등록하거나, 여기 APP으로 env 설정
+# 카카오: https://developers.kakao.com/apps → REST API 키, 리다이렉트: /accounts/kakao/login/callback/
+# 네이버: https://developers.naver.com/appinfo → Client ID/Secret, 리다이렉트: /accounts/naver/login/callback/
+SOCIALACCOUNT_PROVIDERS = {
+    'kakao': {},
+    'naver': {},
+}
+if os.getenv('KAKAO_REST_API_KEY'):
+    SOCIALACCOUNT_PROVIDERS['kakao']['APP'] = {
+        'client_id': os.getenv('KAKAO_REST_API_KEY'),
+        'secret': os.getenv('KAKAO_CLIENT_SECRET', ''),
+    }
+if os.getenv('NAVER_CLIENT_ID'):
+    SOCIALACCOUNT_PROVIDERS['naver']['APP'] = {
+        'client_id': os.getenv('NAVER_CLIENT_ID'),
+        'secret': os.getenv('NAVER_CLIENT_SECRET', ''),
+    }
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
@@ -117,14 +157,18 @@ REST_FRAMEWORK = {
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "http")
 CSRF_TRUSTED_ORIGINS = ['http://www.s2022.co.kr', 'https://www.s2022.co.kr', 'https://s2022.co.kr', 'http://s2022.co.kr', 'http://211.110.140.201', 'http://211.110.140.201:8001']
-LOGIN_REDIRECT_URL = '/'
 LANGUAGE_CODE = 'ko-kr'
 USE_I18N = True
 
-# 로그인 관련 설정
+# 로그인 관련 설정 (일반 + allauth 소셜 로그인)
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+
+# 휴대폰 인증 문자 (equipment.phone_verify_service.send_sms)
+# SMS_API_KEY 또는 SENS_SERVICE_KEY 등이 있으면 실제 발송 연동, 없으면 DEBUG 시 콘솔 출력
+# 문자 업체: 선택 → 계정·발신번호 등록 → API 키 발급 → phone_verify_service.send_sms() 연동
 
 # 비밀번호 찾기 메일: .env에 EMAIL_HOST 있으면 SMTP 발송, 없으면 콘솔 출력
 # .env 예시 (실제 발송 시):

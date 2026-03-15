@@ -7,6 +7,7 @@ from equipment.views import user_login, user_logout, signup, check_username, fin
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),  # 소셜 로그인: /accounts/login/ 에서 카카오/네이버
     path('chat/', include('chat.urls')),
     path('soil/', include('soil.urls')),
     path('', include('equipment.urls')),

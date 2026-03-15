@@ -12,6 +12,9 @@
                 <div class="gn-profile-info">
                     <p class="gn-profile-greeting">안녕하세요, {{ user.username }}님</p>
                     <p class="gn-profile-meta">아이디: {{ user.username }} · 가입일: {{ user.date_joined|date:"Y-m-d" }}</p>
+                    {% if is_legacy_user %}
+                    <p class="mt-2 mb-0"><a href="{% url 'legacy_convert' %}" class="btn btn-sm btn-warning">정식 회원 전환 (아이디·이메일·비밀번호 설정)</a></p>
+                    {% endif %}
                 </div>
             </div>
             <div class="gn-profile-actions">

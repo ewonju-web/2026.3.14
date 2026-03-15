@@ -522,7 +522,6 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">{{ LANG|tr:"nav_market" }}</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'job_list' %}">{{ LANG|tr:"nav_jobs" }}</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'part_list' %}">{{ LANG|tr:"nav_attachment" }}</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'excavator_info' %}">{{ LANG|tr:"nav_youtube" }}</a></li>
@@ -546,7 +545,7 @@
                         <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">{{ LANG|tr:"nav_logout" }}</a>
                     {% else %}
                         <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">{{ LANG|tr:"nav_login" }}</a>
-                        <a href="{% url 'signup' %}" class="btn btn-accent btn-sm">{{ LANG|tr:"nav_signup" }}</a>
+                        <a href="{% url 'join_choice' %}" class="btn btn-accent btn-sm">{{ LANG|tr:"nav_signup" }}</a>
                     {% endif %}
                 </div>
             </div>
@@ -591,14 +590,19 @@
                     <a href="{% url 'index' %}?category=loader" class="gn-service-item">
                         <div class="gn-service-item-icon"><i class="bi bi-box2-heart-fill"></i></div>
                         <div>
-                            <div class="gn-service-item-title">로더</div>
-                            <div class="small text-muted">스키로더</div>
+                            <div class="gn-service-item-title">로더/휠로더</div>
                         </div>
                     </a>
-                    <a href="{% url 'index' %}?category=etc" class="gn-service-item">
-                        <div class="gn-service-item-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                    <a href="{% url 'index' %}?category=crane" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-truck"></i></div>
                         <div>
-                            <div class="gn-service-item-title">기타장비</div>
+                            <div class="gn-service-item-title">크레인</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'index' %}?category=other" class="gn-service-item">
+                        <div class="gn-service-item-icon"><i class="bi bi-gear-wide-connected"></i></div>
+                        <div>
+                            <div class="gn-service-item-title">기타 중장비</div>
                         </div>
                     </a>
                 </div>

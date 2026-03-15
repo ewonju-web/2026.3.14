@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="container py-4">
+  <h4 class="fw-bold mb-3">
+    <i class="bi bi-person-badge me-2"></i>{{ author_user.get_full_name|default:author_user.username }} 님의 전체 매물
+  </h4>
+  {% if listings %}
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+    {% for eq in listings %}
+    <div class="col">
+      <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
+        <div class="card h-100 item-card border rounded overflow-hidden">
+          <div class="position-relative" style="height: 140px; background: #e2e8f0;">
+            {% if eq.images.first %}
+            <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+            {% else %}
+            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+            {% endif %}
+            {% if eq.is_sold %}
+            <span class="position-absolute top-0 start-0 badge bg-secondary m-1">판매완료</span>
+            {% endif %}
+          </div>
+          <div class="card-body p-2">
+            <div class="fw-bold text-truncate small" style="color: var(--gn-text);">{{ eq.model_name|default:"-" }}</div>
+            <div class="fw-bold text-danger">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+            <div class="small text-muted">{{ eq.get_equipment_type_display }} · {{ eq.year_manufactured|default:"-" }}년</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted">등록된 매물이 없습니다.</p>
+  {% endif %}
+  <div class="mt-4">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">뒤로</a>
+  </div>
+</div>
+{% endblock %}

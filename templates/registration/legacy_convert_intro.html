@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5" style="max-width: 560px;">
+    <h2 class="fw-bold mb-2 text-center" style="color: var(--gn-text); font-size: 1.5rem;">기존 회원 전환</h2>
+    <p class="text-muted small text-center mb-4">예전 사이트(direct-nara) 회원이시면 <strong>이름 + 휴대폰</strong>으로 본인 확인 후 새 아이디로 전환할 수 있습니다.</p>
+
+    <!-- 전환 흐름 안내 -->
+    <div class="card border-0 mb-4 rounded-3" style="background: var(--gn-border);">
+        <div class="card-body p-3 small">
+            <div class="fw-bold text-muted mb-2">전환 흐름</div>
+            <ol class="mb-0 ps-3 pe-0" style="line-height: 1.9;">
+                <li><strong>이름 + 휴대폰번호</strong> 입력</li>
+                <li><strong>본인확인</strong> (인증번호 확인)</li>
+                <li><strong>기존 정보 조회</strong></li>
+                <li><strong>새 아이디 / 비밀번호 / 이메일</strong> 설정</li>
+                <li><strong>전환 완료</strong></li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 1단계: 이름 + 휴대폰 입력 -->
+    <div id="legacy-step-input" class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <h3 class="h6 fw-bold mb-3">1. 이름 + 휴대폰번호 입력</h3>
+            <div id="legacy-send-err" class="alert alert-warning py-2 small d-none mb-3"></div>
+            <form id="legacy-input-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_legacy_name" class="form-label small fw-bold">예전 사이트에 등록한 이름</label>
+                    <input type="text" name="name" id="id_legacy_name" class="form-control" placeholder="홍길동" maxlength="50" style="border-radius: 10px;">
+                </div>
+                <div class="mb-3">
+                    <label for="id_legacy_phone" class="form-label small fw-bold">휴대폰 번호</label>
+                    <input type="tel" name="phone" id="id_legacy_phone" class="form-control" placeholder="010-1234-5678" required style="border-radius: 10px;">
+                </div>
+                <button type="submit" id="legacy-send-btn" class="btn w-100 fw-bold py-2 text-dark" style="background: var(--gn-accent); border-radius: 10px;">인증번호 보내기</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2단계: 인증번호 확인 -->
+    <div id="legacy-step-code" class="card border-0 shadow-sm rounded-3 d-none">
+        <div class="card-body p-4">
+            <h3 class="h6 fw-bold mb-3">2. 본인확인 (인증번호 확인)</h3>
+            <p class="text-muted small mb-3">휴대폰으로 받은 6자리 인증번호를 입력해 주세요.</p>
+            <div id="legacy-verify-err" class="alert alert-warning py-2 small d-none mb-3"></div>
+            <form id="legacy-verify-form">
+                {% csrf_token %}
+                <input type="hidden" id="legacy-verify-phone" name="phone">
+                <div class="mb-3">
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" name="code" id="legacy-code" class="form-control form-control-lg text-center" placeholder="6자리 숫자" style="border-radius: 10px; letter-spacing: 0.2em;">
+                </div>
+                <button type="submit" id="legacy-verify-btn" class="btn w-100 fw-bold py-2 text-dark mb-2" style="background: var(--gn-accent); border-radius: 10px;">인증 확인</button>
+                <button type="button" id="legacy-resend-btn" class="btn btn-outline-secondary w-100" style="border-radius: 10px;" disabled>30초 후 재발송</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3단계: 로딩 -->
+    <div id="legacy-step-loading" class="card border-0 shadow-sm rounded-3 text-center py-5 d-none">
+        <div class="card-body">
+            <p class="mb-1 fw-bold" style="color: var(--gn-text);">기존 정보를 조회하고 있어요.</p>
+            <p class="text-muted small mb-0">잠시만 기다려 주세요.</p>
+            <div class="spinner-border spinner-border-sm text-secondary mt-3" role="status"><span class="visually-hidden">조회 중</span></div>
+        </div>
+    </div>
+
+    <!-- 4단계: 기존 회원 조회 결과 (있음) -->
+    <div id="legacy-step-found" class="card border-0 shadow-sm rounded-3 border-success d-none">
+        <div class="card-body p-4">
+            <p class="fw-bold text-success mb-2">3. 기존 정보 조회 완료</p>
+            <p class="small text-muted mb-3">아래 로그인 아이디와 임시 비밀번호로 로그인한 뒤, <strong>4. 새 아이디·이메일·비밀번호</strong>를 설정해 주세요.</p>
+            <div class="bg-light rounded p-3 mb-3 small">
+                <div class="mb-2"><strong>로그인 아이디</strong> <span id="legacy-username-display" class="font-monospace"></span></div>
+                <div><strong>임시 비밀번호</strong> <span id="legacy-temp-password-display" class="font-monospace"></span></div>
+            </div>
+            <div class="d-grid gap-2">
+                <a id="legacy-login-btn" href="{{ login_url }}" class="btn fw-bold py-2 text-dark" style="background: var(--gn-accent); border-radius: 10px;">로그인하고 새 아이디/비밀번호 설정하기</a>
+                <button type="button" id="legacy-another" class="btn btn-outline-secondary" style="border-radius: 10px;">다른 번호로 조회</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4단계: 기존 회원 없음 -->
+    <div id="legacy-step-not-found" class="card border-0 shadow-sm rounded-3 d-none">
+        <div class="card-body p-4 text-center">
+            <p class="fw-bold mb-2">기존 회원 정보를 찾지 못했어요.</p>
+            <p class="small text-muted mb-3">입력한 이름·휴대폰으로 등록된 이관 회원이 없습니다. 신규 회원가입을 이용해 주세요.</p>
+            <a href="{% url 'join_choice' %}" class="btn fw-bold py-2 text-dark mb-2" style="background: var(--gn-accent); border-radius: 10px;">회원가입하기</a>
+            <button type="button" id="legacy-retry" class="btn btn-outline-secondary w-100" style="border-radius: 10px;">다시 조회</button>
+        </div>
+    </div>
+
+    <p class="text-center mt-4 mb-0">
+        <a href="{% url 'join_choice' %}" class="text-muted small">회원가입</a>
+        <span class="text-muted mx-2">|</span>
+        <a href="{% url 'login' %}" class="text-muted small">로그인</a>
+    </p>
+</div>
+<script>
+(function() {
+    var stepInput = document.getElementById('legacy-step-input');
+    var stepCode = document.getElementById('legacy-step-code');
+    var stepLoading = document.getElementById('legacy-step-loading');
+    var stepFound = document.getElementById('legacy-step-found');
+    var stepNotFound = document.getElementById('legacy-step-not-found');
+    var sendErr = document.getElementById('legacy-send-err');
+    var verifyErr = document.getElementById('legacy-verify-err');
+    var loginUrl = '{{ login_url|escapejs }}';
+    var resendBtn = document.getElementById('legacy-resend-btn');
+    var resendAt = 0;
+
+    function show(el) { el.classList.remove('d-none'); }
+    function hide(el) { el.classList.add('d-none'); }
+    function showStep(step) {
+        hide(stepInput); hide(stepCode); hide(stepLoading); hide(stepFound); hide(stepNotFound);
+        sendErr.classList.add('d-none'); verifyErr.classList.add('d-none');
+        if (step === 'input') show(stepInput);
+        else if (step === 'code') show(stepCode);
+        else if (step === 'loading') show(stepLoading);
+        else if (step === 'found') show(stepFound);
+        else if (step === 'not-found') show(stepNotFound);
+    }
+    function showSendErr(msg) { sendErr.textContent = msg; sendErr.classList.remove('d-none'); }
+    function showVerifyErr(msg) { verifyErr.textContent = msg; verifyErr.classList.remove('d-none'); }
+
+    function startResendCooldown() {
+        resendAt = Date.now() + 30000;
+        resendBtn.disabled = true;
+        resendBtn.textContent = '30초 후 재발송';
+        var t = setInterval(function() {
+            var left = Math.ceil((resendAt - Date.now()) / 1000);
+            if (left <= 0) { resendBtn.disabled = false; resendBtn.textContent = '인증번호 다시 받기'; clearInterval(t); return; }
+            resendBtn.textContent = left + '초 후 재발송';
+        }, 1000);
+    }
+
+    document.getElementById('legacy-input-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var name = document.getElementById('id_legacy_name').value.trim();
+        var phone = document.getElementById('id_legacy_phone').value.trim();
+        if (!phone) { showSendErr('휴대폰 번호를 입력해 주세요.'); return; }
+        showSendErr('');
+        var fd = new FormData();
+        fd.append('name', name);
+        fd.append('phone', phone);
+        fd.append('csrfmiddlewaretoken', this.querySelector('[name=csrfmiddlewaretoken]').value);
+        fetch('{% url "legacy_convert_send_code" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    document.getElementById('legacy-verify-phone').value = phone;
+                    document.getElementById('legacy-code').value = '';
+                    showStep('code');
+                    startResendCooldown();
+                } else { showSendErr(data.error || '발송 실패'); }
+            })
+            .catch(function() { showSendErr('요청 실패'); });
+    });
+
+    document.getElementById('legacy-verify-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var phone = document.getElementById('legacy-verify-phone').value.trim();
+        var code = document.getElementById('legacy-code').value.trim();
+        if (!code || code.length !== 6) { showVerifyErr('인증번호 6자리를 입력해 주세요.'); return; }
+        showVerifyErr('');
+        var fd = new FormData();
+        fd.append('phone', phone);
+        fd.append('code', code);
+        fd.append('csrfmiddlewaretoken', this.querySelector('[name=csrfmiddlewaretoken]').value);
+        fetch('{% url "phone_verify_api" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    showStep('loading');
+                    fd = new FormData();
+                    fd.append('csrfmiddlewaretoken', document.querySelector('#legacy-input-form [name=csrfmiddlewaretoken]').value);
+                    fetch('{% url "join_check" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(function(r) { return r.json(); })
+                        .then(function(d) {
+                            setTimeout(function() {
+                                if (d.ok && d.found) {
+                                    document.getElementById('legacy-username-display').textContent = d.legacy_username;
+                                    document.getElementById('legacy-temp-password-display').textContent = d.temp_password;
+                                    document.getElementById('legacy-login-btn').href = loginUrl;
+                                    showStep('found');
+                                } else { showStep('not-found'); }
+                            }, 500);
+                        })
+                        .catch(function() { showStep('not-found'); });
+                } else { showVerifyErr(data.error || '인증 실패'); }
+            })
+            .catch(function() { showVerifyErr('요청 실패'); });
+    });
+
+    resendBtn.addEventListener('click', function() {
+        if (this.disabled) return;
+        var name = document.getElementById('id_legacy_name').value.trim();
+        var phone = document.getElementById('legacy-verify-phone').value.trim();
+        if (!phone) return;
+        var fd = new FormData();
+        fd.append('name', name);
+        fd.append('phone', phone);
+        fd.append('csrfmiddlewaretoken', document.querySelector('#legacy-input-form [name=csrfmiddlewaretoken]').value);
+        fetch('{% url "legacy_convert_send_code" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) { startResendCooldown(); }
+                else { showVerifyErr(data.error || '재발송 실패'); }
+            });
+    });
+
+    document.getElementById('legacy-another').onclick = function() {
+        showStep('input');
+        document.getElementById('id_legacy_name').value = '';
+        document.getElementById('id_legacy_phone').value = '';
+    };
+    document.getElementById('legacy-retry').onclick = function() {
+        showStep('input');
+        document.getElementById('id_legacy_name').value = '';
+        document.getElementById('id_legacy_phone').value = '';
+    };
+})();
+</script>
+{% endblock %}

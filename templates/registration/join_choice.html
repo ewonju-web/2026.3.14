@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5" style="max-width: 420px;">
+    <p class="text-center mb-1" style="font-size: 1.1rem; color: var(--gn-text);">휴대폰 번호를 입력해주세요</p>
+    <p class="text-center text-muted small mb-4">기존 회원인지 바로 확인해드릴게요.</p>
+
+    <!-- 1) 휴대폰 입력 + 인증번호 보내기 -->
+    <div id="join-step-phone" class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form id="join-phone-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <input type="tel" name="phone" id="join-phone" class="form-control form-control-lg" placeholder="010-1234-5678" required style="border-radius: 10px; text-align: center;">
+                </div>
+                <div id="join-send-err" class="alert alert-warning py-2 small d-none mb-2"></div>
+                <button type="submit" id="join-send-btn" class="btn w-100 fw-bold py-2 text-dark" style="background: var(--gn-accent); border-radius: 10px;">인증번호 보내기</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2) 인증번호 입력 + 인증 확인 -->
+    <div id="join-step-code" class="card border-0 shadow-sm rounded-3 d-none">
+        <div class="card-body p-4">
+            <p class="text-center text-muted small mb-3">인증번호를 입력해주세요</p>
+            <form id="join-verify-form">
+                {% csrf_token %}
+                <input type="hidden" id="join-verify-phone" name="phone">
+                <div class="mb-3">
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" name="code" id="join-code" class="form-control form-control-lg text-center" placeholder="6자리 숫자" style="border-radius: 10px; letter-spacing: 0.2em;">
+                </div>
+                <div id="join-verify-err" class="alert alert-warning py-2 small d-none mb-2"></div>
+                <button type="submit" id="join-verify-btn" class="btn w-100 fw-bold py-2 text-dark mb-2" style="background: var(--gn-accent); border-radius: 10px;">인증 확인</button>
+                <button type="button" id="join-resend-btn" class="btn btn-outline-secondary w-100" style="border-radius: 10px;" disabled>30초 후 재발송</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3) 확인 중 -->
+    <div id="join-step-loading" class="card border-0 shadow-sm rounded-3 text-center py-5 d-none">
+        <div class="card-body">
+            <p class="mb-1 fw-bold" style="color: var(--gn-text);">회원 정보를 확인하고 있어요.</p>
+            <p class="text-muted small mb-0">잠시만 기다려주세요.</p>
+            <div class="spinner-border spinner-border-sm text-secondary mt-3" role="status"><span class="visually-hidden">확인 중</span></div>
+        </div>
+    </div>
+
+    <!-- 4) 기존 회원 결과 -->
+    <div id="join-step-existing" class="card border-0 shadow-sm rounded-3 d-none">
+        <div class="card-body p-4">
+            <p class="fw-bold mb-1" style="color: var(--gn-text); font-size: 1.05rem;">아, 기존 회원이시네요.</p>
+            <p class="text-muted small mb-2">예전 회원 정보가 확인됐습니다.</p>
+            <p class="text-muted small mb-3">새 사이트에서 사용하실 아이디와 비밀번호만 설정하면 됩니다.</p>
+            <div id="join-existing-credentials" class="bg-light rounded p-3 mb-3 small">
+                <div class="mb-1">로그인 아이디 <span id="join-legacy-username" class="font-monospace fw-bold"></span></div>
+                <div>임시 비밀번호 <span id="join-temp-password" class="font-monospace fw-bold"></span></div>
+            </div>
+            <a id="join-existing-btn" href="#" class="btn w-100 fw-bold py-2 text-dark mb-2" style="background: var(--gn-accent); border-radius: 10px;">기존 회원 계속하기</a>
+            <button type="button" id="join-another-phone" class="btn btn-outline-secondary w-100" style="border-radius: 10px;">다른 번호로 확인</button>
+        </div>
+    </div>
+
+    <!-- 5) 신규 회원 결과 -->
+    <div id="join-step-new" class="card border-0 shadow-sm rounded-3 d-none">
+        <div class="card-body p-4">
+            <p class="fw-bold mb-1" style="color: var(--gn-text); font-size: 1.05rem;">처음 방문하셨네요.</p>
+            <p class="text-muted small mb-4">간편하게 가입하고 바로 이용하실 수 있습니다.</p>
+            <div class="d-grid gap-2">
+                <a href="{% url 'signup' %}" class="btn btn-outline-secondary btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="border-radius: 10px;">
+                    <i class="bi bi-person-badge"></i> 신규 회원가입
+                </a>
+                <a href="{{ kakao_signup_url }}" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #FEE500; color: #191919; border-radius: 10px; border: none;">
+                    <i class="bi bi-chat-dots-fill"></i> 카카오로 시작하기
+                </a>
+                <a href="{{ naver_signup_url }}" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #03C75A; color: #fff; border-radius: 10px; border: none;">
+                    <span style="font-size: 1.1rem; font-weight: 800;">N</span> 네이버로 시작하기
+                </a>
+            </div>
+            <button type="button" id="join-new-back" class="btn btn-link w-100 mt-3 text-muted small">다른 번호로 확인</button>
+        </div>
+    </div>
+
+    <p class="text-center mt-4 mb-0">
+        <a href="{% url 'login' %}" class="text-muted small">이미 계정이 있으신가요? 로그인</a>
+    </p>
+</div>
+<script>
+(function() {
+    var stepPhone = document.getElementById('join-step-phone');
+    var stepCode = document.getElementById('join-step-code');
+    var stepLoading = document.getElementById('join-step-loading');
+    var stepExisting = document.getElementById('join-step-existing');
+    var stepNew = document.getElementById('join-step-new');
+    var sendErr = document.getElementById('join-send-err');
+    var verifyErr = document.getElementById('join-verify-err');
+    var loginUrl = '{% url "login" %}?next=' + encodeURIComponent('/account/convert/');
+    var resendBtn = document.getElementById('join-resend-btn');
+    var resendAt = 0;
+
+    function show(el) { el.classList.remove('d-none'); }
+    function hide(el) { el.classList.add('d-none'); }
+    function showStep(step) {
+        hide(stepPhone); hide(stepCode); hide(stepLoading); hide(stepExisting); hide(stepNew);
+        sendErr.classList.add('d-none'); verifyErr.classList.add('d-none');
+        if (step === 'phone') show(stepPhone);
+        else if (step === 'code') show(stepCode);
+        else if (step === 'loading') show(stepLoading);
+        else if (step === 'existing') show(stepExisting);
+        else if (step === 'new') show(stepNew);
+    }
+    function showSendErr(msg) { sendErr.textContent = msg; sendErr.classList.remove('d-none'); }
+    function showVerifyErr(msg) { verifyErr.textContent = msg; verifyErr.classList.remove('d-none'); }
+
+    function startResendCooldown() {
+        resendAt = Date.now() + 30000;
+        resendBtn.disabled = true;
+        resendBtn.textContent = '30초 후 재발송';
+        var t = setInterval(function() {
+            var left = Math.ceil((resendAt - Date.now()) / 1000);
+            if (left <= 0) { resendBtn.disabled = false; resendBtn.textContent = '인증번호 다시 받기'; clearInterval(t); return; }
+            resendBtn.textContent = left + '초 후 재발송';
+        }, 1000);
+    }
+
+    document.getElementById('join-phone-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var phone = document.getElementById('join-phone').value.trim();
+        if (!phone) return;
+        showSendErr('');
+        var fd = new FormData();
+        fd.append('phone', phone);
+        fd.append('csrfmiddlewaretoken', this.querySelector('[name=csrfmiddlewaretoken]').value);
+        fetch('{% url "phone_send" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    document.getElementById('join-verify-phone').value = phone;
+                    document.getElementById('join-code').value = '';
+                    showStep('code');
+                    startResendCooldown();
+                } else { showSendErr(data.error || '발송 실패'); }
+            })
+            .catch(function() { showSendErr('요청 실패'); });
+    });
+
+    document.getElementById('join-verify-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var phone = document.getElementById('join-verify-phone').value.trim();
+        var code = document.getElementById('join-code').value.trim();
+        if (!code || code.length !== 6) { showVerifyErr('인증번호 6자리를 입력해 주세요.'); return; }
+        showVerifyErr('');
+        var fd = new FormData();
+        fd.append('phone', phone);
+        fd.append('code', code);
+        fd.append('csrfmiddlewaretoken', this.querySelector('[name=csrfmiddlewaretoken]').value);
+        fetch('{% url "phone_verify_api" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    showStep('loading');
+                    fd = new FormData();
+                    fd.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                    fetch('{% url "join_check" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(function(r) { return r.json(); })
+                        .then(function(d) {
+                            setTimeout(function() {
+                                if (d.ok && d.found) {
+                                    document.getElementById('join-legacy-username').textContent = d.legacy_username;
+                                    document.getElementById('join-temp-password').textContent = d.temp_password;
+                                    document.getElementById('join-existing-btn').href = loginUrl;
+                                    showStep('existing');
+                                } else { showStep('new'); }
+                            }, 600);
+                        })
+                        .catch(function() { showStep('phone'); });
+                } else { showVerifyErr(data.error || '인증 실패'); }
+            })
+            .catch(function() { showVerifyErr('요청 실패'); });
+    });
+
+    resendBtn.addEventListener('click', function() {
+        if (this.disabled) return;
+        var phone = document.getElementById('join-verify-phone').value.trim();
+        if (!phone) return;
+        var fd = new FormData();
+        fd.append('phone', phone);
+        fd.append('csrfmiddlewaretoken', document.querySelector('#join-phone-form [name=csrfmiddlewaretoken]').value);
+        fetch('{% url "phone_send" %}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) { startResendCooldown(); }
+                else { showVerifyErr(data.error || '재발송 실패'); }
+            });
+    });
+
+    document.getElementById('join-another-phone').onclick = function() { showStep('phone'); document.getElementById('join-phone').value = ''; };
+    document.getElementById('join-new-back').onclick = function() { showStep('phone'); document.getElementById('join-phone').value = ''; };
+})();
+</script>
+{% endblock %}

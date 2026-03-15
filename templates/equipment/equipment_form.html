@@ -2,8 +2,11 @@
 {% block content %}
 <div class="container py-4" style="max-width: 720px;">
     <h2 class="section-title mb-4">{% if mode == "edit" %}매물 수정{% else %}매물 등록{% endif %}</h2>
+    {% if mode == "create" and not is_premium %}
+    <p class="small text-muted mb-3">무료 회원은 <strong>한 달에</strong> 매물 <strong>{{ free_listing_limit }}건</strong>까지 등록 가능합니다. (이번 달 <strong>{{ free_listing_count }}건</strong> 등록함 — 삭제해도 당월 건수에 포함, 다음 달에 초기화)</p>
+    {% endif %}
 
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card border-0 shadow-sm rounded-3 overflow-visible">
         <div class="card-body p-4">
             <form id="equipment-form" method="post" enctype="multipart/form-data" data-mode="{{ mode }}" data-edit-existing-images="{% if mode == 'edit' and equipment %}{{ equipment.images.count }}{% else %}0{% endif %}">
                 {% csrf_token %}
@@ -14,16 +17,17 @@
                 {{ form.sub_type }}{{ form.weight_class }}{{ form.mast_type }}{{ form.region_sido }}{{ form.region_sigungu }}
 
                 <div class="row g-3">
-                    <div class="col-12">
+                    <div class="col-12 min-width-0">
                         <label class="form-label fw-bold">기종 선택 <span class="text-danger">(필수)</span></label>
                         <div id="equipment-type-select" class="d-none" aria-hidden="true">{{ form.equipment_type }}</div>
-                        <div class="gn-equipment-type-btns d-flex flex-wrap gap-2 mt-1" role="group" aria-label="기종 선택">
+                        <div class="gn-equipment-type-btns mt-1" style="display:flex;flex-wrap:nowrap;overflow-x:auto;width:100%;min-width:0;-webkit-overflow-scrolling:touch;" role="group" aria-label="기종 선택">
                             <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="excavator"><i class="bi bi-truck-front-fill"></i><span>굴삭기</span></button>
                             <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="forklift"><i class="bi bi-box-seam-fill"></i><span>지게차</span></button>
-                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="dump"><i class="bi bi-truck-flatbed"></i><span>덤프</span></button>
-                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="loader"><i class="bi bi-box2-heart-fill"></i><span>로더</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="dump"><i class="bi bi-truck-flatbed"></i><span>덤프트럭</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="loader"><i class="bi bi-box2-heart-fill"></i><span>로더/휠로더</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="crane"><i class="bi bi-truck"></i><span>크레인</span></button>
                             <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="attachment"><i class="bi bi-wrench-adjustable"></i><span>어태치먼트</span></button>
-                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="etc"><i class="bi bi-grid-3x3-gap-fill"></i><span>기타</span></button>
+                            <button type="button" class="gn-cat-pill gn-equipment-type-btn" data-value="other"><i class="bi bi-gear-wide-connected"></i><span>기타 중장비</span></button>
                         </div>
                         {% if form.equipment_type.errors %}<p class="text-danger small mt-1 mb-0">{{ form.equipment_type.errors.0 }}</p>{% endif %}
                     </div>
@@ -70,85 +74,128 @@
                             <option value="기타">기타</option>
                         </select>
                     </div>
-                    <div class="col-md-4 d-none" id="exc-sub-type-wrapper">
-                        <label class="form-label fw-bold">종류</label>
-                        <select id="exc-sub-type-select" class="form-select">
-                            <option value="">선택</option>
-                            <option value="EXC_TIRE">타이어식</option>
-                            <option value="EXC_CRAWLER">크롤러식(체인)</option>
-                            <option value="EXC_ATTACHMENT">어테치먼트</option>
+                    <div class="col-md-6 d-none" id="dump-maker-wrapper">
+                        <label class="form-label fw-bold">제조사 (덤프트럭)</label>
+                        <select id="dump-maker-select" class="form-select">
+                            <option value="">제조사 선택</option>
+                            <option value="현대">현대</option>
+                            <option value="타타대우">타타대우</option>
+                            <option value="볼보">볼보</option>
+                            <option value="스카니아">스카니아</option>
+                            <option value="만(man)">만(man)</option>
+                            <option value="벤츠트럭">벤츠트럭</option>
+                            <option value="기타">기타</option>
                         </select>
                     </div>
-                    <div class="col-md-4 d-none" id="exc-weight-class-wrapper">
-                        <label class="form-label fw-bold">장비중량</label>
-                        <select id="exc-weight-class-select" class="form-select">
-                            <option value="">선택</option>
-                            <!-- 타이어식: 03W/06W/08W -->
-                            <option value="EXC_TIRE_LE_6" data-group="tire">03W 5~6 ton</option>
-                            <option value="EXC_TIRE_LE_17" data-group="tire">06W 12~16 ton</option>
-                            <option value="EXC_TIRE_LE_21" data-group="tire">08W 20~22 ton</option>
-                            <!-- 크롤러식 -->
-                            <option value="EXC_CR_LT_1" data-group="crawler">1 ton 미만</option>
-                            <option value="EXC_CR_LE_2" data-group="crawler">2 ton 미만</option>
-                            <option value="EXC_CR_LE_3_5" data-group="crawler">3.5 ton 미만</option>
-                            <option value="EXC_CR_LE_6_5" data-group="crawler">5~6 ton 02급</option>
-                            <option value="EXC_CR_LE_16" data-group="crawler">12~16 ton 06급</option>
-                            <option value="EXC_CR_EQ_20" data-group="crawler">20~22 ton 08급</option>
-                            <option value="EXC_CR_GE_30" data-group="crawler">30~40 ton 10급</option>
-                            <!-- 어테치먼트 -->
-                            <option value="EXC_ATT_LT_1" data-group="attachment">1톤 미만 (어테치)</option>
-                            <option value="EXC_ATT_LE_2" data-group="attachment">2톤 이하 (어테치)</option>
-                            <option value="EXC_ATT_LE_3_5" data-group="attachment">3.5톤 이하 (어테치)</option>
-                            <option value="EXC_ATT_LE_6_5" data-group="attachment">6.5톤 이하 (어테치)</option>
-                            <option value="EXC_ATT_LE_16" data-group="attachment">16톤 이하 (어테치)</option>
-                            <option value="EXC_ATT_EQ_20" data-group="attachment">20톤 (어테치)</option>
-                        </select>
+                    <div id="detail-fields" class="row g-3 col-12 mt-0">
+                        <div class="col-md-4 d-none" id="exc-sub-type-wrapper">
+                            <label class="form-label fw-bold">종류</label>
+                            <select id="exc-sub-type-select" class="form-select">
+                                <option value="">선택</option>
+                                <option value="EXC_TIRE">타이어식</option>
+                                <option value="EXC_CRAWLER">크롤러식(체인)</option>
+                                <option value="EXC_ATTACHMENT">어테치먼트</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-none" id="exc-weight-class-wrapper">
+                            <label class="form-label fw-bold">장비중량</label>
+                            <select id="exc-weight-class-select" class="form-select">
+                                <option value="">선택</option>
+                                <!-- 타이어식: 03W/06W/08W -->
+                                <option value="EXC_TIRE_LE_6" data-group="tire">03W 5~6 ton</option>
+                                <option value="EXC_TIRE_LE_17" data-group="tire">06W 12~16 ton</option>
+                                <option value="EXC_TIRE_LE_21" data-group="tire">08W 20~22 ton</option>
+                                <!-- 크롤러식 -->
+                                <option value="EXC_CR_LT_1" data-group="crawler">1 ton 미만</option>
+                                <option value="EXC_CR_LE_2" data-group="crawler">2 ton 미만</option>
+                                <option value="EXC_CR_LE_3_5" data-group="crawler">3.5 ton 미만</option>
+                                <option value="EXC_CR_LE_6_5" data-group="crawler">5~6 ton 02급</option>
+                                <option value="EXC_CR_LE_16" data-group="crawler">12~16 ton 06급</option>
+                                <option value="EXC_CR_EQ_20" data-group="crawler">20~22 ton 08급</option>
+                                <option value="EXC_CR_GE_30" data-group="crawler">30~40 ton 10급</option>
+                                <!-- 어테치먼트 -->
+                                <option value="EXC_ATT_LT_1" data-group="attachment">1톤 미만 (어테치)</option>
+                                <option value="EXC_ATT_LE_2" data-group="attachment">2톤 이하 (어테치)</option>
+                                <option value="EXC_ATT_LE_3_5" data-group="attachment">3.5톤 이하 (어테치)</option>
+                                <option value="EXC_ATT_LE_6_5" data-group="attachment">6.5톤 이하 (어테치)</option>
+                                <option value="EXC_ATT_LE_16" data-group="attachment">16톤 이하 (어테치)</option>
+                                <option value="EXC_ATT_EQ_20" data-group="attachment">20톤 (어테치)</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4" id="exc-month-wrapper">
+                            <label class="form-label">제작월</label>
+                            {{ form.month_manufactured }}
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">가동시간(hr)</label>
+                            {{ form.operating_hours }}
+                        </div>
                     </div>
-                    <div class="col-md-4 d-none" id="fk-sub-type-wrapper">
-                        <label class="form-label fw-bold">형식 (지게차)</label>
-                        <select id="fk-sub-type-select" class="form-select">
-                            <option value="">선택</option>
-                            <option value="FORK_DIESEL">디젤식</option>
-                            <option value="FORK_ELEC_SIT">전동좌식</option>
-                            <option value="FORK_ELEC_STAND">전동입식</option>
-                            <option value="FORK_LPG">LPG지게차</option>
-                        </select>
+                    <div id="forklift-fields" class="row g-3 col-12 d-none">
+                        <div class="col-md-4 d-none" id="fk-sub-type-wrapper">
+                            <label class="form-label fw-bold">형식 (지게차)</label>
+                            <select id="fk-sub-type-select" class="form-select">
+                                <option value="">선택</option>
+                                <option value="FORK_DIESEL">디젤식</option>
+                                <option value="FORK_ELEC_SIT">전동좌식</option>
+                                <option value="FORK_ELEC_STAND">전동입식</option>
+                                <option value="FORK_LPG">LPG지게차</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-none" id="fk-weight-class-wrapper">
+                            <label class="form-label fw-bold">장비중량 (지게차)</label>
+                            <select id="fk-weight-class-select" class="form-select">
+                                <option value="">선택</option>
+                                <option value="FORK_LE_1">1 ton 이하</option>
+                                <option value="FORK_LE_2">2 ton 이하</option>
+                                <option value="FORK_LE_3">3톤 이하</option>
+                                <option value="FORK_LE_4">4 ton 이하</option>
+                                <option value="FORK_LE_5">5 ton 이하</option>
+                                <option value="FORK_LE_7">7톤 이하</option>
+                                <option value="FORK_LE_10">10톤 이하</option>
+                                <option value="FORK_LE_16">16 ton 이하</option>
+                                <option value="FORK_LE_25">25 ton 이하</option>
+                                <option value="FORK_ETC">기타</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-none" id="fk-mast-type-wrapper">
+                            <label class="form-label fw-bold">종류 (마스트)</label>
+                            <select id="fk-mast-type-select" class="form-select">
+                                <option value="">선택</option>
+                                <option value="2단">2단</option>
+                                <option value="3단">3단</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">가동시간(hr)</label>
+                            <input type="number" name="operating_hours" id="id_operating_hours_forklift" class="form-control" min="0" placeholder="가동시간 (선택)" value="{{ form.operating_hours.value|default:'' }}">
+                        </div>
                     </div>
-                    <div class="col-md-4 d-none" id="fk-weight-class-wrapper">
-                        <label class="form-label fw-bold">장비중량 (지게차)</label>
-                        <select id="fk-weight-class-select" class="form-select">
-                            <option value="">선택</option>
-                            <option value="FORK_LE_1">1 ton 이하</option>
-                            <option value="FORK_LE_2">2 ton 이하</option>
-                            <option value="FORK_LE_3">3톤 이하</option>
-                            <option value="FORK_LE_4">4 ton 이하</option>
-                            <option value="FORK_LE_5">5 ton 이하</option>
-                            <option value="FORK_LE_7">7톤 이하</option>
-                            <option value="FORK_LE_10">10톤 이하</option>
-                            <option value="FORK_LE_16">16 ton 이하</option>
-                            <option value="FORK_LE_25">25 ton 이하</option>
-                            <option value="FORK_ETC">기타</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-none" id="fk-mast-type-wrapper">
-                        <label class="form-label fw-bold">종류 (마스트)</label>
-                        <select id="fk-mast-type-select" class="form-select">
-                            <option value="">선택</option>
-                            <option value="2단">2단</option>
-                            <option value="3단">3단</option>
-                        </select>
+                    <!-- 덤프/로더/크레인/어태치먼트/기타: 톤수 (제조사·모델명·년월·지역·가격은 공통) -->
+                    <div id="simple-type-fields" class="row g-3 col-12 d-none">
+                        <div class="col-md-4" id="dump-weight-wrapper">
+                            <label class="form-label fw-bold">톤수 (덤프트럭) <span class="text-muted small">(선택)</span></label>
+                            <select name="weight_class" id="id_weight_class_dump" class="form-select">
+                                <option value="">선택</option>
+                                <option value="DUMP_LE_3_5">3.5톤 이하</option>
+                                <option value="DUMP_LE_5">5톤 이하</option>
+                                <option value="DUMP_LE_8">8톤 이하</option>
+                                <option value="DUMP_LE_15">15톤 이하</option>
+                                <option value="DUMP_GE_24">24톤 이상</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-none" id="other-weight-wrapper">
+                            <label class="form-label fw-bold">톤수/중량 <span class="text-muted small">(선택)</span></label>
+                            <input type="text" name="weight_class" id="id_weight_class_simple" class="form-control" placeholder="예) 5톤, 25CBM" maxlength="30" value="{{ form.initial.weight_class|default:form.weight_class.value|default:'' }}">
+                        </div>
+                        <div class="col-6 col-md-4" id="simple-month-wrapper">
+                            <label class="form-label">제작월</label>
+                            <input type="number" name="month_manufactured" id="id_month_manufactured_simple" class="form-control" min="1" max="12" placeholder="1~12" value="{{ form.month_manufactured.value|default:1 }}">
+                        </div>
                     </div>
                     <div class="col-6 col-md-4">
                         <label class="form-label">제작년도</label>
                         {{ form.year_manufactured }}
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label class="form-label">제작월</label>
-                        {{ form.month_manufactured }}
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label class="form-label">가동시간(hr)</label>
-                        {{ form.operating_hours }}
                     </div>
                     <div class="col-6 col-md-4">
                         <label class="form-label fw-bold">가격(만원) <span class="text-danger">(필수)</span></label>
@@ -179,6 +226,11 @@
                                 </select>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">주소 <span class="text-muted small">(선택)</span></label>
+                        {{ form.current_location }}
+                        <p class="form-text small text-muted mb-0 mt-1">매물 위치 주소를 입력하세요. 예) 서울 강남구 역삼동 123-45, 경기 화성시 동탄2동</p>
                     </div>
                     <div class="col-12">
                         <label class="form-label">상세 설명 <span class="text-muted small">(최대 50자)</span></label>
@@ -244,25 +296,32 @@
     color: #4b5563 !important;
   }
 
-  /* 기종 버튼: 정렬·간격·폭 통일 */
+  /* 기종 버튼: 한 줄 배치, 좁은 화면에서는 가로 스크롤 */
+  .min-width-0 { min-width: 0; }
   .gn-equipment-type-btns {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .gn-equipment-type-btns .gn-equipment-type-btn {
     margin-right: 0;
     cursor: pointer;
-    flex: 1 1 calc(50% - 0.25rem);
-    min-width: calc(50% - 0.25rem);
-    max-width: none;
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    min-width: 0;
+    white-space: nowrap;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
     transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease;
   }
-  @media (min-width: 576px) {
-    .gn-equipment-type-btns .gn-equipment-type-btn {
-      flex: 0 1 auto;
-      min-width: 0;
-    }
+  .gn-equipment-type-btns .gn-equipment-type-btn i {
+    font-size: 0.95rem;
   }
   /* PC hover: 살짝 떠오르며 색·그림자 변화 */
   .gn-equipment-type-btns .gn-equipment-type-btn:hover {
@@ -311,6 +370,7 @@
   const makerSelect = document.getElementById('exc-maker-select');
   const forkliftMakerWrapper = document.getElementById('forklift-maker-wrapper');
   const fkMakerSelect = document.getElementById('fk-maker-select');
+  const dumpMakerSelect = document.getElementById('dump-maker-select');
   const excSubTypeWrapper = document.getElementById('exc-sub-type-wrapper');
   const excWeightWrapper = document.getElementById('exc-weight-class-wrapper');
   const excSubTypeSelect = document.getElementById('exc-sub-type-select');
@@ -366,12 +426,17 @@
       });
     }
     function updateTypeUI() {
-      var isExcavator = (equipmentTypeSelect.value === 'excavator');
-      var isForklift = (equipmentTypeSelect.value === 'forklift');
+      var val = (equipmentTypeSelect.value || '').trim();
+      var isExcavator = (val === 'excavator');
+      var isForklift = (val === 'forklift');
+      var isOtherType = ['crane', 'loader', 'dump', 'attachment', 'other'].indexOf(val) !== -1;
 
-      if (makerTextWrapper) makerTextWrapper.classList.toggle('d-none', isExcavator || isForklift);
+      var isDump = (val === 'dump');
+      if (makerTextWrapper) makerTextWrapper.classList.toggle('d-none', isExcavator || isForklift || isDump);
       if (excavatorMakerWrapper) excavatorMakerWrapper.classList.toggle('d-none', !isExcavator);
       if (forkliftMakerWrapper) forkliftMakerWrapper.classList.toggle('d-none', !isForklift);
+      var dumpMakerWrapper = document.getElementById('dump-maker-wrapper');
+      if (dumpMakerWrapper) dumpMakerWrapper.classList.toggle('d-none', !isDump);
 
       if (excSubTypeWrapper) excSubTypeWrapper.classList.toggle('d-none', !isExcavator);
       if (excWeightWrapper) excWeightWrapper.classList.toggle('d-none', !isExcavator);
@@ -379,6 +444,40 @@
       if (fkSubTypeWrapper) fkSubTypeWrapper.classList.toggle('d-none', !isForklift);
       if (fkWeightWrapper) fkWeightWrapper.classList.toggle('d-none', !isForklift);
       if (fkMastWrapper) fkMastWrapper.classList.toggle('d-none', !isForklift);
+
+      // detail-fields(굴삭기) / forklift-fields(지게차) 표시
+      var detailFields = document.getElementById('detail-fields');
+      var forkliftFields = document.getElementById('forklift-fields');
+      var simpleTypeFields = document.getElementById('simple-type-fields');
+      var opHoursExc = document.getElementById('id_operating_hours');
+      var opHoursFk = document.getElementById('id_operating_hours_forklift');
+      if (detailFields) detailFields.classList.toggle('d-none', !isExcavator);
+      if (forkliftFields) forkliftFields.classList.toggle('d-none', !isForklift);
+      if (simpleTypeFields) simpleTypeFields.classList.toggle('d-none', !isOtherType);
+      var monthExc = document.getElementById('id_month_manufactured');
+      var monthSimple = document.getElementById('id_month_manufactured_simple');
+      if (monthExc) monthExc.disabled = isOtherType;
+      if (monthSimple) monthSimple.disabled = !isOtherType;
+      var weightExc = document.getElementById('id_weight_class');
+      var weightSimple = document.getElementById('id_weight_class_simple');
+      var weightDump = document.getElementById('id_weight_class_dump');
+      var dumpWeightWrapper = document.getElementById('dump-weight-wrapper');
+      var otherWeightWrapper = document.getElementById('other-weight-wrapper');
+      if (weightExc) weightExc.disabled = isOtherType;
+      if (dumpWeightWrapper) dumpWeightWrapper.classList.toggle('d-none', !isDump);
+      if (otherWeightWrapper) otherWeightWrapper.classList.toggle('d-none', isDump);
+      if (weightSimple) weightSimple.disabled = isDump;
+      if (weightDump) {
+        weightDump.disabled = !isDump;
+        if (isDump && weightExc && weightExc.value) weightDump.value = weightExc.value;
+      }
+      // 굴삭기: exc 제출, 지게차: forklift 복사본 제출, 그 외: exc 제출(숨겨진 div 안)
+      if (opHoursExc) opHoursExc.disabled = isForklift;
+      if (opHoursFk) {
+        opHoursFk.disabled = !isForklift;
+        if (isForklift && opHoursExc && opHoursExc.value) opHoursFk.value = opHoursExc.value;
+        if (isExcavator && opHoursFk && opHoursFk.value) opHoursExc.value = opHoursFk.value;
+      }
 
       // 모델명 placeholder: 굴삭기 vs 지게차
       if (manufacturerInput && manufacturerInput.form && manufacturerInput.form.elements['model_name']) {
@@ -400,6 +499,10 @@
         updateTypeButtons(val);
         updateTypeUI();
       });
+    });
+    equipmentTypeSelect.addEventListener('change', function() {
+      updateTypeButtons(equipmentTypeSelect.value);
+      updateTypeUI();
     });
   }
 
@@ -426,6 +529,19 @@
       });
     }
     fkMakerSelect.addEventListener('change', function() {
+      manufacturerInput.value = this.value || '';
+    });
+  }
+
+  // ----- 덤프트럭: 제조사 -----
+  if (dumpMakerSelect && manufacturerInput) {
+    var initialDumpMaker = (manufacturerInput.value || '').trim();
+    if (initialDumpMaker) {
+      Array.from(dumpMakerSelect.options).forEach(function(opt) {
+        if (opt.value === initialDumpMaker) opt.selected = true;
+      });
+    }
+    dumpMakerSelect.addEventListener('change', function() {
       manufacturerInput.value = this.value || '';
     });
   }

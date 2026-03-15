@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, Group
 class Profile(models.Model):
     """
     사용자 프로필. 딜러 표시(매매상 배지)는 user_type == DEALER.
-    PRO 혜택/노출 가중치는 billing.DealerMembership.is_active 로 구분.
+    유료 회원: is_premium=True 이고 premium_until 이 없거나 오늘 이후면 PRO 혜택(무제한 매물·이 회원 매물 전체 보기·노출).
     """
     USER_TYPE_CHOICES = (
         ('PERSONAL', '개인'),
@@ -19,6 +19,14 @@ class Profile(models.Model):
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="연락처")
     is_approved = models.BooleanField(default=False, verbose_name="승인여부")
     youtube_url = models.URLField(blank=True, null=True, verbose_name='유튜브 채널 주소')
+    # 유료 회원: 무제한 매물 등록, 첫화면/우측 배너 노출, "이 회원 매물 전체 보기" 이용 가능
+    is_premium = models.BooleanField(default=False, verbose_name="유료 회원 여부")
+    premium_until = models.DateField(null=True, blank=True, verbose_name="유료 만료일")
+    # direct-nara 이관: 기존 회원 PK. 재이관·중복 방지·정식 전환 대상 식별용
+    legacy_member_id = models.IntegerField(null=True, blank=True, db_index=True, verbose_name="(이관) 기존 회원 PK")
+    # 휴대폰 본인인증: 매물 등록·유료 결제 전 필수 (소셜 로그인과 분리)
+    phone_verified = models.BooleanField(default=False, verbose_name="휴대폰 본인인증 여부")
+    phone_verified_at = models.DateTimeField(null=True, blank=True, verbose_name="휴대폰 인증 시각")
 
     class Meta:
         verbose_name = "사용자 프로필"
@@ -26,6 +34,16 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ({self.get_user_type_display()})"
+
+    @property
+    def is_premium_active(self):
+        """유료 기간이 유효한지 (오늘 기준)."""
+        if not self.is_premium:
+            return False
+        if not self.premium_until:
+            return True
+        from django.utils import timezone
+        return self.premium_until >= timezone.now().date()
 
 
 class ListingStatus(models.TextChoices):
@@ -37,10 +55,11 @@ class EquipmentType(models.TextChoices):
     """기종 선택 (매물 등록 시 필수)"""
     EXCAVATOR = 'excavator', '굴삭기'
     FORKLIFT = 'forklift', '지게차'
-    DUMP = 'dump', '덤프'
-    LOADER = 'loader', '로더'
+    DUMP = 'dump', '덤프트럭'
+    LOADER = 'loader', '로더/휠로더'
+    CRANE = 'crane', '크레인'
     ATTACHMENT = 'attachment', '어태치먼트'
-    ETC = 'etc', '기타(부품)'
+    OTHER = 'other', '기타 중장비'
 
 
 class EquipmentQuerySet(models.QuerySet):
@@ -127,6 +146,10 @@ class Equipment(models.Model):
         db_index=True,
         verbose_name="노출 상태",
     )
+    # 끌어올리기: 유료회원만 주 1회. 정렬 시 이 값이 있으면 이 시간 기준으로 상단 노출
+    last_bumped_at = models.DateTimeField(null=True, blank=True, verbose_name="마지막 끌어올리기 시각")
+    # direct-nara 이관: 기존 매물 PK. 재이관·중복 방지용
+    legacy_listing_id = models.IntegerField(null=True, blank=True, db_index=True, verbose_name="(이관) 기존 매물 PK")
 
     objects = EquipmentQuerySet.as_manager()
 
@@ -145,6 +168,24 @@ class EquipmentImage(models.Model):
     class Meta:
         verbose_name = "장비 사진"
         verbose_name_plural = "3. 장비 사진 관리"
+
+
+class DeletedListingLog(models.Model):
+    """무료회원 재등록 제한: 삭제한 매물의 모델명·사진 해시를 저장해 동일 매물 재업로드 감지."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='deleted_listing_logs',
+        verbose_name="사용자",
+    )
+    model_name = models.CharField(max_length=100, blank=True, default="", verbose_name="모델명")
+    image_hash = models.CharField(max_length=64, blank=True, default="", db_index=True, verbose_name="대표 사진 해시")
+    deleted_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="삭제 시각")
+
+    class Meta:
+        verbose_name = "삭제 매물 로그(재등록 제한)"
+        verbose_name_plural = "삭제 매물 로그(재등록 제한)"
+        ordering = ['-deleted_at']
 
 
 # --- 방문 통계 ---

@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn daemon for gulsakgi-nara (Django)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/gulsakgi-nara
+Environment="PATH=/var/www/gulsakgi-nara/venv/bin"
+ExecStart=/var/www/gulsakgi-nara/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 config.wsgi:application
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

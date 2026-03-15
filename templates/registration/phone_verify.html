@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4" style="max-width: 520px;">
+    <h2 class="section-title mb-3">휴대폰 본인인증</h2>
+    <p class="text-muted small mb-2">
+        굴삭기나라에서는 <strong>거래 신뢰 확보</strong>를 위해 매물 등록·구인·구직·부품 등록 및 유료 결제 전에 휴대폰 본인인증이 필요합니다.
+    </p>
+    <p class="text-muted small mb-4">
+        카카오/네이버 로그인은 <strong>로그인 편의</strong>만 제공하며, 실제 매물 등록·결제 시에는 본인인증이 별도로 필요합니다.
+    </p>
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form method="post" action="{% url 'phone_verify' %}">
+                {% csrf_token %}
+                {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+                <div class="mb-3">
+                    <label for="id_phone" class="form-label fw-bold">휴대폰 번호</label>
+                    <input type="tel" name="phone" id="id_phone" class="form-control"
+                           value="{{ phone|default:'' }}"
+                           placeholder="010-0000-0000" autocomplete="tel">
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary fw-bold py-2">본인인증 하기</button>
+                    <a href="{% url 'my_page' %}" class="btn btn-outline-secondary">나중에 하기</a>
+                </div>
+            </form>
+            {% if debug %}
+            <hr class="my-3">
+            <p class="small text-muted mb-0">
+                개발/테스트: URL에 <code>?test=1</code> 을 붙이면 휴대폰 번호 입력만으로 인증 완료 처리됩니다.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

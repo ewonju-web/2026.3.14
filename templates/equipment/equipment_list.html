@@ -8,7 +8,7 @@
         <div class="row justify-content-center gn-pc-search-row">
             <div class="col-lg-9 col-xl-8">
                 <!-- 카테고리 링크는 폼 밖에 두어 클릭 시 항상 해당 기종만 조회되도록 함 -->
-                <div class="d-flex flex-wrap mb-3 gn-index-category-pc">
+                <div class="d-flex flex-nowrap overflow-x-auto mb-3 gn-index-category-pc" style="min-width:0;-webkit-overflow-scrolling:touch;">
                     <a href="{% url 'index' %}?category=" class="gn-cat-pill gn-cat-pill-pc {% if not filter_category %}active{% endif %}">
                         <i class="bi bi-layers-fill"></i><span>전체</span>
                     </a>
@@ -19,18 +19,22 @@
                         <i class="bi bi-box-seam-fill"></i><span>지게차</span>
                     </a>
                     <a href="{% url 'index' %}?category=dump" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'dump' %}active{% endif %}">
-                        <i class="bi bi-truck-flatbed"></i><span>덤프</span>
+                        <i class="bi bi-truck-flatbed"></i><span>덤프트럭</span>
                     </a>
                     <a href="{% url 'index' %}?category=loader" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'loader' %}active{% endif %}">
-                        <i class="bi bi-box2-heart-fill"></i><span>로더</span>
+                        <i class="bi bi-box2-heart-fill"></i><span>로더/휠로더</span>
+                    </a>
+                    <a href="{% url 'index' %}?category=crane" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'crane' %}active{% endif %}">
+                        <i class="bi bi-truck"></i><span>크레인</span>
                     </a>
                     <a href="{% url 'index' %}?category=attachment" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'attachment' %}active{% endif %}">
                         <i class="bi bi-wrench-adjustable"></i><span>어태치먼트</span>
                     </a>
-                    <a href="{% url 'index' %}?category=etc" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'etc' %}active{% endif %}">
-                        <i class="bi bi-grid-3x3-gap-fill"></i><span>기타</span>
+                    <a href="{% url 'index' %}?category=other" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'other' %}active{% endif %}">
+                        <i class="bi bi-gear-wide-connected"></i><span>기타 중장비</span>
                     </a>
                 </div>
+                {% if filter_category %}
                 <form action="{% url 'index' %}" method="get" class="gn-pc-search-form" id="gn-pc-search-form" data-index-url="{% url 'index' %}">
                     <input type="hidden" name="category" value="{{ filter_category|default:'excavator' }}">
                     <input type="hidden" name="expand" value="1">
@@ -55,13 +59,13 @@
                     </div>
                     <!-- PC: 기종 밑에 바로 상세검색바 (PC에서만 항상 표시) -->
                     <div class="collapse gn-pc-advanced-filters gn-pc-filters-below-category {% if filter_category == 'forklift' %}gn-pc-advanced-filters-forklift{% endif %} p-2 rounded border bg-light {% if request.GET.expand == '1' or filter_maker or filter_sub_type or filter_weight_class or filter_year_min or filter_year_max or filter_mast_type %}show{% endif %}" id="gnPcAdvancedFilters">
-                        {% if filter_category == 'excavator' or filter_category == 'forklift' or filter_category == '' %}
+                        {% if filter_category == 'excavator' or filter_category == 'forklift' %}
                         <div class="gn-pc-advanced-filters-row d-flex flex-wrap align-items-end gap-2">
                             <div class="gn-pc-filter-item">
                                 <label class="form-label form-label-sm mb-1">제조사</label>
                                 <select name="maker" class="form-select form-select-sm gn-filter-select">
                                     <option value="">전체</option>
-                                    {% if filter_category == 'excavator' or filter_category == '' %}
+                                    {% if filter_category == 'excavator' %}
                                     <option value="HD 현대" {% if filter_maker == 'HD 현대' %}selected{% endif %}>HD 현대</option>
                                     <option value="두산" {% if filter_maker == '두산' %}selected{% endif %}>두산</option>
                                     <option value="볼보" {% if filter_maker == '볼보' %}selected{% endif %}>볼보</option>
@@ -91,11 +95,11 @@
                             </div>
                             <div class="gn-pc-filter-item">
                                 <label class="form-label form-label-sm mb-1">
-                                    {% if filter_category == 'excavator' or filter_category == '' %}종류{% else %}형식{% endif %}
+                                    {% if filter_category == 'excavator' %}종류{% else %}형식{% endif %}
                                 </label>
                                 <select name="sub_type" id="gn-pc-sub-type" class="form-select form-select-sm gn-filter-select">
                                     <option value="">전체</option>
-                                    {% if filter_category == 'excavator' or filter_category == '' %}
+                                    {% if filter_category == 'excavator' %}
                                     <option value="EXC_TIRE" {% if filter_sub_type == 'EXC_TIRE' %}selected{% endif %}>타이어식</option>
                                     <option value="EXC_CRAWLER" {% if filter_sub_type == 'EXC_CRAWLER' %}selected{% endif %}>크롤러식(체인)</option>
                                     <option value="EXC_ATTACHMENT" {% if filter_sub_type == 'EXC_ATTACHMENT' %}selected{% endif %}>어테치먼트</option>
@@ -111,7 +115,7 @@
                                 <label class="form-label form-label-sm mb-1">장비중량</label>
                                 <select name="weight_class" id="gn-pc-weight-class" class="form-select form-select-sm gn-filter-select">
                                     <option value="">전체</option>
-                                    {% if filter_category == 'excavator' or filter_category == '' %}
+                                    {% if filter_category == 'excavator' %}
                                     <!-- 타이어식: 03W/06W/08W -->
                                     <option value="EXC_TIRE_LE_6" {% if filter_weight_class == 'EXC_TIRE_LE_6' %}selected{% endif %}>03W 5~6 ton</option>
                                     <option value="EXC_TIRE_LE_17" {% if filter_weight_class == 'EXC_TIRE_LE_17' %}selected{% endif %}>06W 12~16 ton</option>
@@ -224,20 +228,109 @@
                                 <button type="submit" class="btn btn-sm btn-warning px-3">검색</button>
                             </div>
                         </div>
+                        {% elif filter_category == 'dump' %}
+                        <div class="gn-pc-advanced-filters-row d-flex flex-wrap align-items-end gap-2">
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">제조사</label>
+                                <select name="maker" class="form-select form-select-sm gn-filter-select">
+                                    <option value="">전체</option>
+                                    <option value="현대" {% if filter_maker == '현대' %}selected{% endif %}>현대</option>
+                                    <option value="타타대우" {% if filter_maker == '타타대우' %}selected{% endif %}>타타대우</option>
+                                    <option value="볼보" {% if filter_maker == '볼보' %}selected{% endif %}>볼보</option>
+                                    <option value="스카니아" {% if filter_maker == '스카니아' %}selected{% endif %}>스카니아</option>
+                                    <option value="만(man)" {% if filter_maker == '만(man)' %}selected{% endif %}>만(man)</option>
+                                    <option value="벤츠트럭" {% if filter_maker == '벤츠트럭' %}selected{% endif %}>벤츠트럭</option>
+                                    <option value="기타" {% if filter_maker == '기타' %}selected{% endif %}>기타</option>
+                                </select>
+                            </div>
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">톤수</label>
+                                <select name="weight_class" class="form-select form-select-sm gn-filter-select">
+                                    <option value="">전체</option>
+                                    <option value="DUMP_LE_3_5" {% if filter_weight_class == 'DUMP_LE_3_5' %}selected{% endif %}>3.5톤 이하</option>
+                                    <option value="DUMP_LE_5" {% if filter_weight_class == 'DUMP_LE_5' %}selected{% endif %}>5톤 이하</option>
+                                    <option value="DUMP_LE_8" {% if filter_weight_class == 'DUMP_LE_8' %}selected{% endif %}>8톤 이하</option>
+                                    <option value="DUMP_LE_15" {% if filter_weight_class == 'DUMP_LE_15' %}selected{% endif %}>15톤 이하</option>
+                                    <option value="DUMP_GE_24" {% if filter_weight_class == 'DUMP_GE_24' %}selected{% endif %}>24톤 이상</option>
+                                </select>
+                            </div>
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">년식(시작)</label>
+                                <select name="year_min" class="form-select form-select-sm gn-filter-select">
+                                    <option value="">전체</option>
+                                    <option value="2000" {% if filter_year_min == '2000' %}selected{% endif %}>2000년</option>
+                                    <option value="2005" {% if filter_year_min == '2005' %}selected{% endif %}>2005년</option>
+                                    <option value="2010" {% if filter_year_min == '2010' %}selected{% endif %}>2010년</option>
+                                    <option value="2015" {% if filter_year_min == '2015' %}selected{% endif %}>2015년</option>
+                                    <option value="2020" {% if filter_year_min == '2020' %}selected{% endif %}>2020년</option>
+                                    <option value="2025" {% if filter_year_min == '2025' %}selected{% endif %}>2025년</option>
+                                </select>
+                            </div>
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">년식(끝)</label>
+                                <select name="year_max" class="form-select form-select-sm gn-filter-select">
+                                    <option value="">전체</option>
+                                    <option value="2005" {% if filter_year_max == '2005' %}selected{% endif %}>2005년</option>
+                                    <option value="2010" {% if filter_year_max == '2010' %}selected{% endif %}>2010년</option>
+                                    <option value="2015" {% if filter_year_max == '2015' %}selected{% endif %}>2015년</option>
+                                    <option value="2020" {% if filter_year_max == '2020' %}selected{% endif %}>2020년</option>
+                                    <option value="2025" {% if filter_year_max == '2025' %}selected{% endif %}>2025년</option>
+                                    <option value="2026" {% if filter_year_max == '2026' %}selected{% endif %}>2026년</option>
+                                </select>
+                            </div>
+                            <div class="gn-pc-filter-item gn-pc-filter-btn">
+                                <button type="submit" class="btn btn-sm btn-warning px-3">검색</button>
+                            </div>
+                        </div>
+                        {% elif filter_category == 'loader' or filter_category == 'crane' or filter_category == 'attachment' or filter_category == 'other' %}
+                        <div class="gn-pc-advanced-filters-row d-flex flex-wrap align-items-end gap-2">
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">중량</label>
+                                <input type="text" name="weight_class" class="form-control form-control-sm gn-filter-select" placeholder="예) 5톤, 25CBM" value="{{ filter_weight_class|default:'' }}" maxlength="30">
+                            </div>
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">년식(시작)</label>
+                                <select name="year_min" class="form-select form-select-sm gn-filter-select">
+                                    <option value="">전체</option>
+                                    <option value="2000" {% if filter_year_min == '2000' %}selected{% endif %}>2000년</option>
+                                    <option value="2005" {% if filter_year_min == '2005' %}selected{% endif %}>2005년</option>
+                                    <option value="2010" {% if filter_year_min == '2010' %}selected{% endif %}>2010년</option>
+                                    <option value="2015" {% if filter_year_min == '2015' %}selected{% endif %}>2015년</option>
+                                    <option value="2020" {% if filter_year_min == '2020' %}selected{% endif %}>2020년</option>
+                                    <option value="2025" {% if filter_year_min == '2025' %}selected{% endif %}>2025년</option>
+                                </select>
+                            </div>
+                            <div class="gn-pc-filter-item">
+                                <label class="form-label form-label-sm mb-1">년식(끝)</label>
+                                <select name="year_max" class="form-select form-select-sm gn-filter-select">
+                                    <option value="">전체</option>
+                                    <option value="2005" {% if filter_year_max == '2005' %}selected{% endif %}>2005년</option>
+                                    <option value="2010" {% if filter_year_max == '2010' %}selected{% endif %}>2010년</option>
+                                    <option value="2015" {% if filter_year_max == '2015' %}selected{% endif %}>2015년</option>
+                                    <option value="2020" {% if filter_year_max == '2020' %}selected{% endif %}>2020년</option>
+                                    <option value="2025" {% if filter_year_max == '2025' %}selected{% endif %}>2025년</option>
+                                    <option value="2026" {% if filter_year_max == '2026' %}selected{% endif %}>2026년</option>
+                                </select>
+                            </div>
+                            <div class="gn-pc-filter-item gn-pc-filter-btn">
+                                <button type="submit" class="btn btn-sm btn-warning px-3">검색</button>
+                            </div>
+                        </div>
                         {% else %}
                         <div class="text-muted small px-2 py-2">
-                            굴삭기 또는 지게차를 선택하시면 상세검색을 사용할 수 있습니다.
+                            기종을 선택하시면 상세검색을 사용할 수 있습니다.
                         </div>
                         {% endif %}
                     </div>
                 </form>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- 모바일: 카테고리 + 상세검색 + 매물 그리드 -->
     <div class="gn-index-mobile d-md-none">
-        <div class="gn-category-scroll gn-index-category mb-2">
+        <div class="gn-category-scroll gn-index-category mb-2 d-flex flex-nowrap overflow-x-auto" style="gap:0.35rem;min-width:0;-webkit-overflow-scrolling:touch;">
             <a href="{% url 'index' %}?category=" class="gn-cat-pill {% if not filter_category %}active{% endif %}">
                 <i class="bi bi-layers-fill"></i><span>전체</span>
             </a>
@@ -248,20 +341,24 @@
                 <i class="bi bi-box-seam-fill"></i><span>지게차</span>
             </a>
             <a href="{% url 'index' %}?category=dump" class="gn-cat-pill {% if filter_category == 'dump' %}active{% endif %}">
-                <i class="bi bi-truck-flatbed"></i><span>덤프</span>
+                <i class="bi bi-truck-flatbed"></i><span>덤프트럭</span>
             </a>
             <a href="{% url 'index' %}?category=loader" class="gn-cat-pill {% if filter_category == 'loader' %}active{% endif %}">
-                <i class="bi bi-box2-heart-fill"></i><span>로더</span>
+                <i class="bi bi-box2-heart-fill"></i><span>로더/휠로더</span>
+            </a>
+            <a href="{% url 'index' %}?category=crane" class="gn-cat-pill {% if filter_category == 'crane' %}active{% endif %}">
+                <i class="bi bi-truck"></i><span>크레인</span>
             </a>
             <a href="{% url 'index' %}?category=attachment" class="gn-cat-pill {% if filter_category == 'attachment' %}active{% endif %}">
                 <i class="bi bi-wrench-adjustable"></i><span>어태치먼트</span>
             </a>
-            <a href="{% url 'index' %}?category=etc" class="gn-cat-pill {% if filter_category == 'etc' %}active{% endif %}">
-                <i class="bi bi-grid-3x3-gap-fill"></i><span>기타</span>
+            <a href="{% url 'index' %}?category=other" class="gn-cat-pill {% if filter_category == 'other' %}active{% endif %}">
+                <i class="bi bi-gear-wide-connected"></i><span>기타 중장비</span>
             </a>
         </div>
 
-        <!-- 모바일 상세검색 (굴삭기/지게차만 표시) -->
+        <!-- 모바일 상세검색: 기종 선택 시에만 표시 (굴삭기/지게차는 필터, 그 외는 안내) -->
+        {% if filter_category %}
         {% if filter_category == 'excavator' or filter_category == 'forklift' %}
         <form id="gn-mobile-adv-form" action="{% url 'index' %}" method="get" class="mt-3 mb-2" data-index-url="{% url 'index' %}">
             <input type="hidden" name="category" value="{{ filter_category|default:'' }}">
@@ -445,6 +542,175 @@
                 조회하기
             </button>
         </div>
+        {% elif filter_category == 'dump' %}
+        <form action="{% url 'index' %}" method="get" class="mt-3 mb-2">
+            <input type="hidden" name="category" value="dump">
+            <div class="card border-0 shadow-sm gn-mobile-adv-card">
+                <div class="card-body p-3">
+                    <span class="small fw-semibold">상세검색 (덤프트럭)</span>
+                    <div class="row g-2 mt-1">
+                        <div class="col-12">
+                            <label class="form-label form-label-sm mb-0">제조사</label>
+                            <select name="maker" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="현대" {% if filter_maker == '현대' %}selected{% endif %}>현대</option>
+                                <option value="타타대우" {% if filter_maker == '타타대우' %}selected{% endif %}>타타대우</option>
+                                <option value="볼보" {% if filter_maker == '볼보' %}selected{% endif %}>볼보</option>
+                                <option value="스카니아" {% if filter_maker == '스카니아' %}selected{% endif %}>스카니아</option>
+                                <option value="만(man)" {% if filter_maker == '만(man)' %}selected{% endif %}>만(man)</option>
+                                <option value="벤츠트럭" {% if filter_maker == '벤츠트럭' %}selected{% endif %}>벤츠트럭</option>
+                                <option value="기타" {% if filter_maker == '기타' %}selected{% endif %}>기타</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label form-label-sm mb-0">톤수</label>
+                            <select name="weight_class" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="DUMP_LE_3_5" {% if filter_weight_class == 'DUMP_LE_3_5' %}selected{% endif %}>3.5톤 이하</option>
+                                <option value="DUMP_LE_5" {% if filter_weight_class == 'DUMP_LE_5' %}selected{% endif %}>5톤 이하</option>
+                                <option value="DUMP_LE_8" {% if filter_weight_class == 'DUMP_LE_8' %}selected{% endif %}>8톤 이하</option>
+                                <option value="DUMP_LE_15" {% if filter_weight_class == 'DUMP_LE_15' %}selected{% endif %}>15톤 이하</option>
+                                <option value="DUMP_GE_24" {% if filter_weight_class == 'DUMP_GE_24' %}selected{% endif %}>24톤 이상</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm mb-0">년식(시작)</label>
+                            <select name="year_min" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="2000" {% if filter_year_min == '2000' %}selected{% endif %}>2000년</option>
+                                <option value="2005" {% if filter_year_min == '2005' %}selected{% endif %}>2005년</option>
+                                <option value="2010" {% if filter_year_min == '2010' %}selected{% endif %}>2010년</option>
+                                <option value="2015" {% if filter_year_min == '2015' %}selected{% endif %}>2015년</option>
+                                <option value="2020" {% if filter_year_min == '2020' %}selected{% endif %}>2020년</option>
+                                <option value="2025" {% if filter_year_min == '2025' %}selected{% endif %}>2025년</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm mb-0">년식(끝)</label>
+                            <select name="year_max" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="2005" {% if filter_year_max == '2005' %}selected{% endif %}>2005년</option>
+                                <option value="2010" {% if filter_year_max == '2010' %}selected{% endif %}>2010년</option>
+                                <option value="2015" {% if filter_year_max == '2015' %}selected{% endif %}>2015년</option>
+                                <option value="2020" {% if filter_year_max == '2020' %}selected{% endif %}>2020년</option>
+                                <option value="2025" {% if filter_year_max == '2025' %}selected{% endif %}>2025년</option>
+                                <option value="2026" {% if filter_year_max == '2026' %}selected{% endif %}>2026년</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-sm btn-warning w-100">검색</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% elif filter_category == 'loader' or filter_category == 'crane' or filter_category == 'attachment' or filter_category == 'other' %}
+        <form action="{% url 'index' %}" method="get" class="mt-3 mb-2">
+            <input type="hidden" name="category" value="{{ filter_category }}">
+            <div class="card border-0 shadow-sm gn-mobile-adv-card">
+                <div class="card-body p-3">
+                    <span class="small fw-semibold">상세검색</span>
+                    <div class="row g-2 mt-1">
+                        <div class="col-12">
+                            <label class="form-label form-label-sm mb-0">중량</label>
+                            <input type="text" name="weight_class" class="form-control form-control-sm" placeholder="예) 5톤, 25CBM" value="{{ filter_weight_class|default:'' }}" maxlength="30">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm mb-0">년식(시작)</label>
+                            <select name="year_min" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="2000" {% if filter_year_min == '2000' %}selected{% endif %}>2000년</option>
+                                <option value="2005" {% if filter_year_min == '2005' %}selected{% endif %}>2005년</option>
+                                <option value="2010" {% if filter_year_min == '2010' %}selected{% endif %}>2010년</option>
+                                <option value="2015" {% if filter_year_min == '2015' %}selected{% endif %}>2015년</option>
+                                <option value="2020" {% if filter_year_min == '2020' %}selected{% endif %}>2020년</option>
+                                <option value="2025" {% if filter_year_min == '2025' %}selected{% endif %}>2025년</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm mb-0">년식(끝)</label>
+                            <select name="year_max" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="2005" {% if filter_year_max == '2005' %}selected{% endif %}>2005년</option>
+                                <option value="2010" {% if filter_year_max == '2010' %}selected{% endif %}>2010년</option>
+                                <option value="2015" {% if filter_year_max == '2015' %}selected{% endif %}>2015년</option>
+                                <option value="2020" {% if filter_year_max == '2020' %}selected{% endif %}>2020년</option>
+                                <option value="2025" {% if filter_year_max == '2025' %}selected{% endif %}>2025년</option>
+                                <option value="2026" {% if filter_year_max == '2026' %}selected{% endif %}>2026년</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-sm btn-warning w-100">검색</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="card border-0 shadow-sm mt-3 mb-2">
+            <div class="card-body py-2">
+                <p class="text-muted small mb-0">기종을 선택하시면 상세검색을 사용할 수 있습니다.</p>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+        <!-- 유료회원 매물 로테이션 (첫 화면 상단, 자동 슬라이드) -->
+        {% if premium_rotation_chunks %}
+        <div class="mb-4">
+          <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
+          <div id="gnPremiumCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+            <div class="carousel-inner">
+              {% for chunk in premium_rotation_chunks %}
+              <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-2 g-md-3">
+                  {% for eq in chunk %}
+                  <div class="col">
+                    <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
+                      <div class="card h-100 border shadow-sm overflow-hidden">
+                        <div style="height: 100px; background: #e2e8f0;">
+                          {% if eq.images.first %}
+                          <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                          {% else %}
+                          <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                          {% endif %}
+                        </div>
+                        <div class="card-body p-2">
+                          <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
+                          <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% if premium_rotation_chunks|length > 1 %}
+            <button class="carousel-control-prev gn-premium-carousel-btn" type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide="prev" aria-label="이전">
+              <span class="carousel-control-prev-icon bg-dark bg-opacity-50 rounded-circle" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next gn-premium-carousel-btn" type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide="next" aria-label="다음">
+              <span class="carousel-control-next-icon bg-dark bg-opacity-50 rounded-circle" aria-hidden="true"></span>
+            </button>
+            <div class="carousel-indicators gn-premium-indicators">
+              {% for chunk in premium_rotation_chunks %}
+              <button type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="슬라이드 {{ forloop.counter }}"></button>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        <!-- 모바일: 기종 선택 시 매물 영역 오른쪽 위에 정렬 -->
+        {% if filter_category %}
+        <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-2 d-md-none">
+            <span class="small text-muted me-1">정렬:</span>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_desc" class="btn btn-sm {% if sort == 'price_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 높은순</a>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=year_desc" class="btn btn-sm {% if sort == 'year_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">연식 최신순</a>
+        </div>
         {% endif %}
         <!-- 첫화면: 처음 20개만 카드, 이후는 더보기 시 한 줄 목록 -->
         <div class="row row-cols-2 g-2 mb-3 gn-index-initial-grid">
@@ -460,6 +726,9 @@
                         {% endif %}
                     </a>
                     <span class="position-absolute top-0 start-0 m-1 px-2 py-0 rounded text-white fw-bold" style="background: #c00; font-size: 0.8rem;">{% if equipment.is_sold %}판매완료{% else %}팝니다{% endif %}</span>
+                    {% if equipment.author_id in premium_author_ids %}
+                    <span class="position-absolute top-0 start-0 m-1 mt-4 px-2 py-0 rounded text-white fw-bold" style="background: #e8a317; font-size: 0.7rem;"><i class="bi bi-star-fill"></i> 프리미엄</span>
+                    {% endif %}
                     {% if user.is_authenticated %}
                     <a href="{% url 'toggle_equipment_favorite' equipment.pk %}?next={{ request.get_full_path|urlencode }}" class="position-absolute top-0 end-0 m-1 text-decoration-none gn-card-fav" style="z-index: 3;" title="찜">
                         <i class="bi bi-heart{% if equipment.pk in favorited_equipment_ids %}-fill text-danger{% else %} text-white{% endif %}" style="font-size: 1rem; text-shadow: 0 0 4px rgba(0,0,0,.5);"></i>
@@ -473,10 +742,13 @@
                             <tr><td class="gn-list-label">기종</td><td class="gn-list-value">{{ equipment.get_equipment_type_display|default:"-" }}</td></tr>
                             <tr><td class="gn-list-label">제조사</td><td class="gn-list-value text-truncate">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% else %}모름{% endif %}</td></tr>
                             <tr><td class="gn-list-label">연식</td><td class="gn-list-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td></tr>
+                            {% if equipment.weight_class %}<tr><td class="gn-list-label">톤수/중량</td><td class="gn-list-value text-truncate">{{ equipment.weight_class }}</td></tr>{% endif %}
+                            {% if equipment.equipment_type == 'excavator' or equipment.equipment_type == 'forklift' %}<tr><td class="gn-list-label">가동시간</td><td class="gn-list-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }}hr{% else %}모름{% endif %}</td></tr>{% endif %}
                             <tr><td class="gn-list-label">위치</td><td class="gn-list-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
                         </tbody>
                     </table>
                     <p class="mb-0 mt-1 text-end d-flex align-items-center justify-content-end gap-1 flex-wrap">
+                        {% if equipment.author_id in premium_author_ids %}<span class="badge bg-warning text-dark small">프리미엄</span>{% endif %}
                         {% if equipment.vehicle_number %}<span class="badge badge-verified">번호등록</span>{% endif %}
                         <span class="gn-list-price">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
                     </p>
@@ -521,7 +793,10 @@
                             <span class="fw-bold text-truncate d-block">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</span>
                             <span class="small text-muted">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %} {% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년{% endif %} · {% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</span>
                         </div>
-                        <span class="fw-bold text-danger flex-shrink-0">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            {% if equipment.author_id in premium_author_ids %}<span class="badge bg-warning text-dark small">프리미엄</span>{% endif %}
+                            <span class="fw-bold text-danger">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
+                        </div>
                     </a>
                 </div>
                 {% endfor %}
@@ -530,7 +805,19 @@
         {% endif %}
     </div>
 
-    <h2 class="section-title d-none d-md-block gn-recommend-title">추천 매물</h2>
+    <!-- PC: 기종 선택 시 매물 오른쪽 위에 정렬 -->
+    <div class="d-none d-md-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="section-title mb-0 gn-recommend-title">추천 매물</h2>
+        {% if filter_category %}
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="small text-muted me-1">정렬:</span>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_desc" class="btn btn-sm {% if sort == 'price_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 높은순</a>
+            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=year_desc" class="btn btn-sm {% if sort == 'year_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">연식 최신순</a>
+        </div>
+        {% endif %}
+    </div>
 
     <!-- PC: 첫 20개 4열 카드 + 더보기 시 21번째부터 한 줄씩 목록 -->
     <div class="d-none d-md-block mb-5">
@@ -550,10 +837,13 @@
                             <tr><td class="gn-pc-card-label" style="width: 2.5rem;">기종</td><td class="gn-pc-card-value">{{ equipment.get_equipment_type_display|default:"-" }}</td></tr>
                             <tr><td class="gn-pc-card-label" style="width: 2.5rem;">제조사</td><td class="gn-pc-card-value text-truncate">{% if equipment.manufacturer %}{{ equipment.manufacturer }}{% else %}모름{% endif %}</td></tr>
                             <tr><td class="gn-pc-card-label">연식</td><td class="gn-pc-card-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td></tr>
+                            {% if equipment.weight_class %}<tr><td class="gn-pc-card-label">톤수/중량</td><td class="gn-pc-card-value text-truncate">{{ equipment.weight_class }}</td></tr>{% endif %}
+                            {% if equipment.equipment_type == 'excavator' or equipment.equipment_type == 'forklift' %}<tr><td class="gn-pc-card-label">가동시간</td><td class="gn-pc-card-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }}hr{% else %}모름{% endif %}</td></tr>{% endif %}
                             <tr><td class="gn-pc-card-label">위치</td><td class="gn-pc-card-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
                         </tbody>
                     </table>
                     <p class="mb-0 mt-1 mt-md-2 text-end d-flex align-items-center justify-content-end gap-1 flex-wrap">
+                        {% if equipment.author_id in premium_author_ids %}<span class="badge bg-warning text-dark small">프리미엄</span>{% endif %}
                         {% if equipment.vehicle_number %}<span class="badge badge-verified">번호등록</span>{% endif %}
                         <span class="fw-bold gn-pc-card-price" style="font-size: 1rem;">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
                     </p>
@@ -565,6 +855,9 @@
                     <div class="w-100 h-100 d-flex align-items-center justify-content-center text-secondary" style="font-size: 0.7rem;">이미지 준비중</div>
                     {% endif %}
                     <span class="position-absolute top-0 start-0 m-1 px-1 py-0 rounded text-white fw-bold" style="background: #c00; font-size: 0.8rem;">{% if equipment.is_sold %}판매완료{% else %}팝니다{% endif %}</span>
+                    {% if equipment.author_id in premium_author_ids %}
+                    <span class="position-absolute top-0 start-0 m-1 mt-4 px-1 py-0 rounded text-white fw-bold" style="background: #e8a317; font-size: 0.7rem;"><i class="bi bi-star-fill"></i> 프리미엄</span>
+                    {% endif %}
                 </a>
                 <a href="{% url 'equipment_detail' equipment.pk %}" class="stretched-link"></a>
             </div>
@@ -610,6 +903,34 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- 우측 고정: 유료회원 매물 명함 배너 (PC만, 스크롤 시 따라다님) -->
+    {% if premium_sidebar_list %}
+    <div class="d-none d-lg-block gn-premium-sidebar">
+      <div class="card border shadow-sm">
+        <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
+          <i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물
+        </div>
+        <div class="card-body p-2">
+          {% for eq in premium_sidebar_list %}
+          <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none border-bottom mb-2 pb-2 {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}">
+            <div class="d-flex gap-2 align-items-center">
+              <div class="flex-shrink-0 rounded overflow-hidden" style="width: 48px; height: 48px; background: #e2e8f0;">
+                {% if eq.images.first %}
+                <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                {% endif %}
+              </div>
+              <div class="min-width-0 flex-grow-1">
+                <div class="fw-bold text-truncate small" style="color: var(--gn-text);">{{ eq.model_name|default:"-" }}</div>
+                <div class="text-danger fw-bold small">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
 <!-- 모바일 글쓰기 FAB (당근 스타일) -->
 {% if user.is_authenticated %}
@@ -715,15 +1036,33 @@
   .gn-pc-card .badge-verified { background: #6b7280; color: #fff; }
   .equip-card-img { height: 140px; min-height: 140px; }
   @media (min-width: 992px) { .equip-card-img { height: 200px; min-height: 200px; } }
+  /* 유료회원 매물 캐러셀 로테이션 */
+  #gnPremiumCarousel { position: relative; }
+  .gn-premium-carousel-btn { width: 44px; height: 44px; top: 50%; transform: translateY(-50%); }
+  .gn-premium-indicators { position: relative; margin-top: 0.75rem; margin-bottom: 0; }
+  .gn-premium-indicators button { width: 8px; height: 8px; border-radius: 50%; background-color: #94a3b8; border: none; }
+  .gn-premium-indicators button.active { background-color: var(--gn-accent, #e8a317); }
+
+  /* 우측 고정 유료회원 매물 배너 */
+  .gn-premium-sidebar {
+    position: fixed;
+    right: 12px;
+    top: 76px;
+    width: 220px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    z-index: 1020;
+  }
+  .gn-premium-sidebar .card { max-height: 100%; }
   /* PC 카테고리: 컴팩트 레이아웃 + hover/active + 연결 바 */
   @media (min-width: 768px) {
     .gn-index-category-pc {
       display: flex !important;
-      flex-wrap: wrap !important;
-      justify-content: center !important;
+      flex-wrap: nowrap !important;
+      justify-content: flex-start !important;
       column-gap: 10px !important;
-      row-gap: 8px !important;
-      max-width: 980px;
+      row-gap: 0;
+      max-width: 100%;
       margin-left: auto;
       margin-right: auto;
       padding-left: 0.5rem;
@@ -731,7 +1070,15 @@
       margin-bottom: 1rem;
       position: relative;
       padding-bottom: 10px;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      min-width: 0;
     }
+    /* 기종 띠 아래 스크롤바 보이도록 (높이 조금만) */
+    .gn-index-category-pc::-webkit-scrollbar { height: 6px; }
+    .gn-index-category-pc::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+    .gn-index-category-pc::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .gn-index-category-pc::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     /* 연결 바: 버튼 그룹 아래 얇은 라인 */
     .gn-index-category-pc::after {
       content: '';
@@ -748,6 +1095,8 @@
       font-size: 1.03rem;
       margin-right: 0;
       flex: 0 0 auto;
+      flex-shrink: 0;
+      white-space: nowrap;
       position: relative;
       transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease;
       background: #f1f5f9;
@@ -852,6 +1201,14 @@
       margin-top: 6px !important;
       margin-bottom: 4px !important;
     }
+    .gn-index-mobile .gn-index-category .gn-cat-pill {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    /* 모바일 기종 띠 아래 스크롤바 */
+    .gn-index-mobile .gn-index-category::-webkit-scrollbar { height: 6px; }
+    .gn-index-mobile .gn-index-category::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+    .gn-index-mobile .gn-index-category::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     .gn-index-mobile .gn-index-initial-grid {
       margin-top: 6px !important;  /* 카테고리/상세검색와 사진 그리드 사이 여유 */
     }
@@ -1027,8 +1384,30 @@
   .gn-simple-list-row:hover { opacity: 0.95; background: var(--gn-card) !important; }
 </style>
 <script>
-  // 카테고리 스크롤 & "더보기" 버튼
+  // 카테고리: 아래 스크롤바 + 커서 올리면 휠로 가로 스크롤 (끝까지 동작)
   (function() {
+    function wheelScrollHoriz(el) {
+      if (!el) return;
+      el.addEventListener('wheel', function(e) {
+        if (e.deltaY === 0) return;
+        var maxScroll = el.scrollWidth - el.clientWidth;
+        if (maxScroll <= 0) return;
+        var next = el.scrollLeft + e.deltaY;
+        if (next < 0 || next > maxScroll) {
+          next = Math.max(0, Math.min(maxScroll, next));
+          el.scrollLeft = next;
+          e.preventDefault();
+        } else {
+          el.scrollLeft = next;
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
+    var pcCategory = document.querySelector('.gn-index-category-pc');
+    var mobileCategory = document.querySelector('.gn-category-scroll.gn-index-category');
+    if (pcCategory) wheelScrollHoriz(pcCategory);
+    if (mobileCategory) wheelScrollHoriz(mobileCategory);
+
     var scroll = document.querySelector('.gn-category-scroll');
     if (scroll) {
       var active = scroll.querySelector('.gn-cat-pill.active');

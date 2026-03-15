@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.formats import number_format
-from .models import Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment
+from django.db.models import Count, Q
+from django.utils import timezone
+from .models import Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog
 
 
 # 1. 매물 관리
@@ -15,7 +17,7 @@ class EquipmentImageInline(admin.TabularInline):
 class EquipmentAdmin(admin.ModelAdmin):
     list_display = [
         'id', 'equipment_type', 'model_name', 'manufacturer', 'year_manufactured', 'listing_price_display',
-        'current_location', 'vehicle_number', 'listing_status', 'is_sold', 'author', 'created_at',
+        'current_location', 'vehicle_number', 'listing_status', 'is_sold', 'author', 'last_bumped_at', 'created_at',
     ]
     list_filter = ('equipment_type', 'listing_status', 'is_sold', 'manufacturer')
     search_fields = ('model_name', 'manufacturer', 'current_location', 'description')
@@ -72,12 +74,163 @@ class JobPostAdmin(admin.ModelAdmin):
     list_per_page = 50
 
 
+# --- 회원(Profile) 목록: 기존/신규, 인증, 개인·사업자, 무료·유료, 매물수, 결제이력, 신고 ---
+class MemberTypeFilter(admin.SimpleListFilter):
+    title = '회원 구분'
+    parameter_name = 'member_type'
+    def lookups(self, request, model_admin):
+        return [('legacy', '기존회원'), ('new', '신규회원')]
+    def queryset(self, request, queryset):
+        if self.value() == 'legacy':
+            return queryset.exclude(legacy_member_id__isnull=True)
+        if self.value() == 'new':
+            return queryset.filter(legacy_member_id__isnull=True)
+        return queryset
+
+
+class PremiumStatusFilter(admin.SimpleListFilter):
+    title = '요금 구분'
+    parameter_name = 'premium'
+    def lookups(self, request, model_admin):
+        return [('free', '무료'), ('paid', '유료')]
+    def queryset(self, request, queryset):
+        today = timezone.now().date()
+        if self.value() == 'free':
+            return queryset.filter(
+                Q(is_premium=False) | Q(is_premium=True, premium_until__lt=today)
+            )
+        if self.value() == 'paid':
+            return queryset.filter(
+                is_premium=True
+            ).filter(Q(premium_until__isnull=True) | Q(premium_until__gte=today))
+        return queryset
+
+
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'user_type', 'company_name', 'phone', 'is_approved', 'business_number']
-    list_filter = ('user_type', 'is_approved')
-    search_fields = ('user__username', 'user__email', 'company_name', 'phone')
+    list_display = [
+        'user', 'name_display', 'phone', 'premium_display', 'premium_until', 'premium_remaining_display',
+        'payment_memo_display',
+        'equipment_count_display', 'member_type_display', 'verified_display', 'user_type_display',
+        'is_premium', 'payment_count_display', 'company_name', 'is_approved', 'created_display',
+    ]
+    list_filter = (MemberTypeFilter, 'phone_verified', 'user_type', PremiumStatusFilter, 'is_approved')
+    search_fields = ('user__username', 'user__first_name', 'user__email', 'company_name', 'phone')
     list_per_page = 50
+    list_editable = ('is_premium',)
+    readonly_fields = ('equipment_count_display', 'payment_count_display', 'reported_display', 'created_display')
+    date_hierarchy = 'user__date_joined'
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('user').annotate(_equipment_count=Count('user__authored_equipment', distinct=True))
+
+    def name_display(self, obj):
+        """이름: User.first_name 또는 상호명."""
+        if not obj.user_id:
+            return '-'
+        name = (getattr(obj.user, 'first_name', None) or '').strip()
+        if name:
+            return name
+        if (getattr(obj, 'company_name', None) or '').strip():
+            return obj.company_name.strip()
+        return '-'
+    name_display.short_description = '이름'
+
+    def member_type_display(self, obj):
+        if obj.legacy_member_id is not None:
+            return format_html('<span style="color:#059669;">기존</span>')
+        if getattr(obj.user, 'username', '').startswith('legacy_'):
+            return format_html('<span style="color:#059669;">기존</span>')
+        return format_html('<span style="color:#6b7280;">신규</span>')
+    member_type_display.short_description = '구분'
+
+    def verified_display(self, obj):
+        if getattr(obj, 'phone_verified', False):
+            return format_html('<span style="color:#059669;">O</span>')
+        return format_html('<span style="color:#dc2626;">X</span>')
+    verified_display.short_description = '인증'
+
+    def user_type_display(self, obj):
+        return obj.get_user_type_display() if obj.user_type else '-'
+    user_type_display.short_description = '개인/사업자'
+
+    def premium_display(self, obj):
+        """현재 유료 상태."""
+        if not getattr(obj, 'is_premium', False):
+            return format_html('<span>무료</span>')
+        today = timezone.now().date()
+        if obj.premium_until and obj.premium_until < today:
+            return format_html('<span style="color:#9ca3af;">만료</span>')
+        return format_html('<span style="color:#d97706; font-weight:bold;">유료</span>')
+    premium_display.short_description = '유료 상태'
+
+    def premium_remaining_display(self, obj):
+        """남은 기간: D-day, 무기한, 만료, -."""
+        if not getattr(obj, 'is_premium', False):
+            return '-'
+        if not obj.premium_until:
+            return format_html('<span style="color:#059669;">무기한</span>')
+        today = timezone.now().date()
+        if obj.premium_until < today:
+            return format_html('<span style="color:#9ca3af;">만료</span>')
+        delta = (obj.premium_until - today).days
+        if delta == 0:
+            return 'D-0'
+        return f'D-{delta}'
+    premium_remaining_display.short_description = '남은 기간'
+
+    def payment_memo_display(self, obj):
+        """최근 결제 여부 또는 메모: 마지막 결제완료 주문의 결제일·메모."""
+        try:
+            from billing.models import Order
+            last_order = Order.objects.filter(user_id=obj.user_id, status='PAID').order_by('-updated_at').first()
+            if not last_order:
+                return format_html('<span style="color:#9ca3af;">결제 없음</span>')
+            parts = []
+            last_payment = getattr(last_order, 'payments', None)
+            if last_payment:
+                paid = last_payment.filter(status='SUCCESS').order_by('-paid_at').first()
+                if paid and getattr(paid, 'paid_at', None):
+                    parts.append(paid.paid_at.strftime('%Y-%m-%d'))
+            if not parts and getattr(last_order, 'updated_at', None):
+                parts.append(last_order.updated_at.strftime('%Y-%m-%d'))
+            memo = (getattr(last_order, 'admin_memo', None) or '').strip()
+            if memo:
+                parts.append(memo[:25] + '…' if len(memo) > 25 else memo)
+            return ' · '.join(parts) if parts else '결제 O'
+        except Exception:
+            return '-'
+    payment_memo_display.short_description = '최근 결제/메모'
+
+    def equipment_count_display(self, obj):
+        if hasattr(obj, '_equipment_count'):
+            return obj._equipment_count
+        return getattr(obj.user, 'authored_equipment', []).count() if obj.user_id else 0
+    equipment_count_display.short_description = '매물 수'
+
+    def payment_count_display(self, obj):
+        try:
+            from billing.models import Order
+            cnt = Order.objects.filter(user_id=obj.user_id, status='PAID').count()
+            return f'{cnt}건' if cnt else '-'
+        except Exception:
+            return '-'
+    payment_count_display.short_description = '결제 이력'
+
+    def reported_display(self, obj):
+        return '없음'
+    reported_display.short_description = '신고'
+
+    def created_display(self, obj):
+        if not obj.user_id:
+            return '-'
+        try:
+            d = obj.user.date_joined
+            return d.strftime('%Y-%m-%d %H:%M') if d else '-'
+        except Exception:
+            return '-'
+    created_display.short_description = '가입일'
 
 
 @admin.register(EquipmentFavorite)
@@ -112,3 +265,12 @@ class CommentAdmin(admin.ModelAdmin):
             return ""
         return obj.content[:40] + "…" if len(obj.content) > 40 else obj.content
     content_short.short_description = '내용'
+
+
+@admin.register(DeletedListingLog)
+class DeletedListingLogAdmin(admin.ModelAdmin):
+    list_display = ('user', 'model_name', 'image_hash', 'deleted_at')
+    list_filter = ('deleted_at',)
+    search_fields = ('user__username', 'model_name')
+    date_hierarchy = 'deleted_at'
+    readonly_fields = ('deleted_at',)

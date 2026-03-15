@@ -32,7 +32,7 @@ class EquipmentForm(forms.ModelForm):
             "month_manufactured": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 12, "placeholder": "1~12 (선택)"}),
             "operating_hours": forms.NumberInput(attrs={"class": "form-control", "min": 0, "placeholder": "가동시간 (선택)"}),
             "listing_price": forms.NumberInput(attrs={"class": "form-control", "min": 0, "placeholder": "예) 3500 (만원)"}),
-            "current_location": forms.TextInput(attrs={"class": "form-control", "placeholder": "위치 (선택)"}),
+            "current_location": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 서울 강남구 역삼동 123-45", "maxlength": "100"}),
             "region_sido": forms.HiddenInput(),
             "region_sigungu": forms.HiddenInput(),
             "vehicle_number": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 12가3456 (모르면 비워도 됨)"}),
@@ -53,6 +53,21 @@ class EquipmentForm(forms.ModelForm):
         self.fields["equipment_type"].required = True
         self.fields["equipment_type"].choices = [("", "---------")] + list(self.fields["equipment_type"].choices)
         self.fields["listing_price"].required = True
+
+        # equipment_type: instance → initial → POST 순
+        eq_type = None
+        if self.instance and getattr(self.instance, "pk", None) and hasattr(self.instance, "equipment_type"):
+            eq_type = self.instance.equipment_type
+        if eq_type is None and self.initial:
+            eq_type = self.initial.get("equipment_type")
+        if eq_type is None and self.data:
+            eq_type = self.data.get("equipment_type")
+        # 덤프/로더/크레인/어태치먼트/기타: 제조사·모델명·톤수·년월·지역·가격 동일하게 등록 가능. 세부종류/마스트/가동시간만 숨김. 톤수는 템플릿 simple-type-fields에서 별도 입력란으로 노출.
+        if eq_type in ("crane", "loader", "dump", "attachment", "other"):
+            for name in ("sub_type", "mast_type", "operating_hours"):
+                self.fields[name].widget = forms.HiddenInput()
+                self.fields[name].required = False
+            self.fields["weight_class"].required = False
 
     def clean_year_manufactured(self):
         val = self.cleaned_data.get("year_manufactured")

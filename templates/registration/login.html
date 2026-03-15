@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% with next_url=next_url|default:"" %}
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-5">
@@ -11,9 +12,9 @@
                         {% for message in messages %}{{ message }}{% endfor %}
                     </div>
                     {% endif %}
-                    <form method="post" action="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">
+                    <form method="post" action="{% url 'login' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
                         {% csrf_token %}
-                        {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+                        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">아이디</label>
                             <input type="text" name="username" class="form-control" placeholder="아이디" required style="border-radius: 10px; padding: 0.75rem;">
@@ -23,9 +24,24 @@
                             <input type="password" name="password" class="form-control" placeholder="비밀번호" required style="border-radius: 10px; padding: 0.75rem;">
                         </div>
                         <button type="submit" class="btn w-100 fw-bold py-2 mb-3 text-dark" style="background: var(--gn-accent); border-radius: 10px;">로그인</button>
+                        <p class="text-center small text-muted mb-2">또는</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ kakao_login_url }}" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #FEE500; color: #191919; border-radius: 10px; border: none;">
+                                <i class="bi bi-chat-dots-fill"></i> 카카오로 로그인
+                            </a>
+                            <a href="{{ naver_login_url }}" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #03C75A; color: #fff; border-radius: 10px; border: none;">
+                                <span style="font-size: 1.1rem; font-weight: 800;">N</span> 네이버로 로그인
+                            </a>
+                            {% comment %} 구글 추가 시 뷰에 google_login_url 추가 후 아래 주석 해제
+                            <a href="{{ google_login_url }}" class="btn btn-outline-secondary btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="border-radius: 10px;">
+                                <i class="bi bi-google"></i> Google로 로그인
+                            </a>
+                            {% endcomment %}
+                        </div>
                     </form>
-                    <div class="text-center small pt-2">
-                        <p class="text-muted mb-1">회원이 아니신가요? <a href="{% url 'signup' %}" class="fw-bold" style="color: var(--gn-accent);">회원가입</a></p>
+                    <p class="small text-muted mb-0">소셜 로그인은 편의용이며, 매물 등록·유료 결제 전에는 휴대폰 본인인증이 별도로 필요합니다.</p>
+                    <div class="text-center small pt-2 mt-2">
+                        <p class="text-muted mb-1">회원이 아니신가요? <a href="{% url 'join_choice' %}" class="fw-bold" style="color: var(--gn-accent);">회원가입</a></p>
                         <p class="text-muted mb-0">
                             <a href="{% url 'find_username' %}" class="text-decoration-none text-secondary">아이디 찾기</a>
                             <span class="mx-1">|</span>
@@ -37,4 +53,5 @@
         </div>
     </div>
 </div>
+{% endwith %}
 {% endblock %}

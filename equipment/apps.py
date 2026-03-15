@@ -15,5 +15,6 @@ class EquipmentConfig(AppConfig):
             Group._meta.verbose_name = "권한 그룹"
             Group._meta.verbose_name_plural = "권한 그룹 관리"
         except Exception:
-            # auth 앱 로딩 타이밍 문제 등으로 실패해도 서버가 죽지 않게 방어
             pass
+        # 소셜/일반 가입 시 Profile 자동 생성
+        from . import signals  # noqa: F401
