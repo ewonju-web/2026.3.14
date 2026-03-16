@@ -34,7 +34,7 @@
                         <i class="bi bi-gear-wide-connected"></i><span>기타 중장비</span>
                     </a>
                 </div>
-                {% if filter_category %}
+                {% if filter_category and not hide_advanced_filters %}
                 <form action="{% url 'index' %}" method="get" class="gn-pc-search-form" id="gn-pc-search-form" data-index-url="{% url 'index' %}">
                     <input type="hidden" name="category" value="{{ filter_category|default:'excavator' }}">
                     <input type="hidden" name="expand" value="1">
@@ -358,7 +358,7 @@
         </div>
 
         <!-- 모바일 상세검색: 기종 선택 시에만 표시 (굴삭기/지게차는 필터, 그 외는 안내) -->
-        {% if filter_category %}
+        {% if filter_category and not hide_advanced_filters %}
         {% if filter_category == 'excavator' or filter_category == 'forklift' %}
         <form id="gn-mobile-adv-form" action="{% url 'index' %}" method="get" class="mt-3 mb-2" data-index-url="{% url 'index' %}">
             <input type="hidden" name="category" value="{{ filter_category|default:'' }}">
@@ -658,6 +658,29 @@
         {% if premium_rotation_chunks %}
         <div class="mb-4">
           <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
+          {% if hide_advanced_filters %}
+          <div class="row row-cols-2 g-2">
+            {% for eq in premium_rotation_list|slice:":4" %}
+            <div class="col">
+              <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
+                <div class="card h-100 border shadow-sm overflow-hidden">
+                  <div style="height: 100px; background: #e2e8f0;">
+                    {% if eq.images.first %}
+                    <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                    {% else %}
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                    {% endif %}
+                  </div>
+                  <div class="card-body p-2">
+                    <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
+                    <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
           <div id="gnPremiumCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
             <div class="carousel-inner">
               {% for chunk in premium_rotation_chunks %}
@@ -700,6 +723,7 @@
             </div>
             {% endif %}
           </div>
+          {% endif %}
         </div>
         {% endif %}
         <!-- 모바일: 기종 선택 시 매물 영역 오른쪽 위에 정렬 -->
@@ -713,6 +737,7 @@
         </div>
         {% endif %}
         <!-- 첫화면: 처음 20개만 카드, 이후는 더보기 시 한 줄 목록 -->
+        {% if not hide_advanced_filters %}
         <div class="row row-cols-2 g-2 mb-3 gn-index-initial-grid">
         {% for equipment in equipment_list|slice:":20" %}
         <div class="col">
@@ -764,8 +789,10 @@
         </div>
         {% endfor %}
         </div>
+        {% endif %}
         <!-- 더보기 + 40/80개씩 보기 (21개 이상일 때만) -->
-        {% if equipment_list|length > 20 %}
+        {% if hide_advanced_filters or equipment_list|length > 20 %}
+        {% if not hide_advanced_filters %}
         <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 my-3">
             <label class="small text-muted mb-0 d-flex align-items-center gap-1">
                 <span>한줄 목록</span>
@@ -778,8 +805,9 @@
                 <i class="bi bi-chevron-down me-1"></i>더보기
             </button>
         </div>
+        {% endif %}
         <!-- 더보기 후: 21번째부터 40개 또는 80개 한 줄 목록 (처음에는 숨김) -->
-        <div class="gn-more-list-wrap d-none" id="gnMoreListWrap">
+        <div class="gn-more-list-wrap {% if not hide_advanced_filters %}d-none{% endif %}" id="gnMoreListWrap">
             <div class="row g-2 mb-4">
                 {% for equipment in equipment_list|slice:slice_rest %}
                 <div class="col-12">
@@ -799,6 +827,12 @@
                         </div>
                     </a>
                 </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5 rounded-3 border" style="background: var(--gn-card); color: var(--gn-text);">
+                        <p class="text-muted mb-0">등록된 매물이 없습니다.</p>
+                    </div>
+                </div>
                 {% endfor %}
             </div>
         </div>
@@ -806,6 +840,32 @@
     </div>
 
     <!-- PC: 기종 선택 시 매물 오른쪽 위에 정렬 -->
+    {% if hide_advanced_filters and premium_rotation_list %}
+    <div class="d-none d-md-block mb-4">
+      <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
+      <div class="row row-cols-2 row-cols-lg-4 g-2 g-lg-3">
+        {% for eq in premium_rotation_list|slice:":4" %}
+        <div class="col">
+          <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
+            <div class="card h-100 border shadow-sm overflow-hidden">
+              <div style="height: 120px; background: #e2e8f0;">
+                {% if eq.images.first %}
+                <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                {% else %}
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                {% endif %}
+              </div>
+              <div class="card-body p-2">
+                <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
+                <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     <div class="d-none d-md-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <h2 class="section-title mb-0 gn-recommend-title">추천 매물</h2>
         {% if filter_category %}
@@ -821,6 +881,7 @@
 
     <!-- PC: 첫 20개 4열 카드 + 더보기 시 21번째부터 한 줄씩 목록 -->
     <div class="d-none d-md-block mb-5">
+        {% if not hide_advanced_filters %}
         <div class="row row-cols-2 row-cols-md-4 g-3 g-lg-4 mb-3 gn-index-pc-initial">
         {% for equipment in equipment_list|slice:":20" %}
         <div class="col">
@@ -870,7 +931,9 @@
         </div>
         {% endfor %}
         </div>
-        {% if equipment_list|length > 20 %}
+        {% endif %}
+        {% if hide_advanced_filters or equipment_list|length > 20 %}
+        {% if not hide_advanced_filters %}
         <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 my-3">
             <label class="small text-muted mb-0 d-flex align-items-center gap-1">
                 <span>한줄 목록</span>
@@ -883,7 +946,8 @@
                 <i class="bi bi-chevron-down me-1"></i>더보기
             </button>
         </div>
-        <div class="gn-more-list-wrap d-none row g-2 mb-4">
+        {% endif %}
+        <div class="gn-more-list-wrap {% if not hide_advanced_filters %}d-none{% endif %} row g-2 mb-4">
             {% for equipment in equipment_list|slice:slice_rest %}
             <div class="col-12">
                 <a href="{% url 'equipment_detail' equipment.pk %}" class="d-flex align-items-center gap-3 p-3 rounded border text-decoration-none gn-simple-list-row" style="background: #fff; color: #111;">
@@ -899,6 +963,12 @@
                     <span class="fw-bold text-danger flex-shrink-0">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
                 </a>
             </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5 rounded-3 bg-white border">
+                    <p class="text-muted mb-0">등록된 매물이 없습니다.</p>
+                </div>
+            </div>
             {% endfor %}
         </div>
         {% endif %}
@@ -906,7 +976,7 @@
 
     <!-- 우측 고정: 유료회원 매물 명함 배너 (PC만, 스크롤 시 따라다님) -->
     {% if premium_sidebar_list %}
-    <div class="d-none d-lg-block gn-premium-sidebar">
+    <div class="d-none d-md-block gn-premium-sidebar">
       <div class="card border shadow-sm">
         <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
           <i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물

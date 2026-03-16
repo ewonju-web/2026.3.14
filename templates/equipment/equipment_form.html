@@ -31,7 +31,8 @@
                         </div>
                         {% if form.equipment_type.errors %}<p class="text-danger small mt-1 mb-0">{{ form.equipment_type.errors.0 }}</p>{% endif %}
                     </div>
-                    <div class="col-md-6">
+                    <div id="model-field-anchor" class="d-none" aria-hidden="true"></div>
+                    <div class="col-md-6" id="model-field-wrapper">
                         <label class="form-label fw-bold">모델명</label>
                         {{ form.model_name }}
                     </div>
@@ -58,6 +59,7 @@
                             <option value="기타">기타</option>
                         </select>
                     </div>
+                    <div id="forklift-maker-anchor" class="d-none" aria-hidden="true"></div>
                     <div class="col-md-6 d-none" id="forklift-maker-wrapper">
                         <label class="form-label fw-bold">제조사 (지게차)</label>
                         <select id="fk-maker-select" class="form-select">
@@ -126,7 +128,7 @@
                             <label class="form-label">제작월</label>
                             {{ form.month_manufactured }}
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6 col-md-4" id="exc-op-hours-wrapper">
                             <label class="form-label">가동시간(hr)</label>
                             {{ form.operating_hours }}
                         </div>
@@ -193,11 +195,13 @@
                             <input type="number" name="month_manufactured" id="id_month_manufactured_simple" class="form-control" min="1" max="12" placeholder="1~12" value="{{ form.month_manufactured.value|default:1 }}">
                         </div>
                     </div>
-                    <div class="col-6 col-md-4">
+                    <div id="year-field-anchor" class="d-none" aria-hidden="true"></div>
+                    <div class="col-6 col-md-4" id="year-field-wrapper">
                         <label class="form-label">제작년도</label>
                         {{ form.year_manufactured }}
                     </div>
-                    <div class="col-6 col-md-4">
+                    <div id="price-field-anchor" class="d-none" aria-hidden="true"></div>
+                    <div class="col-6 col-md-4" id="price-field-wrapper">
                         <label class="form-label fw-bold">가격(만원) <span class="text-danger">(필수)</span></label>
                         {{ form.listing_price }}
                     </div>
@@ -366,15 +370,24 @@
   const regionSigunguInput = document.getElementById('id_region_sigungu');
 
   const makerTextWrapper = document.getElementById('manufacturer-text-wrapper');
+  const modelFieldWrapper = document.getElementById('model-field-wrapper');
+  const modelFieldAnchor = document.getElementById('model-field-anchor');
   const excavatorMakerWrapper = document.getElementById('excavator-maker-wrapper');
   const makerSelect = document.getElementById('exc-maker-select');
   const forkliftMakerWrapper = document.getElementById('forklift-maker-wrapper');
+  const forkliftMakerAnchor = document.getElementById('forklift-maker-anchor');
   const fkMakerSelect = document.getElementById('fk-maker-select');
   const dumpMakerSelect = document.getElementById('dump-maker-select');
   const excSubTypeWrapper = document.getElementById('exc-sub-type-wrapper');
   const excWeightWrapper = document.getElementById('exc-weight-class-wrapper');
   const excSubTypeSelect = document.getElementById('exc-sub-type-select');
   const excWeightSelect = document.getElementById('exc-weight-class-select');
+  const excMonthWrapper = document.getElementById('exc-month-wrapper');
+  const excOpHoursWrapper = document.getElementById('exc-op-hours-wrapper');
+  const yearFieldWrapper = document.getElementById('year-field-wrapper');
+  const yearFieldAnchor = document.getElementById('year-field-anchor');
+  const priceFieldWrapper = document.getElementById('price-field-wrapper');
+  const priceFieldAnchor = document.getElementById('price-field-anchor');
 
   const fkSubTypeWrapper = document.getElementById('fk-sub-type-wrapper');
   const fkWeightWrapper = document.getElementById('fk-weight-class-wrapper');
@@ -477,6 +490,39 @@
         opHoursFk.disabled = !isForklift;
         if (isForklift && opHoursExc && opHoursExc.value) opHoursFk.value = opHoursExc.value;
         if (isExcavator && opHoursFk && opHoursFk.value) opHoursExc.value = opHoursFk.value;
+      }
+
+      // 지게차 등록 폼 배치:
+      // 제조사(지게차) → 모델명 순서로 보이도록 재배치
+      if (isForklift && forkliftMakerWrapper && modelFieldWrapper && modelFieldWrapper.parentNode === forkliftMakerWrapper.parentNode) {
+        modelFieldWrapper.parentNode.insertBefore(forkliftMakerWrapper, modelFieldWrapper);
+      } else {
+        // 다른 기종으로 전환 시 지게차 제조사 필드 원래 자리로 복구
+        if (forkliftMakerWrapper && forkliftMakerAnchor && forkliftMakerAnchor.parentNode) {
+          forkliftMakerAnchor.parentNode.insertBefore(forkliftMakerWrapper, forkliftMakerAnchor.nextSibling);
+        }
+      }
+
+      // 굴삭기 등록 폼 배치:
+      // 가격 입력란을 제작년도 영역으로 올리고,
+      // 제작년도 → 제작월 → 가동시간 순서가 유지되도록 필드 위치 재배치
+      if (isExcavator && detailFields) {
+        // insertBefore 기준 노드가 다른 부모에 있으면 예외가 나므로,
+        // appendChild로 안전하게 원하는 최종 순서를 강제한다.
+        if (priceFieldWrapper) detailFields.appendChild(priceFieldWrapper);
+        if (yearFieldWrapper) detailFields.appendChild(yearFieldWrapper);
+        if (excMonthWrapper) detailFields.appendChild(excMonthWrapper);
+        if (excOpHoursWrapper) detailFields.appendChild(excOpHoursWrapper);
+      } else {
+        if (modelFieldWrapper && modelFieldAnchor && modelFieldAnchor.parentNode) {
+          modelFieldAnchor.parentNode.insertBefore(modelFieldWrapper, modelFieldAnchor.nextSibling);
+        }
+        if (yearFieldWrapper && yearFieldAnchor && yearFieldAnchor.parentNode) {
+          yearFieldAnchor.parentNode.insertBefore(yearFieldWrapper, yearFieldAnchor.nextSibling);
+        }
+        if (priceFieldWrapper && priceFieldAnchor && priceFieldAnchor.parentNode) {
+          priceFieldAnchor.parentNode.insertBefore(priceFieldWrapper, priceFieldAnchor.nextSibling);
+        }
       }
 
       // 모델명 placeholder: 굴삭기 vs 지게차

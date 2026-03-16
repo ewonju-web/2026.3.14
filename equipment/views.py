@@ -121,6 +121,20 @@ def index(request):
     region_sido = (request.GET.get('region_sido', '') or '').strip()
     region_sigungu = (request.GET.get('region_sigungu', '') or '').strip()
     mast_type = (request.GET.get('mast_type', '') or '').strip()
+    # 상세검색 실행 후에는 목록 화면에서 상세검색 바를 숨기고 정렬만 남긴다.
+    hide_advanced_filters = request.GET.get('expand') == '1' or any(
+        bool(v) for v in (
+            maker,
+            sub_type,
+            weight_class,
+            model,
+            year_min,
+            year_max,
+            region_sido,
+            region_sigungu,
+            mast_type,
+        )
+    )
 
     # 목록/검색: NORMAL만 노출(EXPIRED_HIDDEN 제외). 상세 직접 URL은 별도 허용.
     equipment_list = Equipment.objects.visible()
@@ -224,14 +238,20 @@ def index(request):
     ]
     premium_sidebar_list = get_premium_equipment_sidebar(limit=6)
 
-    # 더보기 목록: 21번째부터 per_page개 (40 또는 80)
+    # 더보기 목록:
+    # - 일반 화면: 21번째부터 per_page개(40/80)
+    # - 상세검색 결과 화면: 21번째부터 전부 한줄 목록으로 즉시 노출
     try:
         list_per_page = int(request.GET.get('per_page', '40'))
     except (TypeError, ValueError):
         list_per_page = 40
     if list_per_page not in (40, 80):
         list_per_page = 40
-    slice_rest = f"20:{20 + list_per_page}"  # "20:60" or "20:100"
+    if hide_advanced_filters:
+        # 상세검색 결과에서는 카드형 대신 목록형으로 전체 노출
+        slice_rest = "0:"
+    else:
+        slice_rest = f"20:{20 + list_per_page}"  # "20:60" or "20:100"
 
     # 정렬 링크에서 기존 GET 파라미터 유지용 (sort 제외)
     get_copy = request.GET.copy()
@@ -262,6 +282,7 @@ def index(request):
         'filter_region_sigungu': region_sigungu,
         'filter_mast_type': mast_type,
         'index_query_base': index_query_base,
+        'hide_advanced_filters': hide_advanced_filters,
     })
 
 
