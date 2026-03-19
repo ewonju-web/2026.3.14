@@ -83,11 +83,54 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+def _env_str(name: str, default: str = "") -> str:
+    """dotenv 값에서 감싼 따옴표('"/') 제거."""
+    val = os.getenv(name, default)
+    if val is None:
+        return default
+    s = str(val).strip()
+    if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+        return s[1:-1]
+    return s
+
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    },
+    # direct-nara(php) 백업 DB: legacy 테이블을 읽어오기 위한 연결
+    "legacy": {
+        "ENGINE": "django.db.backends.mysql",
+        # direct-nara legacy DB 이름은 기본값으로 둡니다.
+        "NAME": _env_str("MYSQL_LEGACY_NAME", "direct_nara_legacy"),
+        # MySQL 로그인은 root 사용(이관용).
+        "USER": _env_str("MYSQL_LEGACY_USER", "root"),
+        "PASSWORD": _env_str(
+            "MYSQL_LEGACY_PASSWORD",
+            _env_str("DIRECT_NARA_PASSWORD", ""),
+        ),
+        "HOST": _env_str("MYSQL_LEGACY_HOST", _env_str("DIRECT_NARA_HOST", "127.0.0.1")),
+        "PORT": _env_str("MYSQL_LEGACY_PORT", _env_str("DIRECT_NARA_PORT", "3306")),
+        "OPTIONS": {
+            "charset": "utf8mb4",
+        },
+    },
+    # 일부 커맨드가 기대하는 alias(직접 이름: direct_nara)
+    "direct_nara": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": _env_str("MYSQL_LEGACY_NAME", "direct_nara_legacy"),
+        "USER": _env_str("MYSQL_LEGACY_USER", "root"),
+        "PASSWORD": _env_str(
+            "MYSQL_LEGACY_PASSWORD",
+            _env_str("DIRECT_NARA_PASSWORD", ""),
+        ),
+        "HOST": _env_str("MYSQL_LEGACY_HOST", _env_str("DIRECT_NARA_HOST", "127.0.0.1")),
+        "PORT": _env_str("MYSQL_LEGACY_PORT", _env_str("DIRECT_NARA_PORT", "3306")),
+        "OPTIONS": {
+            "charset": "utf8mb4",
+        },
+    },
 }
 
 # django-allauth: 소셜 로그인 = 로그인 편의, 휴대폰 인증 = 거래/결제 신뢰 (별도 필수)

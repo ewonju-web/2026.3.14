@@ -12,23 +12,23 @@
     <!-- 왼쪽(65~70%): 메인 이미지 + 썸네일 한 줄 -->
     <div class="col-12 col-lg-9 gn-detail-left">
       <div class="card gn-card-sharp gn-detail-photo-card" style="border-radius: 10px; overflow: hidden;">
-        {% if equipment.images.all %}
+        {% if detail_images %}
           <div class="position-relative bg-dark bg-opacity-10 gn-detail-main-wrap">
             <img id="detailMainImg"
-                 src="{{ equipment.images.first.image.url }}"
+                 src="{{ detail_images.0.image.url }}"
                  class="img-fluid w-100 cursor-pointer gn-detail-main-img"
                  style="cursor: zoom-in;"
                  data-bs-toggle="modal" data-bs-target="#lightboxModal"
                  data-lightbox-index="0"
-                 data-lightbox-src="{{ equipment.images.first.image.url }}"
+                 data-lightbox-src="{{ detail_images.0.image.url }}"
                  alt="{{ equipment.model_name }}">
             <span class="position-absolute bottom-0 end-0 m-2 badge bg-dark bg-opacity-75 py-2 px-3 small">
               <i class="bi bi-zoom-in me-1"></i>클릭하면 크게 보기
             </span>
           </div>
-          {% if equipment.images.all|length > 1 %}
+          {% if detail_images|length > 1 %}
           <div class="gn-detail-thumbs p-2 border-top bg-light d-flex gap-2 overflow-x-auto flex-nowrap">
-            {% for image in equipment.images.all %}
+            {% for image in detail_images %}
             <button type="button"
                     class="p-0 border rounded flex-shrink-0 detail-thumb {% if forloop.first %}border-primary{% endif %}"
                     style="width: 72px; height: 72px; overflow: hidden; {% if forloop.first %}border-width: 2px !important;{% endif %}"
@@ -82,11 +82,14 @@
         <h6 class="gn-section-heading mb-2 small">기본 정보</h6>
         <table class="table table-sm table-borderless mb-0 align-middle gn-spec-table small">
           <tbody>
+            {% if equipment.equipment_type != 'excavator' %}
             <tr><td class="spec-label">기종</td><td class="spec-value">{{ equipment.get_equipment_type_display|default:"-" }}</td></tr>
+            {% endif %}
             <tr><td class="spec-label">모델명</td><td class="spec-value spec-value-model">{% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}</td></tr>
             <tr><td class="spec-label">연식</td><td class="spec-value">{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}년 {{ equipment.month_manufactured|default:1|stringformat:"02d" }}월{% else %}모름{% endif %}</td></tr>
-            <tr><td class="spec-label">가동시간</td><td class="spec-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }} HR{% else %}모름{% endif %}</td></tr>
+            <tr><td class="spec-label">가동시간</td><td class="spec-value">{% if equipment.operating_hours %}{{ equipment.operating_hours }} HR{% else %}-{% endif %}</td></tr>
             <tr><td class="spec-label">위치</td><td class="spec-value">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
+            <tr><td class="spec-label">매물 등록일</td><td class="spec-value">{{ equipment.created_at|date:"Y-m-d" }}</td></tr>
           </tbody>
         </table>
         {% if equipment.author_id %}
@@ -242,12 +245,12 @@
   </div>
 
   <!-- 사진 보기 (2컬럼 아래 전체 폭) -->
-  {% if equipment.images.all %}
+  {% if detail_images %}
   <div class="row mt-4">
     <div class="col-12">
       <h5 class="fw-bold mb-3" style="border-left: 4px solid #c00; padding-left: 12px;">사진 보기</h5>
       <div class="gn-detail-photo-stack">
-        {% for image in equipment.images.all %}
+        {% for image in detail_images %}
         <a href="{{ image.image.url }}" target="_blank" rel="noopener" class="d-block gn-detail-photo-item gn-card-sharp rounded overflow-hidden">
           <img src="{{ image.image.url }}" class="img-fluid w-100" alt="{{ equipment.model_name }} {{ forloop.counter }}">
         </a>
@@ -341,14 +344,14 @@
         <a href="#" id="lightboxOriginalLink" target="_blank" rel="noopener" class="position-absolute top-0 start-0 m-3 btn btn-outline-light btn-sm z-2">
           <i class="bi bi-arrows-fullscreen me-1"></i>원본 크기로 보기
         </a>
-        {% if equipment.images.all|length > 1 %}
+        {% if detail_images|length > 1 %}
         <button type="button" class="btn btn-outline-light btn-lg position-absolute start-0 top-50 translate-middle-y m-3 z-2 rounded-circle opacity-75" id="lightboxPrev" aria-label="이전">
           <i class="bi bi-chevron-left"></i>
         </button>
         <button type="button" class="btn btn-outline-light btn-lg position-absolute end-0 top-50 translate-middle-y m-3 z-2 rounded-circle opacity-75" id="lightboxNext" aria-label="다음">
           <i class="bi bi-chevron-right"></i>
         </button>
-        <span class="position-absolute bottom-0 start-50 translate-middle-x mb-3 text-white-50 small z-2" id="lightboxCounter">1 / {{ equipment.images.all|length }}</span>
+        <span class="position-absolute bottom-0 start-50 translate-middle-x mb-3 text-white-50 small z-2" id="lightboxCounter">1 / {{ detail_images|length }}</span>
         {% endif %}
         <img src="" class="img-fluid" id="lightboxImg" style="max-width: 100%; max-height: 95vh; width: auto; height: auto;" alt="확대 보기">
       </div>
@@ -358,7 +361,7 @@
 
 <script>
 (function() {
-  var images = [{% for image in equipment.images.all %}'{{ image.image.url|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+  var images = [{% for image in detail_images %}'{{ image.image.url|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
   var total = images.length;
   var currentIndex = 0;
   var lastClickedIndex = 0;

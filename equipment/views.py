@@ -103,6 +103,25 @@ def _build_location_text(current_location: str, region_sido: str, region_sigungu
     return sido or ''
 
 
+def _is_excavator_tire_5_6_filter(sub_type: str, weight_class: str) -> bool:
+    """굴삭기 상세검색에서 '타이어식 5~6 ton' 선택 여부."""
+    return sub_type == 'EXC_TIRE' and weight_class == 'EXC_TIRE_LE_6'
+
+
+def _legacy_excavator_tire_5_6_q() -> Q:
+    """
+    레거시 데이터 호환:
+    - 예전 이관 데이터는 sub_type/weight_class 코드가 비어있거나 잘못된 경우가 있어
+      모델명 패턴(EW60/HW60/DX55W/06W 등)도 함께 검색한다.
+    """
+    return Q(
+        model_name__iregex=(
+            r"(EW\s*60|EW\s*55|HW\s*60|DX\s*55\s*W|R\s*555\s*W|"
+            r"\b55\s*W(?:I)?\b|\b0?6\s*W\b)"
+        )
+    )
+
+
 # [1] 메인 페이지 (키워드 + 정렬만)
 def index(request):
     query = (request.GET.get('q', '') or '').strip()
@@ -186,9 +205,19 @@ def index(request):
     # 카테고리별 세부 필터
     if filter_category == 'excavator':
         if sub_type:
-            equipment_list = equipment_list.filter(sub_type=sub_type)
+            if _is_excavator_tire_5_6_filter(sub_type, weight_class):
+                equipment_list = equipment_list.filter(
+                    Q(sub_type=sub_type) | _legacy_excavator_tire_5_6_q()
+                )
+            else:
+                equipment_list = equipment_list.filter(sub_type=sub_type)
         if weight_class:
-            equipment_list = equipment_list.filter(weight_class=weight_class)
+            if _is_excavator_tire_5_6_filter(sub_type, weight_class):
+                equipment_list = equipment_list.filter(
+                    Q(weight_class=weight_class) | _legacy_excavator_tire_5_6_q()
+                )
+            else:
+                equipment_list = equipment_list.filter(weight_class=weight_class)
     elif filter_category == 'forklift':
         if sub_type:
             equipment_list = equipment_list.filter(sub_type=sub_type)
@@ -217,12 +246,14 @@ def index(request):
             effective_order=Coalesce(F('last_bumped_at'), F('created_at'))
         ).order_by('-effective_order')
 
-    # 검색 상단 우선 노출: 유료 회원 매물을 목록 상단에 배치
+    # 기본 최신 목록에서만 유료 회원 매물을 상단 우선 배치
+    # (상세검색/정렬 결과에서는 사용자가 선택한 정렬 순서를 그대로 유지)
     premium_author_ids = set(get_premium_user_ids())
-    equipment_list = list(equipment_list)
-    equipment_list = [e for e in equipment_list if e.author_id in premium_author_ids] + [
-        e for e in equipment_list if e.author_id not in premium_author_ids
-    ]
+    if sort == 'new' and not hide_advanced_filters and not query:
+        equipment_list = list(equipment_list)
+        equipment_list = [e for e in equipment_list if e.author_id in premium_author_ids] + [
+            e for e in equipment_list if e.author_id not in premium_author_ids
+        ]
     premium_author_ids = list(premium_author_ids)  # 템플릿에서 프리미엄 배지용
 
     favorited_ids = set()
@@ -251,6 +282,7 @@ def index(request):
         # 상세검색 결과에서는 카드형 대신 목록형으로 전체 노출
         slice_rest = "0:"
     else:
+        # 일반 화면 더보기: 21번째부터 선택 개수(40/80)만 노출
         slice_rest = f"20:{20 + list_per_page}"  # "20:60" or "20:100"
 
     # 정렬 링크에서 기존 GET 파라미터 유지용 (sort 제외)
@@ -976,6 +1008,51 @@ def equipment_detail(request, pk):
         except Exception:
             author_display = equipment.author.username if equipment.author else None
 
+    # 작성자 연결이 없는 이관 매물 보정:
+    # 같은 핵심 정보(모델/가격/위치/등록일)의 최근 매물에서 연락처를 fallback으로 사용
+    if not author_phone:
+        sibling_qs = (
+            Equipment.objects.select_related('author__profile')
+            .exclude(pk=equipment.pk)
+            .exclude(author__isnull=True)
+            .filter(
+                model_name=equipment.model_name,
+                listing_price=equipment.listing_price,
+                current_location=equipment.current_location,
+                created_at__date=equipment.created_at.date(),
+            )
+            .order_by('-created_at')
+        )
+        for sibling in sibling_qs[:10]:
+            sibling_profile = getattr(getattr(sibling, 'author', None), 'profile', None)
+            sibling_phone = getattr(sibling_profile, 'phone', None) if sibling_profile else None
+            if sibling_phone:
+                author_phone = sibling_phone
+                if not author_display:
+                    author_display = (
+                        getattr(sibling_profile, 'company_name', None)
+                        or sibling.author.get_full_name()
+                        or sibling.author.username
+                    )
+                if not author_is_dealer:
+                    author_is_dealer = getattr(sibling_profile, 'user_type', None) == 'DEALER'
+                if not author_is_premium:
+                    author_is_premium = (
+                        getattr(sibling_profile, 'is_premium_active', False)
+                        or sibling.author_id in set(get_premium_user_ids())
+                    )
+                break
+
+    # 실제 파일이 존재하는 사진만 상세 화면에 노출 (깨진 이미지 방지)
+    detail_images = []
+    for image in equipment.images.all():
+        try:
+            image_name = getattr(image.image, 'name', '') or ''
+            if image_name and image.image.storage.exists(image_name):
+                detail_images.append(image)
+        except Exception:
+            continue
+
     # 금융 예상 한도 / 월 납입액(60개월, 연 7% 가정)
     finance_limit = None
     finance_monthly_60 = None
@@ -1041,6 +1118,7 @@ def equipment_detail(request, pk):
 
     return render(request, 'equipment/equipment_detail.html', {
         'equipment': equipment,
+        'detail_images': detail_images,
         'is_favorited': is_favorited,
         'comments': comments,
         'author_phone': author_phone,
