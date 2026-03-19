@@ -997,6 +997,11 @@ def equipment_detail(request, pk):
             profile = getattr(equipment.author, 'profile', None)
             if profile:
                 author_phone = getattr(profile, 'phone', None)
+                if author_phone is not None:
+                    author_phone = str(author_phone).strip()
+                    # 전화번호는 숫자가 있어야 유효 (예: legacy_XXXX 같은 값 방지)
+                    if author_phone and not any(ch.isdigit() for ch in author_phone):
+                        author_phone = None
                 author_is_dealer = getattr(profile, 'user_type', None) == 'DEALER'
                 author_is_premium = getattr(profile, 'is_premium_active', False) or (
                     equipment.author_id in set(get_premium_user_ids())
@@ -1027,7 +1032,11 @@ def equipment_detail(request, pk):
             sibling_profile = getattr(getattr(sibling, 'author', None), 'profile', None)
             sibling_phone = getattr(sibling_profile, 'phone', None) if sibling_profile else None
             if sibling_phone:
-                author_phone = sibling_phone
+                author_phone = str(sibling_phone).strip()
+                if author_phone and not any(ch.isdigit() for ch in author_phone):
+                    author_phone = None
+                if not author_phone:
+                    continue
                 if not author_display:
                     author_display = (
                         getattr(sibling_profile, 'company_name', None)

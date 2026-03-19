@@ -1622,6 +1622,14 @@
     if (pcCategory) wheelScrollHoriz(pcCategory);
     if (mobileCategory) wheelScrollHoriz(mobileCategory);
 
+    // PC 카테고리: 모바일과 동일하게 active pill을 자동으로 스크롤해 가운데로 보이게 함
+    if (pcCategory) {
+      var activePc = pcCategory.querySelector('.gn-cat-pill-pc.active') || pcCategory.querySelector('.gn-cat-pill.active');
+      if (activePc && activePc.scrollIntoView) {
+        activePc.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+      }
+    }
+
     var scroll = document.querySelector('.gn-category-scroll');
     if (scroll) {
       var active = scroll.querySelector('.gn-cat-pill.active');

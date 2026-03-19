@@ -64,7 +64,10 @@
           {% endif %}
         </div>
         {% if author_phone %}
-        <p class="mb-0 small"><i class="bi bi-telephone me-1"></i><a href="tel:{{ author_phone|cut:'-'|cut:' ' }}" class="text-decoration-none fw-bold">{{ author_phone }}</a></p>
+        <p class="mb-0 small">
+          <i class="bi bi-telephone me-1"></i>
+          <a href="tel:{{ author_phone|format_phone|cut:'-'|cut:' ' }}" class="text-decoration-none fw-bold">{{ author_phone|format_phone }}</a>
+        </p>
         {% endif %}
       </div>
 
@@ -133,7 +136,7 @@
         <h6 class="small text-muted text-uppercase mb-2">문의하기</h6>
         <div class="d-grid gap-2">
           {% if author_phone %}
-          <a href="tel:{{ author_phone|cut:'-'|cut:' ' }}" class="btn gn-btn-primary py-2 fw-bold">
+          <a href="tel:{{ author_phone|format_phone|cut:'-'|cut:' ' }}" class="btn gn-btn-primary py-2 fw-bold">
             <i class="bi bi-telephone-fill me-2"></i> 전화 걸기
           </a>
           {% else %}

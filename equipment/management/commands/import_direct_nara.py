@@ -49,9 +49,12 @@ def parse_sdate_to_created_at(sdate):
 def normalize_phone(raw):
     if not raw:
         return ""
-    s = re.sub(r"[\s\-]", "", str(raw).strip())
-    if s.startswith("+82"):
-        s = "0" + s[3:]
+    # legacy DB에 전화번호가 공백/하이픈뿐 아니라 점(.) 등으로 섞여 있을 수 있어
+    # 매칭이 실패하지 않도록 "숫자만" 추출한다.
+    s = re.sub(r"[^0-9]", "", str(raw).strip())
+    # 국가코드(82) 형태 제거: 8210xxxxxxx -> 010xxxxxxx
+    if s.startswith("82") and len(s) >= 10:
+        s = "0" + s[2:]
     return s[:20]  # 필드 길이 제한
 
 
