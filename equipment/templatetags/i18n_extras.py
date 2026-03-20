@@ -145,12 +145,28 @@ def format_phone(value: str) -> str:
     """
     if not value:
         return ""
-    digits = re.sub(r"[^0-9]", "", str(value))
+    raw = str(value)
+    digits = re.sub(r"[^0-9]", "", raw)
+
+    # 값 안에 전화번호가 2개 이상(개행/공백 포함) 섞여 들어오는 경우가 있어,
+    # 숫자 길이가 10/11이 아니더라도 "첫 번째 정상 전화번호"만 뽑아 포맷합니다.
+    m010 = re.search(r"(010\d{8})", digits)
+    if m010:
+        d = m010.group(1)
+        return f"{d[0:3]}-{d[3:7]}-{d[7:11]}"
+
+    m10 = re.search(r"(\d{10})", digits)
+    if m10:
+        d = m10.group(1)
+        return f"{d[0:3]}-{d[3:6]}-{d[6:10]}"
+
+    # 기존 동작(입력 자체가 이미 포맷된 케이스)에 최대한 호환
     if len(digits) == 11 and digits.startswith("010"):
         return f"{digits[0:3]}-{digits[3:7]}-{digits[7:11]}"
     if len(digits) == 10:
         return f"{digits[0:3]}-{digits[3:6]}-{digits[6:10]}"
-    return value
+
+    return raw
 
 
 @register.filter

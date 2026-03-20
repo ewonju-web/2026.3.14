@@ -158,14 +158,14 @@ class Command(BaseCommand):
 
                 # sw_member:
                 # - mb_rname: 실명(비어 있는 케이스가 많음)
+                # - mb_name: 이름
                 # - mb_nicname: 닉네임
-                # - mb_name: 이름(사이트별 의미 상이)
-                # nickname 우선(실명 없으면 닉네임 사용)으로 전화번호(mb_id)를 이름으로 쓰는 문제를 방지한다.
+                # 이름 칼럼에는 실명/이름 우선으로 넣고, 닉네임은 마지막 fallback으로만 사용.
                 name = (mb_rname or "").strip()
                 if not name:
-                    name = (mb_nicname or "").strip()
-                if not name:
                     name = (mb_name or "").strip()
+                if not name:
+                    name = (mb_nicname or "").strip()
                 if not name:
                     cand = (mb_id or "").strip()
                     if cand and not looks_like_phone_number(cand):

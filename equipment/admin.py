@@ -110,17 +110,21 @@ class PremiumStatusFilter(admin.SimpleListFilter):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
+    # 기존 사이트에서 로그인 아이디가 전화번호였던 이력 때문에 username/이름 폴백이 전화번호처럼 보일 수 있어,
+    # 목록에서는 꼭 필요한 정보만 최소 표시하도록 줄입니다.
     list_display = [
-        'member_number_display', 'user_nickname_display', 'name_display', 'phone',
-        'premium_display', 'premium_until', 'premium_remaining_display',
-        'payment_memo_display',
-        'equipment_count_display', 'member_type_display', 'verified_display', 'user_type_display',
-        'is_premium', 'payment_count_display', 'company_name', 'is_approved', 'created_display',
+        'member_number_display',  # 회원번호(전화번호 우선)
+        'phone',                   # 연락처(원본 전화)
+        'name_display',           # 이름
+        'created_display',        # 가입일
     ]
     list_filter = (MemberTypeFilter, 'phone_verified', 'user_type', PremiumStatusFilter, 'is_approved')
     search_fields = ('user__username', 'user__first_name', 'user__email', 'company_name', 'phone')
     list_per_page = 50
-    list_editable = ('is_premium',)
+    # 목록에서 최소 컬럼만 보여주도록 줄였기 때문에,
+    # list_editable은 list_display에 없는 필드를 가리키면 SystemCheckError가 발생합니다.
+    # 여기서는 편집 기능을 끄고(기본값) 조회 중심으로 동작하도록 합니다.
+    list_editable = ()
     readonly_fields = ('equipment_count_display', 'payment_count_display', 'reported_display', 'created_display')
     date_hierarchy = 'user__date_joined'
 
@@ -323,12 +327,12 @@ class DeletedListingLogAdmin(admin.ModelAdmin):
 
 class CustomAuthUserAdmin(DjangoUserAdmin):
     """auth.User 목록을 리뉴얼 회원 관리 용도에 맞춰 단순 표시."""
+    # auth.User 목록은 username이 전화번호 형태인 경우가 있어 중복/혼란이 발생합니다.
+    # 목록에서는 회원번호(전화번호 우선) + 이름 + 가입일만 보여줍니다.
     list_display = (
         "member_no_display",
-        "username",
         "name_display",
         "joined_display",
-        "is_staff",
     )
     search_fields = ("username", "first_name", "profile__phone")
     ordering = ("-date_joined",)

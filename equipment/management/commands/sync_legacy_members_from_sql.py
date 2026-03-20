@@ -60,10 +60,16 @@ class Command(BaseCommand):
             action="store_true",
             help="저장 없이 대상만 확인",
         )
+        parser.add_argument(
+            "--force-name",
+            action="store_true",
+            help="기존 이름이 있어도 SQL의 이름(mb_name 우선)으로 강제 덮어쓰기",
+        )
 
     def handle(self, *args, **options):
         sql_path = options["sql_path"]
         dry_run = options["dry_run"]
+        force_name = options.get("force_name", False)
 
         tuple_re = re.compile(
             r"\((\d+),'((?:\\.|[^'])*)','((?:\\.|[^'])*)','((?:\\.|[^'])*)','((?:\\.|[^'])*)','((?:\\.|[^'])*)'"
@@ -125,7 +131,10 @@ class Command(BaseCommand):
                 prof.legacy_member_id = data["mb_num"]
                 changed_profile_fields.append("legacy_member_id")
 
-            if data["name"] and (not user.first_name or user.first_name == "회원"):
+            if data["name"] and (
+                force_name
+                or (not user.first_name or user.first_name == "회원")
+            ):
                 user.first_name = data["name"]
                 changed_user_fields.append("first_name")
 

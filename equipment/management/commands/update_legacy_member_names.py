@@ -115,9 +115,13 @@ class Command(BaseCommand):
                     row[4] or "",
                     row[5] or "",
                 )
+                # 이름 우선순위: 실명(mb_rname) -> 이름(mb_name) -> 닉네임(mb_nicname)
+                # 닉네임이 이름 칼럼에 들어가는 문제를 줄이기 위해 mb_nicname은 마지막 fallback으로 둡니다.
                 name = (mb_rname or "").strip()
                 if not name or looks_like_phone_number(name):
-                    name = (mb_nicname or "").strip() or (mb_name or "").strip()
+                    name = (mb_name or "").strip()
+                if not name or looks_like_phone_number(name):
+                    name = (mb_nicname or "").strip()
                 if not name or looks_like_phone_number(name):
                     continue
                 for cand in (mb_hp, mb_tel, mb_id):
@@ -167,7 +171,8 @@ class Command(BaseCommand):
                             if not ph or ph not in target_phones or ph in mapping:
                                 continue
 
-                            name = (mb_rname or "").strip() or (mb_nicname or "").strip() or (mb_name or "").strip()
+                            # SQL 덤프 fallback도 동일한 우선순위 적용
+                            name = (mb_rname or "").strip() or (mb_name or "").strip() or (mb_nicname or "").strip()
                             if not name or looks_like_phone_number(name):
                                 continue
                             mapping[ph] = name
