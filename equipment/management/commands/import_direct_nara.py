@@ -58,6 +58,22 @@ def normalize_phone(raw):
     return s[:20]  # 필드 길이 제한
 
 
+def looks_like_phone_number(raw):
+    """이름으로 들어가면 안 되는 전화번호 형태(010 등)인지 대략 판별."""
+    if not raw:
+        return False
+    digits = re.sub(r"[^0-9]", "", str(raw).strip())
+    if not digits:
+        return False
+    # 한국 휴대폰: 010XXXXXXXX (11자리)
+    if digits.startswith("010") and len(digits) == 11:
+        return True
+    # 기타 전화번호(하이픈 제거 후)도 10~11자리 + 앞자리 0이면 전화로 취급
+    if digits.startswith("0") and len(digits) in (10, 11):
+        return True
+    return False
+
+
 # direct-nara tb_pro.cate1 → EquipmentType
 CATE_TO_TYPE = {
     "1": EquipmentType.EXCAVATOR,
@@ -122,16 +138,41 @@ class Command(BaseCommand):
             # ----- 회원 이관 -----
             rows = run_sql(
                 "direct_nara",
-                "SELECT mb_num, mb_id, mb_tel, mb_hp, mb_rname FROM sw_member ORDER BY mb_num"
+                "SELECT mb_num, mb_id, mb_tel, mb_hp, mb_rname, mb_name, mb_nicname FROM sw_member ORDER BY mb_num"
             )
             if limit < 999999:
                 rows = rows[:limit]
             self.stdout.write("회원 %d명 읽음 (direct_nara.sw_member)" % len(rows))
 
             for row in rows:
-                mb_num, mb_id, mb_tel, mb_hp, mb_rname = (row[0], row[1] or "", row[2] or "", row[3] or "", row[4] or "")
-                phone = normalize_phone(mb_id or mb_tel or mb_hp)
-                name = (mb_rname or mb_id or "").strip() or "회원"
+                mb_num, mb_id, mb_tel, mb_hp, mb_rname, mb_name, mb_nicname = (
+                    row[0],
+                    row[1] or "",
+                    row[2] or "",
+                    row[3] or "",
+                    row[4] or "",
+                    row[5] or "",
+                    row[6] or "",
+                )
+                phone = normalize_phone(mb_hp) or normalize_phone(mb_tel) or normalize_phone(mb_id)
+
+                # sw_member:
+                # - mb_rname: 실명(비어 있는 케이스가 많음)
+                # - mb_nicname: 닉네임
+                # - mb_name: 이름(사이트별 의미 상이)
+                # nickname 우선(실명 없으면 닉네임 사용)으로 전화번호(mb_id)를 이름으로 쓰는 문제를 방지한다.
+                name = (mb_rname or "").strip()
+                if not name:
+                    name = (mb_nicname or "").strip()
+                if not name:
+                    name = (mb_name or "").strip()
+                if not name:
+                    cand = (mb_id or "").strip()
+                    if cand and not looks_like_phone_number(cand):
+                        name = cand
+                # 최종적으로도 전화번호 형태면 보정 대상에서 제외
+                if looks_like_phone_number(name):
+                    name = "회원"
 
                 existing = Profile.objects.filter(legacy_member_id=mb_num).first()
                 if existing:
@@ -211,13 +252,13 @@ class Command(BaseCommand):
                         user=user,
                         defaults={
                             "legacy_member_id": mb_num,
-                            "phone": phone or username,
+                            "phone": phone or "",
                             "company_name": name[:100],
                         },
                     )
                     if not created:
                         prof.legacy_member_id = mb_num
-                        prof.phone = phone or username
+                        prof.phone = phone or ""
                         prof.company_name = name[:100]
                         prof.save()
                 except IntegrityError:

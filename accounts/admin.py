@@ -12,16 +12,57 @@ class MembershipGradeAdmin(admin.ModelAdmin):
 
 @admin.register(MemberProfile)
 class MemberProfileAdmin(admin.ModelAdmin):
+    def member_no_display(self, obj):
+        return (obj.phone or "").strip() or obj.user.username
+
+    member_no_display.short_description = "회원번호"
+
+    def user_nickname_display(self, obj):
+        """
+        관리자 목록의 "사용자" 컬럼 표시용.
+        - 우선 대표자명/상호(이관 데이터의 이름) 사용
+        - 비어 있으면 User.first_name
+        - 그래도 없으면 User.username(로그인 아이디)
+        """
+        return (
+            (obj.ceo_name or "").strip()
+            or (obj.company_name or "").strip()
+            or (getattr(obj.user, "first_name", "") or "").strip()
+            or obj.user.username
+        )
+
+    user_nickname_display.short_description = "사용자"
+
+    def name_display(self, obj):
+        """관리자 목록의 "이름" 컬럼 표시용(대표자명 우선)."""
+        name = (obj.ceo_name or "").strip()
+        if name:
+            return name
+        first = (getattr(obj.user, "first_name", None) or "").strip()
+        if first:
+            return first
+        return (obj.user.username or "").strip() or "-"
+
+    name_display.short_description = "이름"
+
+    def joined_display(self, obj):
+        d = getattr(obj.user, "date_joined", None)
+        return d.strftime("%Y-%m-%d %H:%M") if d else "-"
+
+    joined_display.short_description = "가입일"
+
     list_display = (
-        "user",
+        "member_no_display",
+        "user_nickname_display",
         "grade",
-        "company_name",
+        "name_display",
         "phone",
+        "joined_display",
         "is_dealer",
         "created_at",
     )
     list_filter = ("grade", "is_dealer")
-    search_fields = ("user__username", "user__email", "company_name", "phone")
+    search_fields = ("user__username", "user__email", "ceo_name", "company_name", "phone")
     raw_id_fields = ("user",)
 
 

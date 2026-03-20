@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import User
 from django.utils.html import format_html
 from django.utils.formats import number_format
 from django.db.models import Count, Q
@@ -109,7 +111,8 @@ class PremiumStatusFilter(admin.SimpleListFilter):
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     list_display = [
-        'user', 'name_display', 'phone', 'premium_display', 'premium_until', 'premium_remaining_display',
+        'member_number_display', 'user_nickname_display', 'name_display', 'phone',
+        'premium_display', 'premium_until', 'premium_remaining_display',
         'payment_memo_display',
         'equipment_count_display', 'member_type_display', 'verified_display', 'user_type_display',
         'is_premium', 'payment_count_display', 'company_name', 'is_approved', 'created_display',
@@ -132,10 +135,52 @@ class ProfileAdmin(admin.ModelAdmin):
         name = (getattr(obj.user, 'first_name', None) or '').strip()
         if name:
             return name
+        # accounts.MemberProfile에 이름이 들어있는 회원 fallback
+        try:
+            mp_name = (getattr(obj.user, 'member_profile', None).ceo_name or '').strip()
+            if mp_name:
+                return mp_name
+        except Exception:
+            pass
         if (getattr(obj, 'company_name', None) or '').strip():
             return obj.company_name.strip()
-        return '-'
+        # 최후 fallback: 화면에서 "빈칸"처럼 보이지 않게 로그인 아이디라도 표시
+        return (getattr(obj.user, 'username', None) or '').strip() or '-'
     name_display.short_description = '이름'
+
+    def user_nickname_display(self, obj):
+        """관리자 목록에서 '사용자'는 로그인 아이디 대신 닉네임(이름)을 보여줌."""
+        if not obj.user_id:
+            return '-'
+        first = (getattr(obj.user, 'first_name', None) or '').strip()
+        if first:
+            return first
+        # MemberProfile에 값이 있는 경우 우선
+        try:
+            mp_ceo = (getattr(obj.user, 'member_profile', None).ceo_name or '').strip()
+            if mp_ceo:
+                return mp_ceo
+        except Exception:
+            pass
+        if (getattr(obj, 'company_name', None) or '').strip():
+            return obj.company_name.strip()
+        # User.last_name은 "닉네임"으로 쓰는 편이어서 이름 표시 용 fallback으로도 활용
+        last = (getattr(obj.user, 'last_name', None) or '').strip()
+        if last:
+            return last
+        return obj.user.username or '-'
+
+    user_nickname_display.short_description = '사용자'
+
+    def member_number_display(self, obj):
+        """회원번호: 전화번호 우선 표시."""
+        ph = (getattr(obj, 'phone', None) or '').strip()
+        if ph:
+            return ph
+        username = (getattr(obj.user, 'username', None) or '').strip() if getattr(obj, 'user_id', None) else ''
+        return username or '-'
+
+    member_number_display.short_description = '회원번호'
 
     def member_type_display(self, obj):
         if obj.legacy_member_id is not None:
@@ -274,3 +319,44 @@ class DeletedListingLogAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'model_name')
     date_hierarchy = 'deleted_at'
     readonly_fields = ('deleted_at',)
+
+
+class CustomAuthUserAdmin(DjangoUserAdmin):
+    """auth.User 목록을 리뉴얼 회원 관리 용도에 맞춰 단순 표시."""
+    list_display = (
+        "member_no_display",
+        "username",
+        "name_display",
+        "joined_display",
+        "is_staff",
+    )
+    search_fields = ("username", "first_name", "profile__phone")
+    ordering = ("-date_joined",)
+
+    def member_no_display(self, obj):
+        # 회원번호는 전화번호 우선(없으면 username 사용)
+        try:
+            ph = (getattr(obj, "profile", None).phone or "").strip()
+        except Exception:
+            ph = ""
+        return ph or obj.username
+
+    member_no_display.short_description = "전화번호"
+
+    def name_display(self, obj):
+        return (obj.first_name or "").strip() or "-"
+
+    name_display.short_description = "이름"
+
+    def joined_display(self, obj):
+        d = getattr(obj, "date_joined", None)
+        return d.strftime("%Y-%m-%d %H:%M") if d else "-"
+
+    joined_display.short_description = "가입일"
+
+
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+admin.site.register(User, CustomAuthUserAdmin)

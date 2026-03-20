@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize i18n_extras %}
 {% block body_class %}gn-page-index{% endblock %}
 {% block content %}
 <div class="container gn-index-container py-2 py-md-4">
@@ -1004,7 +1004,17 @@
                             <td>{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}-{% endif %}</td>
                             <td>{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}-{{ equipment.month_manufactured|default:1|stringformat:"02d" }}{% else %}-{% endif %}</td>
                             <td class="text-danger fw-bold">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</td>
-                            <td>{% if equipment.author %}{{ equipment.author.username }}{% else %}-{% endif %}</td>
+                            <td>
+                                {% with seller_phone=equipment.author|user_phone %}
+                                    {% if seller_phone %}
+                                        {{ seller_phone|format_phone }}
+                                    {% elif equipment.author %}
+                                        {{ equipment.author.username }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>

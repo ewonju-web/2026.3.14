@@ -152,3 +152,20 @@ def format_phone(value: str) -> str:
         return f"{digits[0:3]}-{digits[3:6]}-{digits[6:10]}"
     return value
 
+
+@register.filter
+def user_phone(user) -> str:
+    """
+    User에서 Profile.phone을 안전하게 꺼냄.
+    OneToOne Profile이 없는 계정도 예외 없이 빈 문자열 반환.
+    """
+    if not user:
+        return ""
+    try:
+        profile = getattr(user, "profile", None)
+        if not profile:
+            return ""
+        return (getattr(profile, "phone", None) or "").strip()
+    except Exception:
+        return ""
+

@@ -7,8 +7,22 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from equipment.models import Profile as EquipmentProfile
 from accounts.models import MemberProfile, MembershipGrade
+import re
 
 User = get_user_model()
+
+def looks_like_phone_number(raw):
+    """이름/상호 필드에 들어가면 안 되는 전화번호 형태인지 대략 판별."""
+    if not raw:
+        return False
+    digits = re.sub(r"[^0-9]", "", str(raw).strip())
+    if not digits:
+        return False
+    if digits.startswith("010") and len(digits) == 11:
+        return True
+    if digits.startswith("0") and len(digits) in (10, 11):
+        return True
+    return False
 
 
 class Command(BaseCommand):
@@ -75,11 +89,16 @@ class Command(BaseCommand):
                     if not dry_run:
                         mp.phone = phone
                     updated = True
-                if not mp.ceo_name and name and name != "회원":
+                ceo_is_phone = looks_like_phone_number(mp.ceo_name)
+                company_is_phone = looks_like_phone_number(mp.company_name)
+                name_is_phone = looks_like_phone_number(name)
+                company_name_is_phone = looks_like_phone_number(company_name)
+
+                if (not mp.ceo_name or ceo_is_phone) and name and name != "회원" and not name_is_phone:
                     if not dry_run:
                         mp.ceo_name = name[:50]
                     updated = True
-                if not mp.company_name and company_name:
+                if (not mp.company_name or company_is_phone) and company_name and not company_name_is_phone:
                     if not dry_run:
                         mp.company_name = company_name[:100]
                     updated = True
