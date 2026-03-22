@@ -330,7 +330,7 @@
 
     <!-- 모바일: 카테고리 + 상세검색 + 매물 그리드 -->
     <div class="gn-index-mobile d-md-none">
-        <div class="gn-category-scroll gn-index-category mb-2 d-flex flex-nowrap overflow-x-auto" style="gap:0.35rem;min-width:0;-webkit-overflow-scrolling:touch;">
+        <div class="gn-category-scroll gn-index-category mb-2 d-flex flex-nowrap overflow-x-auto" style="gap:0.5rem;min-width:0;-webkit-overflow-scrolling:touch;">
             <a href="{% url 'index' %}?category=" class="gn-cat-pill {% if not filter_category %}active{% endif %}">
                 <i class="bi bi-layers-fill"></i><span>전체</span>
             </a>
@@ -1353,19 +1353,25 @@
     .gn-index-container { padding-top: 0 !important; padding-bottom: 1rem !important; }
     .gn-index-mobile { margin-top: 0; padding-top: 0; }
     .gn-index-mobile .gn-index-category {
-      padding: 0.3rem 0.25rem 0.25rem !important;
+      padding: 0.5rem 0.35rem 0.4rem !important;
       margin-top: 6px !important;
-      margin-bottom: 4px !important;
+      margin-bottom: 6px !important;
+      row-gap: 0.35rem;
     }
     .gn-index-mobile .gn-index-category .gn-cat-pill {
       flex-shrink: 0;
       white-space: nowrap;
-      font-size: 0.93rem !important;
-      padding: 0.52rem 1.18rem !important;
-      gap: 0.4rem !important;
+      font-size: 1rem !important;
+      font-weight: 700 !important;
+      padding: 0.62rem 1.28rem !important;
+      gap: 0.48rem !important;
+      min-height: 2.75rem;
+      align-items: center;
+      line-height: 1.2;
+      box-sizing: border-box;
     }
     .gn-index-mobile .gn-index-category .gn-cat-pill i {
-      font-size: 1.1rem !important;
+      font-size: 1.22rem !important;
     }
     /* 모바일 기종 띠 아래 스크롤바 */
     .gn-index-mobile .gn-index-category::-webkit-scrollbar { height: 6px; }
