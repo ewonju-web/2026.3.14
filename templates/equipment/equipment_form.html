@@ -168,7 +168,7 @@
                                 <option value="3단">3단</option>
                             </select>
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6 col-md-4" id="fk-op-hours-wrapper">
                             <label class="form-label">가동시간(hr)</label>
                             <input type="number" name="operating_hours" id="id_operating_hours_forklift" class="form-control" min="0" placeholder="가동시간 (선택)" value="{{ form.operating_hours.value|default:'' }}">
                         </div>
@@ -190,20 +190,21 @@
                             <label class="form-label fw-bold">톤수/중량 <span class="text-muted small">(선택)</span></label>
                             <input type="text" name="weight_class" id="id_weight_class_simple" class="form-control" placeholder="예) 5톤, 25CBM" maxlength="30" value="{{ form.initial.weight_class|default:form.weight_class.value|default:'' }}">
                         </div>
-                        <div class="col-6 col-md-4" id="simple-month-wrapper">
-                            <label class="form-label">제작월</label>
-                            <input type="number" name="month_manufactured" id="id_month_manufactured_simple" class="form-control" min="1" max="12" placeholder="1~12" value="{{ form.month_manufactured.value|default:1 }}">
-                        </div>
+                    </div>
+                    {# 덤프·로더 등: 톤수 다음 → 가격 → 제작년도·제작월(한 줄) #}
+                    <div id="price-field-anchor" class="d-none" aria-hidden="true"></div>
+                    <div class="col-12 col-md-6" id="price-field-wrapper">
+                        <label class="form-label fw-bold">가격(만원) <span class="text-danger">(필수)</span></label>
+                        {{ form.listing_price }}
                     </div>
                     <div id="year-field-anchor" class="d-none" aria-hidden="true"></div>
                     <div class="col-6 col-md-4" id="year-field-wrapper">
                         <label class="form-label">제작년도</label>
                         {{ form.year_manufactured }}
                     </div>
-                    <div id="price-field-anchor" class="d-none" aria-hidden="true"></div>
-                    <div class="col-6 col-md-4" id="price-field-wrapper">
-                        <label class="form-label fw-bold">가격(만원) <span class="text-danger">(필수)</span></label>
-                        {{ form.listing_price }}
+                    <div class="col-6 col-md-4 d-none" id="simple-month-wrapper">
+                        <label class="form-label">제작월</label>
+                        <input type="number" name="month_manufactured" id="id_month_manufactured_simple" class="form-control" min="1" max="12" placeholder="1~12" value="{{ form.month_manufactured.value|default:1 }}">
                     </div>
                     <div class="col-12">
                         <label class="form-label">차량번호(장비번호) <span class="text-muted small">(선택)</span></label>
@@ -462,6 +463,8 @@
       if (detailFields) detailFields.classList.toggle('d-none', !isExcavator);
       if (forkliftFields) forkliftFields.classList.toggle('d-none', !isForklift);
       if (simpleTypeFields) simpleTypeFields.classList.toggle('d-none', !isOtherType);
+      var simpleMonthWrapper = document.getElementById('simple-month-wrapper');
+      if (simpleMonthWrapper) simpleMonthWrapper.classList.toggle('d-none', !isOtherType);
       var monthExc = document.getElementById('id_month_manufactured');
       var monthSimple = document.getElementById('id_month_manufactured_simple');
       if (monthExc) monthExc.disabled = isOtherType;
@@ -524,6 +527,19 @@
           yearFieldWrapper.parentNode.insertBefore(excMonthWrapper, yearFieldWrapper.nextSibling);
         } else if (isOtherType && detailFields && excMonthWrapper) {
           detailFields.appendChild(excMonthWrapper);
+        }
+        // 지게차: 가격(만원)을 가동시간 입력란 옆(같은 행)으로 이동
+        var fkOpHoursWrap = document.getElementById('fk-op-hours-wrapper');
+        if (isForklift && forkliftFields && priceFieldWrapper && fkOpHoursWrap && fkOpHoursWrap.parentNode === forkliftFields) {
+          priceFieldWrapper.classList.remove('col-12', 'col-md-6');
+          priceFieldWrapper.classList.add('col-6', 'col-md-4');
+          forkliftFields.insertBefore(priceFieldWrapper, fkOpHoursWrap.nextSibling);
+        } else if (!isForklift && priceFieldWrapper && fkOpHoursWrap && priceFieldWrapper.parentNode === forkliftFields) {
+          priceFieldWrapper.classList.remove('col-6', 'col-md-4');
+          priceFieldWrapper.classList.add('col-12', 'col-md-6');
+          if (priceFieldAnchor && priceFieldAnchor.parentNode) {
+            priceFieldAnchor.parentNode.insertBefore(priceFieldWrapper, priceFieldAnchor.nextSibling);
+          }
         }
       }
 
