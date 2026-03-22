@@ -1348,18 +1348,24 @@
 
   /* 첫화면 위쪽 빈 여백 최소화 (모바일) - body 클래스로 첫페이지만 적용 */
   @media (max-width: 767px) {
-    body.gn-page-index .gn-mobile-header { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+    body.gn-page-index .gn-mobile-header { padding-top: 0.52rem; padding-bottom: 0.52rem; }
     body.gn-page-index main { padding-top: 0 !important; }
     .gn-index-container { padding-top: 0 !important; padding-bottom: 1rem !important; }
     .gn-index-mobile { margin-top: 0; padding-top: 0; }
     .gn-index-mobile .gn-index-category {
-      padding: 0.25rem 0.25rem 0.2rem !important;
+      padding: 0.3rem 0.25rem 0.25rem !important;
       margin-top: 6px !important;
       margin-bottom: 4px !important;
     }
     .gn-index-mobile .gn-index-category .gn-cat-pill {
       flex-shrink: 0;
       white-space: nowrap;
+      font-size: 0.93rem !important;
+      padding: 0.52rem 1.18rem !important;
+      gap: 0.4rem !important;
+    }
+    .gn-index-mobile .gn-index-category .gn-cat-pill i {
+      font-size: 1.1rem !important;
     }
     /* 모바일 기종 띠 아래 스크롤바 */
     .gn-index-mobile .gn-index-category::-webkit-scrollbar { height: 6px; }
@@ -1553,6 +1559,24 @@
   .gn-list-card-body .gn-list-price-unit {
     font-size: 0.86rem;
     margin-left: 2px;
+  }
+  /* 모바일: 매물 카드 글씨 살짝 확대 (위 기본 규칙 이후에 적용) */
+  @media (max-width: 767.98px) {
+    .gn-list-card-body .gn-list-title {
+      font-size: 0.92rem;
+    }
+    .gn-list-card-body .gn-list-spec {
+      font-size: 0.86rem;
+    }
+    .gn-list-card-body .gn-list-price-num {
+      font-size: 1.78rem;
+    }
+    .gn-list-card-body .gn-list-price-unit {
+      font-size: 0.9rem;
+    }
+    .gn-mobile-filter-bar .btn {
+      font-size: 0.86rem;
+    }
   }
   .gn-simple-list-row:hover { opacity: 0.95; background: var(--gn-card) !important; }
   .gn-pc-line-table-wrap {
