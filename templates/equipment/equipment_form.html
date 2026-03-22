@@ -174,8 +174,8 @@
                         </div>
                     </div>
                     <!-- 덤프/로더/크레인/어태치먼트/기타: 톤수 (제조사·모델명·년월·지역·가격은 공통) -->
-                    <div id="simple-type-fields" class="row g-3 col-12 d-none">
-                        <div class="col-md-4" id="dump-weight-wrapper">
+                    <div id="simple-type-fields" class="row g-3 col-12 d-none align-items-end">
+                        <div class="col-6 col-md-4" id="dump-weight-wrapper">
                             <label class="form-label fw-bold">톤수 (덤프트럭) <span class="text-muted small">(선택)</span></label>
                             <select name="weight_class" id="id_weight_class_dump" class="form-select">
                                 <option value="">선택</option>
@@ -186,7 +186,7 @@
                                 <option value="DUMP_GE_24">24톤 이상</option>
                             </select>
                         </div>
-                        <div class="col-md-4 d-none" id="other-weight-wrapper">
+                        <div class="col-6 col-md-4 d-none" id="other-weight-wrapper">
                             <label class="form-label fw-bold">톤수/중량 <span class="text-muted small">(선택)</span></label>
                             <input type="text" name="weight_class" id="id_weight_class_simple" class="form-control" placeholder="예) 5톤, 25CBM" maxlength="30" value="{{ form.initial.weight_class|default:form.weight_class.value|default:'' }}">
                         </div>
@@ -535,6 +535,22 @@
           priceFieldWrapper.classList.add('col-6', 'col-md-4');
           forkliftFields.insertBefore(priceFieldWrapper, fkOpHoursWrap.nextSibling);
         } else if (!isForklift && priceFieldWrapper && fkOpHoursWrap && priceFieldWrapper.parentNode === forkliftFields) {
+          priceFieldWrapper.classList.remove('col-6', 'col-md-4');
+          priceFieldWrapper.classList.add('col-12', 'col-md-6');
+          if (priceFieldAnchor && priceFieldAnchor.parentNode) {
+            priceFieldAnchor.parentNode.insertBefore(priceFieldWrapper, priceFieldAnchor.nextSibling);
+          }
+        }
+        // 덤프·로더·크레인 등: 가격을 톤수/중량과 같은 행(옆)으로 (가격을 앞에 두어 한눈에 보이게)
+        if (isOtherType && !isForklift && simpleTypeFields && priceFieldWrapper && dumpWeightWrapper && otherWeightWrapper) {
+          priceFieldWrapper.classList.remove('col-12', 'col-md-6');
+          priceFieldWrapper.classList.add('col-6', 'col-md-4');
+          if (isDump && dumpWeightWrapper.parentNode === simpleTypeFields) {
+            simpleTypeFields.insertBefore(priceFieldWrapper, dumpWeightWrapper);
+          } else if (!isDump && otherWeightWrapper.parentNode === simpleTypeFields) {
+            simpleTypeFields.insertBefore(priceFieldWrapper, otherWeightWrapper);
+          }
+        } else if (!isOtherType && !isExcavator && priceFieldWrapper && simpleTypeFields && priceFieldWrapper.parentNode === simpleTypeFields) {
           priceFieldWrapper.classList.remove('col-6', 'col-md-4');
           priceFieldWrapper.classList.add('col-12', 'col-md-6');
           if (priceFieldAnchor && priceFieldAnchor.parentNode) {
