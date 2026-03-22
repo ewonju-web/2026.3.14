@@ -69,7 +69,7 @@
 2. 무료 회원: `get_free_listing_count(user) >= 10` 이면 등록 불가 메시지
 3. 사진 최소 1장 필수
 4. 무료 회원: `DeletedListingLog` 에서 30일 이내 동일 `model_name` 또는 동일 `image_hash` 있으면 재등록 불가
-5. 저장 시 `_build_location_text(current_location, region_sido, region_sigungu)` 로 current_location 보정
+5. 저장 시 `_build_location_text(region_sido, region_sigungu)` 로 current_location 보정 (시/도·시/군/구만, 상세 주소 없음)
 6. 첫 이미지 해시 계산 후 `seek(0)` 해서 이미지 저장 (포인터 초기화)
 
 ---
@@ -105,7 +105,7 @@
 - `_image_hash_from_equipment(equipment)` — 대표 사진 MD5 (삭제 시 로그)
 - `_get_profile_phone_verified(user)` — 휴대폰 인증 여부
 - `_require_phone_verified(request, next_url=None)` — 미인증 시 `/account/verify-phone/?next=...` 리다이렉트
-- `_build_location_text(current_location, region_sido, region_sigungu)` — 위치 문자열 조합
+- `_build_location_text(region_sido, region_sigungu)` — 위치 문자열 조합 (지역 선택만)
 
 ---
 

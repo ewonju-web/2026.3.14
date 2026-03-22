@@ -15,7 +15,6 @@ class EquipmentForm(forms.ModelForm):
             "month_manufactured",
             "operating_hours",
             "listing_price",
-            "current_location",
             "region_sido",
             "region_sigungu",
             "vehicle_number",
@@ -32,7 +31,6 @@ class EquipmentForm(forms.ModelForm):
             "month_manufactured": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 12, "placeholder": "1~12 (선택)"}),
             "operating_hours": forms.NumberInput(attrs={"class": "form-control", "min": 0, "placeholder": "가동시간 (선택)"}),
             "listing_price": forms.NumberInput(attrs={"class": "form-control", "min": 0, "placeholder": "예) 3500 (만원)"}),
-            "current_location": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 서울 강남구 역삼동 123-45", "maxlength": "100"}),
             "region_sido": forms.HiddenInput(),
             "region_sigungu": forms.HiddenInput(),
             "vehicle_number": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 12가3456 (모르면 비워도 됨)"}),
@@ -46,7 +44,6 @@ class EquipmentForm(forms.ModelForm):
         self.fields["year_manufactured"].required = False
         self.fields["month_manufactured"].required = False
         self.fields["operating_hours"].required = False
-        self.fields["current_location"].required = False
         self.fields["vehicle_number"].required = False
         self.fields["description"].required = False
         # 필수: 기종, 가격 (기종은 빈 선택지 추가 → 미선택 시 서버 검증)

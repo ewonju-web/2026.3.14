@@ -91,11 +91,8 @@ def _require_phone_verified(request, next_url=None):
     return redirect(reverse('phone_verify') + '?next=' + quote(next_path, safe=''))
 
 
-def _build_location_text(current_location: str, region_sido: str, region_sigungu: str) -> str:
-    """현재 위치가 비어있으면 시/도(+시/군/구)로 위치 문자열을 구성한다."""
-    text = (current_location or '').strip()
-    if text:
-        return text
+def _build_location_text(region_sido: str, region_sigungu: str) -> str:
+    """매물 위치 문자열: 시/도·시/군/구만 사용 (상세 주소 입력 없음)."""
     sido = (region_sido or '').strip()
     sigungu = (region_sigungu or '').strip()
     if sido and sigungu:
@@ -1212,11 +1209,7 @@ def equipment_create(request):
                 image_files[0].seek(0)
                 obj = form.save(commit=False)
                 obj.author = request.user
-                obj.current_location = _build_location_text(
-                    obj.current_location,
-                    obj.region_sido,
-                    obj.region_sigungu,
-                )
+                obj.current_location = _build_location_text(obj.region_sido, obj.region_sigungu)
                 obj.save()
                 for f in image_files:
                     EquipmentImage.objects.create(equipment=obj, image=f)
@@ -1258,11 +1251,7 @@ def equipment_edit(request, pk):
                 form.add_error(None, ValidationError('허위 매물 방지를 위해 사진을 최소 1장 이상 등록해주세요.'))
             else:
                 obj = form.save(commit=False)
-                obj.current_location = _build_location_text(
-                    obj.current_location,
-                    obj.region_sido,
-                    obj.region_sigungu,
-                )
+                obj.current_location = _build_location_text(obj.region_sido, obj.region_sigungu)
                 obj.save()
                 for f in image_files:
                     EquipmentImage.objects.create(equipment=obj, image=f)
