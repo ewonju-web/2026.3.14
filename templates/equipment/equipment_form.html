@@ -518,6 +518,13 @@
         if (priceFieldWrapper && priceFieldAnchor && priceFieldAnchor.parentNode) {
           priceFieldAnchor.parentNode.insertBefore(priceFieldWrapper, priceFieldAnchor.nextSibling);
         }
+        // 지게차: 제작월 입력이 굴삭기 전용 #detail-fields 안에 있어 함께 숨겨지므로,
+        // 제작년도 필드 바로 뒤로 옮겨 표시한다. (덤프 등 기타 기종은 simple 월 입력 사용)
+        if (isForklift && yearFieldWrapper && excMonthWrapper && yearFieldWrapper.parentNode) {
+          yearFieldWrapper.parentNode.insertBefore(excMonthWrapper, yearFieldWrapper.nextSibling);
+        } else if (isOtherType && detailFields && excMonthWrapper) {
+          detailFields.appendChild(excMonthWrapper);
+        }
       }
 
       // 모델명 placeholder: 굴삭기 vs 지게차
