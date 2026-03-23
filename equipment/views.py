@@ -693,41 +693,143 @@ def account_delete(request):
     return redirect('index')
 
 
+def _job_list_equipment_q(equipment_key: str):
+    """구인구직 기종 선택 → 제목·내용·필요장비 필드 OR 검색."""
+    if not equipment_key:
+        return None
+    if equipment_key == 'excavator':
+        return (
+            Q(equipment_type__icontains='굴삭')
+            | Q(title__icontains='굴삭')
+            | Q(content__icontains='굴삭')
+        )
+    if equipment_key == 'forklift':
+        return (
+            Q(equipment_type__icontains='지게')
+            | Q(title__icontains='지게차')
+            | Q(content__icontains='지게차')
+        )
+    if equipment_key == 'crane':
+        return (
+            Q(equipment_type__icontains='크레인')
+            | Q(title__icontains='크레인')
+            | Q(content__icontains='크레인')
+        )
+    if equipment_key == 'site':
+        return (
+            Q(equipment_type__icontains='건설')
+            | Q(equipment_type__icontains='현장')
+            | Q(title__icontains='건설현장')
+            | Q(content__icontains='건설현장')
+            | Q(title__icontains='건설')
+            | Q(content__icontains='건설')
+        )
+    if equipment_key == 'etc':
+        return (
+            Q(equipment_type__icontains='기타')
+            | Q(title__icontains='기타')
+            | Q(content__icontains='기타')
+        )
+    return None
+
+
+JOB_EQUIPMENT_KEYS = frozenset({'excavator', 'forklift', 'crane', 'site', 'etc'})
+JOB_EQUIPMENT_LABEL_MAP = {
+    'excavator': '굴삭기',
+    'forklift': '지게차',
+    'crane': '크레인기사',
+    'site': '건설현장',
+    'etc': '기타',
+}
+JOB_FORM_EQUIPMENT_CHOICES = [
+    ('', '선택 안 함'),
+    ('excavator', '굴삭기'),
+    ('forklift', '지게차'),
+    ('crane', '크레인기사'),
+    ('site', '건설현장'),
+    ('etc', '기타'),
+]
+
+
+def _merge_job_equipment_type(category_key: str, detail: str) -> str:
+    """글쓰기 기종 선택 + 상세 입력 → equipment_type 한 필드에 저장."""
+    detail = (detail or '').strip()
+    cat = (category_key or '').strip()
+    if cat and cat not in JOB_EQUIPMENT_LABEL_MAP:
+        cat = ''
+    if not cat:
+        return detail
+    label = JOB_EQUIPMENT_LABEL_MAP[cat]
+    if not detail:
+        return label
+    return f"{label} {detail}"
+
+
+def _split_job_equipment_type(equipment_type: str) -> tuple:
+    """수정 폼: equipment_type → (선택값, 상세 텍스트)."""
+    et = (equipment_type or '').strip()
+    if not et:
+        return '', ''
+    for key, label in JOB_EQUIPMENT_LABEL_MAP.items():
+        if et.startswith(label):
+            rest = et[len(label) :].strip()
+            return key, rest
+    return '', et
+
+
 # [3] 구인구직 관련
 def job_list(request):
     from .region_choices import SIDO_CHOICES, SIGUNGU_MAP
     import json
+
+    JOB_EQUIPMENT_CHOICES = [
+        ('', '전체'),
+        ('excavator', '굴삭기'),
+        ('forklift', '지게차'),
+        ('crane', '크레인기사'),
+        ('site', '건설현장'),
+        ('etc', '기타'),
+    ]
+
     qs = JobPost.objects.all().order_by('-created_at')
     job_type = (request.GET.get('type', '') or '').strip().upper()
-    search = (request.GET.get('q', '') or '').strip()
     region_sido = (request.GET.get('region_sido', '') or '').strip()
     region_sigungu = (request.GET.get('region_sigungu', '') or '').strip()
+    equipment = (request.GET.get('equipment', '') or '').strip()
+    if equipment not in JOB_EQUIPMENT_KEYS and equipment != '':
+        equipment = ''
 
     if job_type in ('HIRING', 'SEEKING'):
         qs = qs.filter(job_type=job_type)
-    if search:
-        qs = qs.filter(
-            Q(location__icontains=search)
-            | Q(title__icontains=search)
-            | Q(content__icontains=search)
-            | Q(writer_display__icontains=search)
-            | Q(region_sido__icontains=search)
-            | Q(region_sigungu__icontains=search)
-        )
     if region_sido:
         qs = qs.filter(region_sido=region_sido)
     if region_sigungu:
         qs = qs.filter(region_sigungu=region_sigungu)
+    eq_q = _job_list_equipment_q(equipment)
+    if eq_q is not None:
+        qs = qs.filter(eq_q)
+
+    from django.utils import timezone as dj_tz
+
+    today = dj_tz.now().date()
+    job_stats = {
+        'total': JobPost.objects.count(),
+        'hiring': JobPost.objects.filter(job_type='HIRING').count(),
+        'seeking': JobPost.objects.filter(job_type='SEEKING').count(),
+        'today': JobPost.objects.filter(created_at__date=today).count(),
+    }
 
     return render(request, 'equipment/job_list.html', {
         'job_list': qs,
         'jobs': qs,
         'filter_type': job_type,
-        'filter_query': search,
         'filter_region_sido': region_sido,
         'filter_region_sigungu': region_sigungu,
+        'filter_equipment': equipment,
+        'job_equipment_choices': JOB_EQUIPMENT_CHOICES,
         'sido_choices': SIDO_CHOICES,
         'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+        'job_stats': job_stats,
     })
 
 
@@ -773,6 +875,11 @@ def job_create(request):
             label = "구인"
             machine = (request.POST.get("machine") or "").strip()
 
+        eq_cat = (request.POST.get("equipment_category") or "").strip()
+        if eq_cat not in JOB_EQUIPMENT_KEYS and eq_cat != "":
+            eq_cat = ""
+        machine = _merge_job_equipment_type(eq_cat, machine)
+
         deadline_type = (request.POST.get("deadline_type") or "UNTIL_FILLED").strip()
         if deadline_type != "DATE":
             deadline = None
@@ -790,10 +897,19 @@ def job_create(request):
 
         if not region_sido or not region_sigungu:
             messages.error(request, "시/도와 시/군/구를 모두 선택해 주세요.")
-            return render(request, "equipment/job_form.html", {
-                'sido_choices': SIDO_CHOICES,
-                'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
-            })
+            return render(
+                request,
+                "equipment/job_form.html",
+                {
+                    "sido_choices": SIDO_CHOICES,
+                    "sigungu_map_json": json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+                    "job_equipment_form_choices": JOB_FORM_EQUIPMENT_CHOICES,
+                    "equipment_category_selected": eq_cat,
+                    "equipment_machine_detail": (
+                        (request.POST.get("machine") or request.POST.get("seek_machine") or "").strip()
+                    ),
+                },
+            )
         if not title:
             title = f"[{label}] 제목없음"
 
@@ -821,10 +937,17 @@ def job_create(request):
         )
         return redirect("job_list")
 
-    return render(request, "equipment/job_form.html", {
-        'sido_choices': SIDO_CHOICES,
-        'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
-    })
+    return render(
+        request,
+        "equipment/job_form.html",
+        {
+            "sido_choices": SIDO_CHOICES,
+            "sigungu_map_json": json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+            "job_equipment_form_choices": JOB_FORM_EQUIPMENT_CHOICES,
+            "equipment_category_selected": "",
+            "equipment_machine_detail": "",
+        },
+    )
 
 
 def job_edit(request, pk):
@@ -836,12 +959,16 @@ def job_edit(request, pk):
         from django.http import Http404
         raise Http404()
 
+    eq_cat, eq_detail = _split_job_equipment_type(job.equipment_type)
     ctx = {
         'job': job,
         'mode': 'edit',
         'is_author': True,
         'sido_choices': SIDO_CHOICES,
         'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+        'job_equipment_form_choices': JOB_FORM_EQUIPMENT_CHOICES,
+        'equipment_category_selected': eq_cat,
+        'equipment_machine_detail': eq_detail,
     }
     if request.method == "POST":
         title = (request.POST.get("title") or "").strip()
@@ -861,9 +988,6 @@ def job_edit(request, pk):
                 deadline = datetime.strptime(deadline_str, "%Y-%m-%d").date()
             except ValueError:
                 pass
-        if not region_sido or not region_sigungu:
-            messages.error(request, "시/도와 시/군/구를 모두 선택해 주세요.")
-            return render(request, 'equipment/job_form.html', ctx)
         if mode == "seek":
             location = (request.POST.get("seek_location") or "").strip()
             label = "구직"
@@ -872,6 +996,19 @@ def job_edit(request, pk):
             location = (request.POST.get("location") or "").strip()
             label = "구인"
             machine = (request.POST.get("machine") or "").strip()
+
+        eq_cat = (request.POST.get("equipment_category") or "").strip()
+        if eq_cat not in JOB_EQUIPMENT_KEYS and eq_cat != "":
+            eq_cat = ""
+        machine = _merge_job_equipment_type(eq_cat, machine)
+
+        if not region_sido or not region_sigungu:
+            messages.error(request, "시/도와 시/군/구를 모두 선택해 주세요.")
+            ctx["equipment_category_selected"] = eq_cat
+            ctx["equipment_machine_detail"] = (
+                (request.POST.get("machine") or request.POST.get("seek_machine") or "").strip()
+            )
+            return render(request, 'equipment/job_form.html', ctx)
 
         deadline_type = (request.POST.get("deadline_type") or "UNTIL_FILLED").strip()
         if deadline_type != "DATE":

@@ -261,6 +261,23 @@ class JobPost(models.Model):
         from django.contrib.auth.hashers import check_password
         return check_password(raw_password, self.password_hash)
 
+    @property
+    def is_urgent_highlight(self):
+        """목록에서 급구 배지·강조 행(연한 노랑 배경)."""
+        from django.utils import timezone
+
+        if '급구' in (self.title or ''):
+            return True
+        if self.deadline and self.job_type == 'HIRING':
+            today = timezone.now().date()
+            try:
+                days_left = (self.deadline - today).days
+            except TypeError:
+                return False
+            if 0 <= days_left <= 7:
+                return True
+        return False
+
 class Part(models.Model):
     PART_CATEGORIES = [
         ('BUCKET', '바가지/버킷'),

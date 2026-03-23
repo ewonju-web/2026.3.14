@@ -84,8 +84,18 @@
                 <input type="hidden" name="job_mode" id="id_job_mode" value="{% if job and job.job_type == 'SEEKING' %}seek{% else %}hire{% endif %}">
 
                 <div class="mb-4">
+                    <label class="form-label fw-bold">기종 선택</label>
+                    <select name="equipment_category" class="form-select" style="border-radius: 10px;">
+                        {% for val, lbl in job_equipment_form_choices %}
+                        <option value="{{ val }}" {% if equipment_category_selected == val %}selected{% endif %}>{{ lbl }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="small text-muted mt-2 mb-0">목록에서 기종·지역 검색과 같은 기준으로 묶입니다. 모델·경력 등은 아래 상세란에 적어 주세요.</p>
+                </div>
+
+                <div class="mb-4">
                     <label class="form-label fw-bold">제목</label>
-                    <input type="text" name="title" class="form-control form-control-lg" placeholder="예: 06W 기사님 모십니다" required style="border-radius: 12px;" value="{% if job %}{{ job.title }}{% endif %}">
+                    <input type="text" name="title" id="id_job_title" class="form-control form-control-lg" placeholder="{% if job and job.job_type == 'SEEKING' %}예: 굴삭기 운전 일자리 구합니다{% else %}예: 굴삭기 기사 모십니다{% endif %}" required style="border-radius: 12px;" value="{% if job %}{{ job.title }}{% endif %}">
                 </div>
 
                 <div class="mb-4">
@@ -113,8 +123,8 @@
                             <input type="text" name="location" class="form-control" placeholder="동·읍·면 등" style="border-radius: 10px;" value="{% if job %}{{ job.location }}{% endif %}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">주경력(장비)</label>
-                            <input type="text" name="machine" class="form-control" placeholder="예: 06W, 텐" style="border-radius: 10px;" value="{% if job %}{{ job.equipment_type }}{% endif %}">
+                            <label class="form-label">기종 상세 (선택)</label>
+                            <input type="text" name="machine" class="form-control" placeholder="예: 06W, 텐, 경력" style="border-radius: 10px;" value="{{ equipment_machine_detail|default:'' }}">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -175,8 +185,8 @@
                             <input type="text" name="seek_location" class="form-control" placeholder="희망 지역" style="border-radius: 10px;" value="{% if job %}{{ job.location }}{% endif %}">
                         </div>
                         <div class="col-6">
-                            <label class="form-label">주경력(장비)</label>
-                            <input type="text" name="seek_machine" class="form-control" placeholder="예: 06W 10년" style="border-radius: 10px;" value="{% if job %}{{ job.equipment_type }}{% endif %}">
+                            <label class="form-label">기종 상세 (선택)</label>
+                            <input type="text" name="seek_machine" class="form-control" placeholder="예: 06W 10년" style="border-radius: 10px;" value="{{ equipment_machine_detail|default:'' }}">
                         </div>
                     </div>
                 </div>
@@ -235,24 +245,29 @@
         });
     }
 })();
+var JOB_TITLE_PLACEHOLDER_HIRE = '예: 굴삭기 기사 모십니다';
+var JOB_TITLE_PLACEHOLDER_SEEK = '예: 굴삭기 운전 일자리 구합니다';
 function toggleForm(type) {
     var hire = document.querySelectorAll('.form-hire');
     var seek = document.querySelectorAll('.form-seek');
     var btnHire = document.getElementById('btn-hire');
     var btnSeek = document.getElementById('btn-seek');
     var input = document.getElementById('id_job_mode');
+    var titleEl = document.getElementById('id_job_title');
     if (type === 'hire') {
         hire.forEach(function(el){ el.classList.remove('d-none'); });
         seek.forEach(function(el){ el.classList.add('d-none'); });
         if (btnHire) btnHire.classList.add('active');
         if (btnSeek) btnSeek.classList.remove('active');
         if (input) input.value = 'hire';
+        if (titleEl) titleEl.placeholder = JOB_TITLE_PLACEHOLDER_HIRE;
     } else {
         hire.forEach(function(el){ el.classList.add('d-none'); });
         seek.forEach(function(el){ el.classList.remove('d-none'); });
         if (btnSeek) btnSeek.classList.add('active');
         if (btnHire) btnHire.classList.remove('active');
         if (input) input.value = 'seek';
+        if (titleEl) titleEl.placeholder = JOB_TITLE_PLACEHOLDER_SEEK;
     }
 }
 document.addEventListener('DOMContentLoaded', function() {

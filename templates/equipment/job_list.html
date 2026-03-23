@@ -4,166 +4,125 @@
 <link rel="stylesheet" href="{% static 'css/jobs.css' %}">
 {% endblock %}
 {% block content %}
-<style>
-    /* PC: 필터바 한 줄, 간격 넓게, 탭 글씨 크기·굵기 */
-    .job-top-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 1rem;
-        padding: 0.9rem 1.15rem;
-        max-width: 100%;
-    }
-    .job-type-tabs {
-        display: inline-flex;
-        border-radius: 999px;
-        overflow: hidden;
-        background: rgba(15,23,42,0.94);
-        border: 1px solid rgba(148,163,184,0.45);
-        flex-shrink: 0;
-        padding: 2px;
-        box-shadow: 0 10px 30px rgba(15,23,42,0.75);
-    }
-    .job-type-tab {
-        padding: 0.45rem 1.4rem;
-        text-align: center;
-        text-decoration: none;
-        color: #cbd5f5;
-        font-weight: 700;
-        font-size: 1rem;
-        transition: background .2s, color .2s, box-shadow .2s, transform .08s;
-        white-space: nowrap;
-        border-radius: 999px;
-    }
-    .job-type-tab:hover {
-        color: #e5e7eb;
-        background: rgba(15,23,42,0.9);
-    }
-    .job-type-tab.active {
-        background: linear-gradient(135deg, #FACC15, #F97316);
-        color: #111827;
-        box-shadow: 0 10px 28px rgba(248,181,0,0.55);
-        transform: translateY(-1px);
-    }
-    @media (min-width: 768px) {
-        .job-type-tab { font-size: 1.05rem; padding: 0.55rem 1.4rem; }
-    }
-
-    .job-filter-inline {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 12px;
-        flex-grow: 1;
-        min-width: 0;
-    }
-    .job-filter-inline .form-label { margin-bottom: 0; font-size: 0.8rem; }
-    .job-filter-inline select { width: auto; min-width: 100px; }
-    @media (min-width: 768px) {
-        .job-filter-inline select { min-width: 115px; }
-    }
-
-    /* 모바일: 3줄 배치 — 1줄 탭, 2줄 시도+시군구, 3줄 검색+초기화 */
-    @media (max-width: 767.98px) {
-        .job-top-row { flex-direction: column; align-items: stretch; gap: 0.75rem; }
-        .job-type-tabs { justify-content: stretch; }
-        .job-type-tab { flex: 1; font-size: 0.95rem; padding: 0.6rem 0.75rem; }
-        .job-filter-inline { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-        .job-filter-region { display: flex; gap: 0.5rem; align-items: center; }
-        .job-filter-region > div { flex: 1; min-width: 0; }
-        .job-filter-region select { width: 100% !important; min-width: 0 !important; }
-        .job-filter-actions { display: flex; gap: 0.5rem; align-items: center; }
-        .job-filter-actions .btn:first-child { flex: 1; }
-        .job-filter-actions .btn:last-child { flex-shrink: 0; }
-    }
-
-    /* 목록: 가독성·행간·hover */
-    .job-list-card { background: #ffffff !important; }
-    .job-list-card .table { color: #333; }
-    .job-list-card .table thead { background: #f8f9fa; }
-    .job-list-card .table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.08); cursor: pointer; transition: background .15s ease; padding-top: 14px; padding-bottom: 14px; }
-    .job-list-card .table tbody tr:hover { background: #f8f9fa !important; }
-    .job-list-card .job-title { font-size: 1.08rem; font-weight: 700; color: #1a1a1a; line-height: 1.5; }
-    .job-list-card .job-meta { font-size: 0.95rem; color: #555; line-height: 1.5; margin-top: 4px; }
-    .job-list-card .table td { padding-top: 14px !important; padding-bottom: 14px !important; vertical-align: middle !important; }
-    .job-list-actions {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 6px;
-        justify-content: flex-end;
-        align-items: center;
-    }
-    .job-list-actions a { white-space: nowrap; }
-</style>
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-        <h2 class="section-title mb-0">구인구직</h2>
-        <a href="{% url 'job_create' %}" class="gn-job-btn gn-job-btn-primary px-4">글쓰기</a>
-    </div>
-
-    <!-- PC 한 줄 / 모바일 3줄: 탭 → 시도+시군구 → 검색+초기화 -->
-    <div class="job-top-row rounded-3" style="background: radial-gradient(140% 200% at 0% 0%, rgba(248,250,252,0.06), rgba(15,23,42,0.97)); border: 1px solid rgba(148,163,184,0.55); box-shadow: 0 18px 40px rgba(15,23,42,0.85);">
-        <div class="job-type-tabs">
-            <a href="{% url 'job_list' %}?type=HIRING{% if filter_region_sido %}&region_sido={{ filter_region_sido|urlencode }}{% endif %}{% if filter_region_sigungu %}&region_sigungu={{ filter_region_sigungu|urlencode }}{% endif %}" class="job-type-tab {% if filter_type != 'SEEKING' %}active{% endif %}">사람구함</a>
-            <a href="{% url 'job_list' %}?type=SEEKING{% if filter_region_sido %}&region_sido={{ filter_region_sido|urlencode }}{% endif %}{% if filter_region_sigungu %}&region_sigungu={{ filter_region_sigungu|urlencode }}{% endif %}" class="job-type-tab {% if filter_type == 'SEEKING' %}active{% endif %}">일자리구함</a>
+<div class="container py-4 job-list-page-v2">
+    <div class="job-list-shell rounded-3 px-2 px-md-3 py-3 py-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <h2 class="job-page-heading mb-0">
+                <span class="job-page-heading-bar" aria-hidden="true"></span>
+                구인구직
+            </h2>
+            <a href="{% url 'job_create' %}" class="job-btn-write-outline">
+                <i class="bi bi-pencil-square job-write-icon me-1" aria-hidden="true"></i>글쓰기
+            </a>
         </div>
-        <form action="{% url 'job_list' %}" method="get" class="job-filter-inline">
-            <input type="hidden" name="type" value="{{ filter_type|default:'HIRING' }}">
-            <div class="job-filter-region d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center gap-1">
-                    <label class="form-label small text-muted mb-0 me-1">시/도</label>
-                    <select name="region_sido" id="job-search-sido" class="form-select form-select-sm" style="border-radius: 8px; min-width: 105px;">
-                        {% for val, label in sido_choices %}
-                        <option value="{{ val }}" {% if filter_region_sido == val %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                    <label class="form-label small text-muted mb-0 me-1">시/군/구</label>
-                    <select name="region_sigungu" id="job-search-sigungu" class="form-select form-select-sm" style="border-radius: 8px; min-width: 110px;">
-                        <option value="">시/군/구 선택</option>
-                    </select>
-                </div>
-            </div>
-            <div class="job-filter-actions d-flex align-items-center gap-2">
-                <button type="submit" class="gn-job-btn gn-job-btn-primary btn-sm px-3 py-2">검색</button>
-                <a href="{% url 'job_list' %}?type={{ filter_type|default:'HIRING' }}" class="gn-job-btn gn-job-btn-outline btn-sm py-2">초기화</a>
-            </div>
-        </form>
-    </div>
 
-    <div class="card border-0 shadow-sm overflow-hidden rounded-3 job-list-card">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead>
-                    <tr>
-                        <th class="text-center py-3" style="width: 100px;">구분</th>
-                        <th class="py-3">제목 / 구인내용</th>
-                        <th class="text-end py-3" style="width: 140px;">액션</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for job in job_list %}
-                    <tr class="job-row" data-href="{% url 'job_detail' job.pk %}">
-                        <td class="text-center">
-                            <span class="badge {% if job.job_type == 'HIRING' %}bg-primary{% else %}bg-success{% endif %} px-3 py-2">
-                                {{ job.get_job_type_display }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="job-title">{{ job.title }}</div>
-                            <div class="job-meta">
-                                {% if job.region_sido or job.region_sigungu %}<i class="bi bi-geo-alt"></i> {{ job.region_sido|default:'' }} {{ job.region_sigungu|default:'' }}{% else %}지역 모름{% endif %}
-                                · 등록일 {{ job.created_at|date:"Y-m-d" }}
-                                {% if job.location %} · {{ job.location }}{% endif %}
-                                {% if job.experience %} · {{ job.experience }}{% endif %}
-                                {% if job.job_type == 'HIRING' and job.deadline %} · 마감 {{ job.deadline|date:"Y-m-d" }}{% endif %}
-                                · {% firstof job.writer_display job.author.username "익명" %}
-                            </div>
-                        </td>
-                        <td class="text-end align-middle" onclick="event.stopPropagation();">
-                            <div class="job-list-actions job-list-action">
+        <div class="job-search-panel border rounded-3 bg-white p-3 p-md-4 mb-3">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <a href="{% url 'job_list' %}?type=HIRING{% if filter_region_sido %}&region_sido={{ filter_region_sido|urlencode }}{% endif %}{% if filter_region_sigungu %}&region_sigungu={{ filter_region_sigungu|urlencode }}{% endif %}{% if filter_equipment %}&equipment={{ filter_equipment|urlencode }}{% endif %}"
+                   class="job-type-pill {% if filter_type != 'SEEKING' %}active{% endif %}"><i class="bi bi-person-fill me-1" aria-hidden="true"></i>사람구함</a>
+                <a href="{% url 'job_list' %}?type=SEEKING{% if filter_region_sido %}&region_sido={{ filter_region_sido|urlencode }}{% endif %}{% if filter_region_sigungu %}&region_sigungu={{ filter_region_sigungu|urlencode }}{% endif %}{% if filter_equipment %}&equipment={{ filter_equipment|urlencode }}{% endif %}"
+                   class="job-type-pill {% if filter_type == 'SEEKING' %}active{% endif %}"><i class="bi bi-briefcase-fill me-1" aria-hidden="true"></i>일자리구함</a>
+            </div>
+
+            <form action="{% url 'job_list' %}" method="get" class="job-filter-form">
+                <input type="hidden" name="type" value="{{ filter_type|default:'HIRING' }}">
+                <div class="job-filter-grid">
+                    <div class="job-filter-fields-row">
+                    <div class="job-filter-field job-filter-field-equip">
+                        <label class="form-label small text-muted mb-1">기종 선택</label>
+                        <select name="equipment" id="job-equipment" class="form-select form-select-sm job-select-rounded">
+                            {% for val, label in job_equipment_choices %}
+                            <option value="{{ val }}" {% if filter_equipment == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="job-filter-field">
+                        <label class="form-label small text-muted mb-1">시/도</label>
+                        <select name="region_sido" id="job-search-sido" class="form-select form-select-sm job-select-rounded">
+                            {% for val, label in sido_choices %}
+                            <option value="{{ val }}" {% if filter_region_sido == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="job-filter-field">
+                        <label class="form-label small text-muted mb-1">시/군/구</label>
+                        <select name="region_sigungu" id="job-search-sigungu" class="form-select form-select-sm job-select-rounded">
+                            <option value="">시/군/구 선택</option>
+                        </select>
+                    </div>
+                    </div>
+                    <div class="job-filter-actions">
+                        <button type="submit" class="job-btn-search-light"><i class="bi bi-search me-1 d-none d-sm-inline" aria-hidden="true"></i>검색</button>
+                        <a href="{% url 'job_list' %}?type={{ filter_type|default:'HIRING' }}" class="job-btn-reset-light">초기화</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="job-stats-strip rounded-3 px-3 py-2 mb-3 small">
+            전체 <span class="job-stat-num job-stat-total">{{ job_stats.total }}</span>
+            <span class="text-muted mx-1">·</span>
+            사람구함 <span class="job-stat-num job-stat-hiring">{{ job_stats.hiring }}</span>
+            <span class="text-muted mx-1">·</span>
+            일자리구함 <span class="job-stat-num job-stat-seeking">{{ job_stats.seeking }}</span>
+            <span class="text-muted mx-1">·</span>
+            오늘 등록 <span class="job-stat-num job-stat-today">{{ job_stats.today }}</span>
+        </div>
+
+        <div class="card border job-list-table-card rounded-3 overflow-hidden shadow-none">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle job-table-v2">
+                    <thead>
+                        <tr class="job-table-head">
+                            <th class="text-center py-3" style="width: 100px;">구분</th>
+                            <th class="py-3">급여</th>
+                            <th class="py-3">제목 / 구인내용</th>
+                            <th class="py-3 d-none d-md-table-cell" style="min-width: 120px;">지역</th>
+                            <th class="text-center py-3 d-none d-lg-table-cell" style="width: 110px;">등록일</th>
+                            <th class="text-end py-3" style="width: 140px;">액션</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in job_list %}
+                        <tr class="job-row {% if job.is_urgent_highlight %}job-row-urgent{% endif %}" data-href="{% url 'job_detail' job.pk %}">
+                            <td class="text-center">
+                                {% if job.job_type == 'HIRING' %}
+                                <span class="job-cat-badge job-cat-badge-hiring">사람구함</span>
+                                {% else %}
+                                <span class="job-cat-badge job-cat-badge-seeking">일자리구함</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="job-pay-cell">{% if job.pay %}{{ job.pay }}{% else %}협의{% endif %}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-start flex-wrap gap-2">
+                                    {% if job.is_urgent_highlight %}
+                                    <span class="job-badge-urgent">급구</span>
+                                    {% endif %}
+                                    <div>
+                                        <div class="job-title-v2">{{ job.title }}</div>
+                                        {% if job.experience or job.equipment_type %}
+                                        <div class="job-subline text-muted small mt-1">
+                                            {% if job.experience %}{{ job.experience }}{% endif %}{% if job.experience and job.equipment_type %} · {% endif %}{% if job.equipment_type %}{{ job.equipment_type }}{% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="d-md-none text-muted small mt-1">
+                                    <i class="bi bi-geo-alt text-danger"></i>
+                                    {% if job.region_sido or job.region_sigungu %}{{ job.region_sido|default:'' }} {{ job.region_sigungu|default:'' }}{% endif %}{% if job.location %} {{ job.location }}{% endif %}
+                                    · {{ job.created_at|date:"Y-m-d" }}
+                                </div>
+                            </td>
+                            <td class="d-none d-md-table-cell text-muted small">
+                                <i class="bi bi-geo-alt text-danger"></i>
+                                {% if job.region_sido or job.region_sigungu %}<span class="text-dark">{{ job.region_sido|default:'' }} {{ job.region_sigungu|default:'' }}</span>{% endif %}
+                                {% if job.location %}<br><span>{{ job.location }}</span>{% elif not job.region_sido and not job.region_sigungu %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td class="text-center text-muted small d-none d-lg-table-cell">{{ job.created_at|date:"Y-m-d" }}</td>
+                            <td class="text-end align-middle" onclick="event.stopPropagation();">
+                                <a href="{% url 'job_detail' job.pk %}" class="btn btn-sm job-btn-view" onclick="event.stopPropagation();">보기</a>
                                 {% if user.is_authenticated and job.author_id == user.id %}
                                 <a href="{% url 'job_edit' job.pk %}" class="btn btn-sm rounded-pill gn-btn-edit">
                                     <i class="bi bi-pencil me-1"></i>수정
@@ -172,16 +131,16 @@
                                     <i class="bi bi-trash me-1"></i>삭제
                                 </a>
                                 {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center py-5 text-muted">등록된 구인구직 공고가 없습니다.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">등록된 구인구직 공고가 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
