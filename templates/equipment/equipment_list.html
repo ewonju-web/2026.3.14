@@ -654,16 +654,17 @@
         </div>
         {% endif %}
         {% endif %}
-        <!-- 상단 고정: 유료회원 매물 4개 카드 -->
-        {% if premium_rotation_list %}
+        <!-- 유료회원 매물 로테이션 (첫 화면 상단, 자동 슬라이드) -->
+        {% if premium_rotation_chunks %}
         <div class="mb-4">
           <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
-          <div class="row row-cols-2 row-cols-md-4 g-2 g-md-3">
+          {% if hide_advanced_filters %}
+          <div class="row row-cols-2 g-2">
             {% for eq in premium_rotation_list|slice:":4" %}
             <div class="col">
               <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
                 <div class="card h-100 border shadow-sm overflow-hidden">
-                  <div style="height: 110px; background: #e2e8f0;">
+                  <div style="height: 100px; background: #e2e8f0;">
                     {% if eq.images.first %}
                     <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
                     {% else %}
@@ -679,11 +680,55 @@
             </div>
             {% endfor %}
           </div>
+          {% else %}
+          <div id="gnPremiumCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+            <div class="carousel-inner">
+              {% for chunk in premium_rotation_chunks %}
+              <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-2 g-md-3">
+                  {% for eq in chunk %}
+                  <div class="col">
+                    <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
+                      <div class="card h-100 border shadow-sm overflow-hidden">
+                        <div style="height: 100px; background: #e2e8f0;">
+                          {% if eq.images.first %}
+                          <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                          {% else %}
+                          <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                          {% endif %}
+                        </div>
+                        <div class="card-body p-2">
+                          <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
+                          <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% if premium_rotation_chunks|length > 1 %}
+            <button class="carousel-control-prev gn-premium-carousel-btn" type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide="prev" aria-label="이전">
+              <span class="carousel-control-prev-icon bg-dark bg-opacity-50 rounded-circle" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next gn-premium-carousel-btn" type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide="next" aria-label="다음">
+              <span class="carousel-control-next-icon bg-dark bg-opacity-50 rounded-circle" aria-hidden="true"></span>
+            </button>
+            <div class="carousel-indicators gn-premium-indicators">
+              {% for chunk in premium_rotation_chunks %}
+              <button type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="슬라이드 {{ forloop.counter }}"></button>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
         {% endif %}
         <!-- 모바일: 기종 선택 시 매물 영역 오른쪽 위에 정렬 -->
         {% if filter_category %}
-        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-2 d-md-none">
+        <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-2 d-md-none">
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
@@ -798,11 +843,37 @@
         {% endif %}
     </div>
 
-    <!-- 상단 유료회원 4개 카드는 위 블록에서 공통으로 노출 -->
-    <div class="d-none d-md-flex flex-column align-items-start gap-2 mb-3">
+    <!-- PC: 기종 선택 시 매물 오른쪽 위에 정렬 -->
+    {% if hide_advanced_filters and premium_rotation_list %}
+    <div class="d-none d-md-block mb-4">
+      <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
+      <div class="row row-cols-2 row-cols-lg-4 g-2 g-lg-3">
+        {% for eq in premium_rotation_list|slice:":4" %}
+        <div class="col">
+          <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
+            <div class="card h-100 border shadow-sm overflow-hidden">
+              <div style="height: 120px; background: #e2e8f0;">
+                {% if eq.images.first %}
+                <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                {% else %}
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
+                {% endif %}
+              </div>
+              <div class="card-body p-2">
+                <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
+                <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <div class="d-none d-md-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <h2 class="section-title mb-0 gn-recommend-title">추천 매물</h2>
         {% if filter_category %}
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center w-100">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
@@ -1447,9 +1518,6 @@
   /* 카드 본문: 여백·줄간격 축소해서 카드 높이 줄임 */
   .gn-list-card-body {
     padding: 0.35rem 0.5rem !important;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
   }
   .gn-list-card-body .gn-list-title {
     font-size: 0.86rem;
@@ -1457,11 +1525,6 @@
     line-height: 1.25;
     margin-bottom: 0.2rem !important;
     color: #0f172a !important;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 2.5em;
   }
   .gn-list-card-body .gn-list-title-bar {
     color: #c00;
@@ -1492,8 +1555,7 @@
   .gn-list-card-body .gn-list-price {
     font-weight: 500;
     line-height: 1;
-    margin-top: auto !important;
-    padding-top: 0.25rem;
+    margin-top: 0.2rem !important;
     color: #ff0000 !important;
   }
   .gn-list-card-body .gn-list-price-num {
