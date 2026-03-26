@@ -564,6 +564,8 @@
         var modelInput = manufacturerInput.form.elements['model_name'];
         if (isForklift) {
           modelInput.placeholder = '예) 45-X';
+        } else if (isDump) {
+          modelInput.placeholder = '예) 엑시언트';
         } else {
           modelInput.placeholder = '예) HX360';
         }
