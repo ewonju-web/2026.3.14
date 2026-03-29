@@ -185,3 +185,50 @@ def user_phone(user) -> str:
     except Exception:
         return ""
 
+
+@register.filter
+def equipment_row_contact(equipment):
+    """
+    목록(더보기 표) 등록인/연락처 표시.
+    작성자 Profile.phone → 없으면 equipment_detail과 동일한 sibling(동일 모델·가격·위치·등록일) fallback.
+    """
+    if not equipment:
+        return "-"
+    from equipment.models import Equipment
+
+    if equipment.author_id:
+        try:
+            profile = getattr(equipment.author, "profile", None)
+            if profile:
+                ph = (getattr(profile, "phone", None) or "").strip()
+                if ph and any(ch.isdigit() for ch in ph):
+                    return format_phone(ph)
+        except Exception:
+            pass
+        un = (getattr(equipment.author, "username", None) or "").strip()
+        return un if un else "-"
+
+    sibling_qs = (
+        Equipment.objects.visible()
+        .select_related("author__profile")
+        .exclude(pk=equipment.pk)
+        .exclude(author__isnull=True)
+        .filter(
+            model_name=equipment.model_name,
+            listing_price=equipment.listing_price,
+            current_location=equipment.current_location,
+            created_at__date=equipment.created_at.date(),
+        )
+        .order_by("-created_at")
+    )
+    for sibling in sibling_qs[:10]:
+        sp = getattr(getattr(sibling, "author", None), "profile", None)
+        sibling_phone = getattr(sp, "phone", None) if sp else None
+        if not sibling_phone:
+            continue
+        ph = str(sibling_phone).strip()
+        if ph and not any(ch.isdigit() for ch in ph):
+            continue
+        return format_phone(ph)
+    return "-"
+

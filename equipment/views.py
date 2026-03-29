@@ -1,5 +1,6 @@
 from equipment.forms import UserSignupForm
 from django.contrib.auth.models import User
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -117,6 +118,51 @@ def _legacy_excavator_tire_5_6_q() -> Q:
             r"\b55\s*W(?:I)?\b|\b0?6\s*W\b)"
         )
     )
+
+
+def legacy_redirect_equipment_uid(request, uid):
+    """
+    구형 매물 URL → /equipment/<pk>/ (301).
+    /viewsale/굴삭기{uid}, /attachment/{uid} 등. uid는 이관 시 legacy_listing_id 우선, 없으면 pk로 조회.
+    """
+    try:
+        uid_int = int(uid)
+    except (TypeError, ValueError):
+        raise Http404()
+    eq = Equipment.objects.filter(legacy_listing_id=uid_int).first()
+    if eq:
+        return redirect("equipment_detail", pk=eq.pk, permanent=True)
+    if Equipment.objects.filter(pk=uid_int).exists():
+        return redirect("equipment_detail", pk=uid_int, permanent=True)
+    raise Http404()
+
+
+def legacy_redirect_job_uid(request, uid):
+    """구형 /job/{uid}/ → /jobs/{uid}/ (301)."""
+    try:
+        uid_int = int(uid)
+    except (TypeError, ValueError):
+        raise Http404()
+    if JobPost.objects.filter(pk=uid_int).exists():
+        return redirect("job_detail", pk=uid_int, permanent=True)
+    raise Http404()
+
+
+def legacy_redirect_community_to_board(request, uid):
+    """구형 /community/{uid}/ → /board/{uid}/ (301)."""
+    try:
+        uid_int = int(uid)
+    except (TypeError, ValueError):
+        raise Http404()
+    return redirect("board_detail", pk=uid_int, permanent=True)
+
+
+def board_post_detail(request, pk):
+    """
+    신규 커뮤니티 상세 URL (/board/<pk>/).
+    게시판 모델 연동 전까지는 404 (구 URL 301 대상만 유효).
+    """
+    raise Http404()
 
 
 # [1] 메인 페이지 (키워드 + 정렬만)
@@ -242,6 +288,8 @@ def index(request):
         equipment_list = equipment_list.annotate(
             effective_order=Coalesce(F('last_bumped_at'), F('created_at'))
         ).order_by('-effective_order')
+
+    equipment_list = equipment_list.select_related('author__profile')
 
     # 기본 최신 목록에서만 유료 회원 매물을 상단 우선 배치
     # (상세검색/정렬 결과에서는 사용자가 선택한 정렬 순서를 그대로 유지)

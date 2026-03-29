@@ -1,8 +1,40 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 from chat import views as chat_views
 
 urlpatterns = [
+    # ── 구형 사이트 URL → 신규 URL (301 Permanent Redirect) ──
+    re_path(
+        r"^viewsale/굴삭기(?P<uid>[0-9]+)/?$",
+        views.legacy_redirect_equipment_uid,
+        name="legacy_viewsale_excavator",
+    ),
+    path(
+        "viewsale/<int:uid>/",
+        views.legacy_redirect_equipment_uid,
+        name="legacy_viewsale_numeric",
+    ),
+    path(
+        "attachment/<int:uid>/",
+        views.legacy_redirect_equipment_uid,
+        name="legacy_attachment_to_equipment",
+    ),
+    path(
+        "job/<int:uid>/",
+        views.legacy_redirect_job_uid,
+        name="legacy_job_to_jobs",
+    ),
+    path(
+        "community/<int:uid>/",
+        views.legacy_redirect_community_to_board,
+        name="legacy_community_to_board",
+    ),
+    # 신규 커뮤니티 상세 (구 /community/… 301 대상)
+    path(
+        "board/<int:pk>/",
+        views.board_post_detail,
+        name="board_detail",
+    ),
     path('', views.index, name='index'),
     path('equipment/<int:pk>/', views.equipment_detail, name='equipment_detail'),
     path('equipment/create/', views.equipment_create, name='equipment_create'),

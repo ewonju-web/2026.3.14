@@ -727,8 +727,8 @@
         </div>
         {% endif %}
         <!-- 모바일: 기종 선택 시 매물 영역 오른쪽 위에 정렬 -->
-        {% if filter_category %}
-        <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-2 d-md-none">
+        {% if filter_category and hide_advanced_filters %}
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-2 d-md-none">
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
@@ -870,10 +870,10 @@
       </div>
     </div>
     {% endif %}
-    <div class="d-none d-md-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h2 class="section-title mb-0 gn-recommend-title">추천 매물</h2>
-        {% if filter_category %}
-        <div class="d-flex flex-wrap gap-2 align-items-center">
+    <div class="d-none d-md-flex justify-content-center align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="section-title mb-0 gn-recommend-title w-100 text-center">추천 매물</h2>
+        {% if filter_category and hide_advanced_filters %}
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center w-100">
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
@@ -1004,17 +1004,7 @@
                             <td>{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}-{% endif %}</td>
                             <td>{% if equipment.year_manufactured %}{{ equipment.year_manufactured }}-{{ equipment.month_manufactured|default:1|stringformat:"02d" }}{% else %}-{% endif %}</td>
                             <td class="text-danger fw-bold">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</td>
-                            <td>
-                                {% with seller_phone=equipment.author|user_phone %}
-                                    {% if seller_phone %}
-                                        {{ seller_phone|format_phone }}
-                                    {% elif equipment.author %}
-                                        {{ equipment.author.username }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
+                            <td>{{ equipment|equipment_row_contact }}</td>
                         </tr>
                         {% empty %}
                         <tr>
