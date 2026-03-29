@@ -138,11 +138,14 @@ def legacy_redirect_equipment_uid(request, uid):
 
 
 def legacy_redirect_job_uid(request, uid):
-    """구형 /job/{uid}/ → /jobs/{uid}/ (301)."""
+    """구형 /job/{uid}/ → /jobs/<pk>/ (301). uid는 legacy_guin_uid 우선, 없으면 pk."""
     try:
         uid_int = int(uid)
     except (TypeError, ValueError):
         raise Http404()
+    job = JobPost.objects.filter(legacy_guin_uid=uid_int).first()
+    if job:
+        return redirect("job_detail", pk=job.pk, permanent=True)
     if JobPost.objects.filter(pk=uid_int).exists():
         return redirect("job_detail", pk=uid_int, permanent=True)
     raise Http404()

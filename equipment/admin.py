@@ -69,7 +69,7 @@ class PartsShopAdmin(admin.ModelAdmin):
 # 3. 구인구직 및 프로필
 @admin.register(JobPost)
 class JobPostAdmin(admin.ModelAdmin):
-    list_display = ['id', 'job_type', 'title', 'company_name', 'region_sido', 'region_sigungu', 'recruit_count', 'deadline_type', 'deadline', 'author', 'created_at']
+    list_display = ['id', 'legacy_guin_uid', 'job_type', 'title', 'company_name', 'region_sido', 'region_sigungu', 'recruit_count', 'deadline_type', 'deadline', 'author', 'created_at']
     list_filter = ('job_type', 'region_sido', 'created_at')
     search_fields = ('title', 'location', 'region_sido', 'region_sigungu', 'content', 'writer_display')
     date_hierarchy = 'created_at'

@@ -217,6 +217,14 @@ Group._meta.verbose_name_plural = "권한 그룹 관리"
 
 class JobPost(models.Model):
     JOB_TYPES = [('HIRING', '사람구함'), ('SEEKING', '일자리구함')]
+    # direct-nara tb_guinout.uid — 이관·구 URL /job/{uid}/ → /jobs/{pk}/ 매칭용
+    legacy_guin_uid = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        verbose_name="(이관) 구인구직 UID",
+    )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

@@ -102,10 +102,14 @@ DATABASES = {
     # direct-nara(php) 백업 DB: legacy 테이블을 읽어오기 위한 연결
     "legacy": {
         "ENGINE": "django.db.backends.mysql",
-        # direct-nara legacy DB 이름은 기본값으로 둡니다.
-        "NAME": _env_str("MYSQL_LEGACY_NAME", "direct_nara_legacy"),
-        # MySQL 로그인은 root 사용(이관용).
-        "USER": _env_str("MYSQL_LEGACY_USER", "root"),
+        "NAME": _env_str(
+            "MYSQL_LEGACY_NAME",
+            _env_str("DIRECT_NARA_NAME", "direct_nara_legacy"),
+        ),
+        "USER": _env_str(
+            "MYSQL_LEGACY_USER",
+            _env_str("DIRECT_NARA_USER", "root"),
+        ),
         "PASSWORD": _env_str(
             "MYSQL_LEGACY_PASSWORD",
             _env_str("DIRECT_NARA_PASSWORD", ""),
@@ -119,8 +123,14 @@ DATABASES = {
     # 일부 커맨드가 기대하는 alias(직접 이름: direct_nara)
     "direct_nara": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": _env_str("MYSQL_LEGACY_NAME", "direct_nara_legacy"),
-        "USER": _env_str("MYSQL_LEGACY_USER", "root"),
+        "NAME": _env_str(
+            "MYSQL_LEGACY_NAME",
+            _env_str("DIRECT_NARA_NAME", "direct_nara_legacy"),
+        ),
+        "USER": _env_str(
+            "MYSQL_LEGACY_USER",
+            _env_str("DIRECT_NARA_USER", "root"),
+        ),
         "PASSWORD": _env_str(
             "MYSQL_LEGACY_PASSWORD",
             _env_str("DIRECT_NARA_PASSWORD", ""),
