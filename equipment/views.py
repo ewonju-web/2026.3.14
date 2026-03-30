@@ -175,6 +175,29 @@ def index(request):
     if sort not in ('price_asc', 'price_desc', 'year_desc', 'new'):
         sort = 'new'
     filter_category = (request.GET.get('category', '') or '').strip().lower()  # excavator, forklift, dump, loader, etc
+    valid_categories = ('excavator', 'forklift', 'dump', 'loader', 'crane', 'attachment', 'other')
+    # 검색 요청에서 category 파라미터가 누락되면 직전 선택 카테고리를 유지한다.
+    if not filter_category and query:
+        last_category = (request.session.get('last_equipment_category') or '').strip().lower()
+        if last_category in valid_categories:
+            filter_category = last_category
+    # 그래도 category가 비어있다면, 검색어에 카테고리 키워드가 있는 경우 자동으로 매핑한다.
+    if not filter_category and query:
+        q = query.lower()
+        if any(k in q for k in ("굴삭기", "excavator")):
+            filter_category = "excavator"
+        elif any(k in q for k in ("지게차", "forklift", "리프트")):
+            filter_category = "forklift"
+        elif any(k in q for k in ("덤프트럭", "덤프", "dump truck", "dump")):
+            filter_category = "dump"
+        elif any(k in q for k in ("로더", "휠로더", "wheel loader", "loader")):
+            filter_category = "loader"
+        elif any(k in q for k in ("크레인", "crane")):
+            filter_category = "crane"
+        elif any(k in q for k in ("어태치", "attachment")):
+            filter_category = "attachment"
+    if filter_category in valid_categories:
+        request.session['last_equipment_category'] = filter_category
 
     # 상세 검색용 파라미터 (굴삭기/지게차 전용)
     maker = (request.GET.get('maker', '') or '').strip()
@@ -203,7 +226,6 @@ def index(request):
 
     # 목록/검색: NORMAL만 노출(EXPIRED_HIDDEN 제외). 상세 직접 URL은 별도 허용.
     equipment_list = Equipment.objects.visible()
-    valid_categories = ('excavator', 'forklift', 'dump', 'loader', 'crane', 'attachment', 'other')
     if filter_category in valid_categories:
         equipment_list = equipment_list.filter(equipment_type=filter_category)
 
@@ -309,13 +331,13 @@ def index(request):
         favorited_ids = set(EquipmentFavorite.objects.filter(user=request.user).values_list('equipment_id', flat=True))
 
     # 유료 회원 매물: 첫 화면 로테이션(캐러셀 슬라이드당 6건, 여러 슬라이드 자동 순환), 우측 고정 배너용
-    premium_rotation_list = get_premium_equipment_rotation(limit=18)
+    premium_rotation_list = get_premium_equipment_rotation(limit=18, equipment_type=filter_category or None)
     premium_rotation_chunks = [
         premium_rotation_list[i : i + 6]
         for i in range(0, len(premium_rotation_list), 6)
         if premium_rotation_list[i : i + 6]
     ]
-    premium_sidebar_list = get_premium_equipment_sidebar(limit=6)
+    premium_sidebar_list = get_premium_equipment_sidebar(limit=6, equipment_type=filter_category or None)
 
     # 더보기 목록:
     # - 일반 화면: 21번째부터 per_page개(40/80)

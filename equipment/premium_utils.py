@@ -16,16 +16,18 @@ def _premium_user_ids():
     )
 
 
-def get_premium_equipment_rotation(limit=18):
+def get_premium_equipment_rotation(limit=18, equipment_type: str | None = None):
     """첫 화면 로테이션용: 유료 회원 매물 중 노출 중인 것, 최신순 후 limit개 (캐러셀 슬라이드 여러 장)."""
     uids = _premium_user_ids()
     if not uids:
         return []
-    return list(
+    qs = (
         Equipment.objects.visible()
         .filter(author_id__in=uids, is_sold=False)
-        .order_by("-created_at")[:limit]
     )
+    if equipment_type:
+        qs = qs.filter(equipment_type=equipment_type)
+    return list(qs.order_by("-created_at")[:limit])
 
 
 def get_premium_user_ids():
@@ -33,16 +35,18 @@ def get_premium_user_ids():
     return list(_premium_user_ids())
 
 
-def get_premium_equipment_sidebar(limit=6):
+def get_premium_equipment_sidebar(limit=6, equipment_type: str | None = None):
     """우측 고정 배너용: 유료 회원 매물 명함, limit개 (로테이션과 구분해 순서 다르게)."""
     uids = _premium_user_ids()
     if not uids:
         return []
-    return list(
+    qs = (
         Equipment.objects.visible()
         .filter(author_id__in=uids, is_sold=False)
-        .order_by("?")[:limit]  # 랜덤
     )
+    if equipment_type:
+        qs = qs.filter(equipment_type=equipment_type)
+    return list(qs.order_by("?")[:limit])  # 랜덤
 
 
 def is_user_premium(user):

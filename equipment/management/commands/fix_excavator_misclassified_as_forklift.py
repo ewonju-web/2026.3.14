@@ -14,6 +14,9 @@ from equipment.models import Equipment
 # 굴삭기 패턴: 두산 DX, 회링, 집게, 굴삭기 등
 EXCAVATOR_PATTERNS = [
     re.compile(r"DX\d", re.I),           # 두산 DX 시리즈
+    re.compile(r"EC\d", re.I),           # 볼보 EC 시리즈
+    re.compile(r"HX\d", re.I),           # 현대 HX 시리즈
+    re.compile(r"S\d{2,3}V", re.I),      # S55V, S55VS 등
     re.compile(r"회링|코집|집게", re.I),
     re.compile(r"굴삭|미니굴|엑스카"),
 ]
@@ -39,10 +42,11 @@ class Command(BaseCommand):
         qs = Equipment.objects.filter(equipment_type="forklift")
         to_fix = []
         for eq in qs:
-            if looks_like_excavator(eq.model_name):
+            is_exc_code = (eq.sub_type or "").startswith("EXC_") or (eq.weight_class or "").startswith("EXC_")
+            if is_exc_code or looks_like_excavator(eq.model_name):
                 to_fix.append(eq)
 
-        self.stdout.write("보정 대상: %d건 (equipment_type=forklift 이지만 모델명이 굴삭기 패턴)" % len(to_fix))
+        self.stdout.write("보정 대상: %d건 (equipment_type=forklift 이지만 EXC_* 코드 또는 굴삭기 모델 패턴)" % len(to_fix))
         if dry_run:
             for eq in to_fix[:10]:
                 self.stdout.write("  id=%s model=%s" % (eq.id, (eq.model_name or "")[:50]))
