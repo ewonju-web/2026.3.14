@@ -26,6 +26,11 @@ from .premium_utils import (
     get_premium_equipment_rotation,
     get_premium_equipment_sidebar,
 )
+from .listing_filters import (
+    exclude_excavator_misclassified_for_non_excavator_tabs,
+    exclude_attachment_like_from_non_attachment_tabs,
+    filter_attachment_tab,
+)
 
 
 def _image_hash_from_upload(uploaded_file):
@@ -176,8 +181,16 @@ def index(request):
         sort = 'new'
     filter_category = (request.GET.get('category', '') or '').strip().lower()  # excavator, forklift, dump, loader, etc
     valid_categories = ('excavator', 'forklift', 'dump', 'loader', 'crane', 'attachment', 'other')
-    # 검색 요청에서 category 파라미터가 누락되면 직전 선택 카테고리를 유지한다.
-    if not filter_category and query:
+    # ?category= (빈 값) → "전체" 명시: 세션에 저장된 기종을 쓰지 않음
+    if 'category' in request.GET and not (request.GET.get('category') or '').strip():
+        request.session.pop('last_equipment_category', None)
+    # URL에 category 키가 없으면(예: / 또는 리다이렉트로 쿼리만 남은 경우) 직전 기종을 유지해 기종이 섞여 보이지 않게 함
+    elif 'category' not in request.GET:
+        last_category = (request.session.get('last_equipment_category') or '').strip().lower()
+        if last_category in valid_categories:
+            filter_category = last_category
+    # 검색어는 있는데 위에서도 비어 있으면(예외 경로) 세션 기종 유지
+    elif not filter_category and query:
         last_category = (request.session.get('last_equipment_category') or '').strip().lower()
         if last_category in valid_categories:
             filter_category = last_category
@@ -227,7 +240,18 @@ def index(request):
     # 목록/검색: NORMAL만 노출(EXPIRED_HIDDEN 제외). 상세 직접 URL은 별도 허용.
     equipment_list = Equipment.objects.visible()
     if filter_category in valid_categories:
-        equipment_list = equipment_list.filter(equipment_type=filter_category)
+        if filter_category == "attachment":
+            equipment_list = filter_attachment_tab(equipment_list)
+        else:
+            equipment_list = equipment_list.filter(equipment_type=filter_category)
+    # 지게차·덤프·로더 탭: DB 오분류로 굴삭기가 섞이지 않도록 EXC_*·모델 패턴 제외
+    equipment_list = exclude_excavator_misclassified_for_non_excavator_tabs(
+        equipment_list, filter_category
+    )
+    # 채버켓 등 어태치: 다른 기종 탭에 나오지 않고 어태치먼트 탭에서만 보이도록
+    equipment_list = exclude_attachment_like_from_non_attachment_tabs(
+        equipment_list, filter_category
+    )
 
     if query:
         lookups = (
