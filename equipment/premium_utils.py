@@ -49,6 +49,12 @@ def get_premium_equipment_sidebar(limit=6, equipment_type: str | None = None):
     return list(qs.order_by("?")[:limit])  # 랜덤
 
 
+def pad_premium_sidebar_slots(items, limit=6):
+    """우측 유료 사이드바를 항상 limit칸으로 맞춤. 부족한 칸은 None(빈 카드)."""
+    items = list(items)[:limit]
+    return items + [None] * (limit - len(items))
+
+
 def is_user_premium(user):
     """해당 사용자가 현재 유료 회원인지."""
     if not user or not user.is_authenticated:

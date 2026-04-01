@@ -7,10 +7,12 @@
       <i class="bi bi-arrow-left me-1"></i>목록으로 가기
     </a>
   </div>
-  <!-- PC: 2컬럼 (왼쪽 사진 / 오른쪽 정보+버튼) -->
+  <!-- 메인(왼쪽) + 바깥 레일(우측, lg+: sticky 명함) -->
+  <div class="row gn-detail-layout gx-2 gx-lg-3 align-items-start">
+    <div class="col-12 {% if equipment.author %}col-lg-10 col-xl-9{% else %}col-lg-12{% endif %} gn-detail-main-col">
   <div class="row g-4 gn-detail-top">
-    <!-- 왼쪽(65~70%): 메인 이미지 + 썸네일 한 줄 -->
-    <div class="col-12 col-lg-9 gn-detail-left">
+    <!-- 왼쪽: 메인 이미지 + 썸네일 -->
+    <div class="col-12 col-lg-8 gn-detail-left">
       <div class="card gn-card-sharp gn-detail-photo-card" style="border-radius: 10px; overflow: hidden;">
         {% if detail_images %}
           <div class="position-relative bg-dark bg-opacity-10 gn-detail-main-wrap">
@@ -49,10 +51,10 @@
       </div>
     </div>
 
-    <!-- 오른쪽: 판매자 프로필 · 가격·기본정보 · 다른 매물 미리보기 · 문의 CTA · 명함 배너 -->
-    <div class="col-12 col-lg-3 gn-detail-right">
-      <!-- 1. 판매자 프로필 카드 + 프리미엄 회원 배지 -->
-      <div class="card gn-card-sharp gn-card-light mb-3 p-3" style="border-radius: 10px;">
+    <!-- 오른쪽: 가격·기본정보 · 다른 매물 · 문의 (판매자 요약은 모바일만 — PC는 우측 레일 명함) -->
+    <div class="col-12 col-lg-4 gn-detail-right">
+      <!-- 1. 판매자 프로필 (모바일·태블릿만; lg+ 는 우측 바깥 레일) -->
+      <div class="card gn-card-sharp gn-card-light mb-3 p-3 d-lg-none" style="border-radius: 10px;">
         <h6 class="small text-muted text-uppercase mb-2">판매자</h6>
         <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
           <span class="fw-bold fs-6">{{ author_display|default:"-" }}</span>
@@ -177,33 +179,6 @@
       </div>
       {% elif next_bump_at %}
       <p class="small text-muted mb-3">다음 끌어올리기: {{ next_bump_at|date:"m/d H:i" }}</p>
-      {% endif %}
-      <!-- 우측 고정: 유료회원 매물 명함 (스크롤 시 따라다님) -->
-      {% if premium_sidebar_list %}
-      <div class="mt-3 gn-detail-premium-sidebar">
-        <div class="card border shadow-sm">
-          <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
-            <i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물
-          </div>
-          <div class="card-body p-2">
-            {% for eq in premium_sidebar_list %}
-            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none border-bottom mb-2 pb-2 {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}">
-              <div class="d-flex gap-2 align-items-center">
-                <div class="flex-shrink-0 rounded overflow-hidden" style="width: 48px; height: 48px; background: #e2e8f0;">
-                  {% if eq.images.first %}
-                  <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
-                  {% endif %}
-                </div>
-                <div class="min-width-0 flex-grow-1">
-                  <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
-                  <div class="text-danger fw-bold small">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
-                </div>
-              </div>
-            </a>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
       {% endif %}
     </div>
   </div>
@@ -336,6 +311,79 @@
       <i class="bi bi-arrow-left me-1"></i>목록으로 가기
     </a>
   </div>
+    </div><!-- /.gn-detail-main-col -->
+
+    <!-- PC 전용: 본문 바깥 우측 레일 — 스크롤 시 따라오는 판매자 명함 -->
+    {% if equipment.author %}
+    <aside class="col-12 col-lg-2 col-xl-3 gn-detail-outer-rail d-none d-lg-block" aria-label="판매자 정보">
+      <div class="gn-detail-sticky-rail">
+        <div class="card gn-card-sharp border shadow-sm gn-seller-rail-card overflow-hidden">
+          <div class="gn-seller-rail-head text-center py-3 px-2">
+            <div class="gn-seller-rail-avatar mx-auto mb-2 d-flex align-items-center justify-content-center fw-bold text-white">
+              {% if author_display %}{{ author_display|slice:":1" }}{% else %}?{% endif %}
+            </div>
+            <div class="fw-bold small px-1 lh-sm">{{ author_display|default:"-" }}</div>
+            {% if author_company and author_company != author_display %}
+            <div class="text-muted mt-1" style="font-size: 0.75rem;">{{ author_company }}</div>
+            {% endif %}
+            <div class="d-flex flex-wrap justify-content-center gap-1 mt-2">
+              <span class="badge {% if author_is_dealer %}bg-primary{% else %}bg-secondary{% endif %} px-2 py-1" style="font-size: 0.65rem;">
+                {% if author_is_dealer %}매매상{% else %}개인{% endif %}
+              </span>
+              {% if author_is_premium %}
+              <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.65rem;"><i class="bi bi-star-fill"></i> 프리미엄</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="border-top bg-light px-2 py-3 small">
+            {% if author_phone %}
+            <p class="mb-2 text-center">
+              <a href="tel:{{ author_phone|format_phone|cut:'-'|cut:' ' }}" class="text-decoration-none fw-bold text-dark">
+                <i class="bi bi-telephone me-1"></i>{{ author_phone|format_phone }}
+              </a>
+            </p>
+            {% endif %}
+            {% if equipment.author_id %}
+            <a href="{% url 'author_listings' equipment.author_id %}" class="btn btn-outline-primary btn-sm w-100 py-2 mb-2">
+              <i class="bi bi-grid-3x3-gap me-1"></i>이 판매자 매물
+            </a>
+            {% endif %}
+            {% if author_youtube %}
+            <a href="{{ author_youtube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger btn-sm w-100 py-2">
+              <i class="bi bi-youtube me-1"></i>유튜브
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if premium_sidebar_list %}
+        <div class="card gn-card-sharp border shadow-sm mt-3">
+          <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
+            <i class="bi bi-star-fill text-warning me-1"></i>같은 기종 유료 매물
+          </div>
+          <div class="card-body p-2">
+            {% for eq in premium_sidebar_list %}
+            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none {% if not forloop.last %}border-bottom mb-2 pb-2{% endif %}">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden" style="width: 40px; height: 40px; background: #e2e8f0;">
+                  {% if eq.images.first %}
+                  <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate" style="font-size: 0.7rem;">{{ eq.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold" style="font-size: 0.7rem;">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                </div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </aside>
+    {% endif %}
+  </div><!-- /.gn-detail-layout -->
 </div>
 
 <!-- 사진 확대 모달 -->
@@ -432,7 +480,29 @@
   }
   .gn-detail-top { margin-bottom: 0.5rem; }
   .gn-detail-desc-section { width: 100%; margin-top: 1.5rem !important; }
-  .gn-detail-premium-sidebar { position: sticky; top: 1rem; }
+  /* 상세: 본문 옆 바깥 레일 — 스크롤 따라오는 명함 */
+  .gn-detail-sticky-rail {
+    position: sticky;
+    top: 5.5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding-bottom: 1rem;
+  }
+  .gn-seller-rail-card { border-radius: 10px !important; }
+  .gn-seller-rail-head { background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%); }
+  .gn-seller-rail-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--gn-accent, #e8a317), #c9870f);
+    font-size: 1.35rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  @media (min-width: 992px) {
+    main .container-fluid.gn-detail-page {
+      max-width: min(100%, 1480px);
+    }
+  }
   .gn-card-light {
     background-color: #FFFFFF !important;
     color: #111827 !important;

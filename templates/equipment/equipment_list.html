@@ -1052,33 +1052,43 @@
         {% endif %}
     </div>
 
-    <!-- 우측 고정: 유료회원 매물 명함 배너 (PC만, 스크롤 시 따라다님) -->
-    {% if premium_sidebar_list %}
+    <!-- 우측 고정: 유료회원 매물 명함 배너 (PC만, 스크롤 시 따라다님). 부족 시 빈 카드로 칸 유지 -->
     <div class="d-none d-md-block gn-premium-sidebar">
       <div class="card border shadow-sm">
         <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
           <i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물
         </div>
         <div class="card-body p-2">
-          {% for eq in premium_sidebar_list %}
-          <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none border-bottom mb-2 pb-2 {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}">
+          {% for slot in premium_sidebar_slots %}
+          {% if slot %}
+          <a href="{% url 'equipment_detail' slot.pk %}" class="d-block text-decoration-none border-bottom mb-2 pb-2 {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}">
             <div class="d-flex gap-2 align-items-center">
               <div class="flex-shrink-0 rounded overflow-hidden" style="width: 48px; height: 48px; background: #e2e8f0;">
-                {% if eq.images.first %}
-                <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                {% if slot.images.first %}
+                <img src="{{ slot.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
                 {% endif %}
               </div>
               <div class="min-width-0 flex-grow-1">
-                <div class="fw-bold text-truncate small" style="color: var(--gn-text);">{{ eq.model_name|default:"-" }}</div>
-                <div class="text-danger fw-bold small">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                <div class="fw-bold text-truncate small" style="color: var(--gn-text);">{{ slot.model_name|default:"-" }}</div>
+                <div class="text-danger fw-bold small">{{ slot.listing_price|floatformat:0|intcomma }}만원</div>
               </div>
             </div>
           </a>
+          {% else %}
+          <div class="d-block border-bottom mb-2 pb-2 gn-premium-sidebar-placeholder {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}" aria-hidden="true">
+            <div class="d-flex gap-2 align-items-center">
+              <div class="flex-shrink-0 rounded" style="width: 48px; height: 48px; background: #e9ecef;"></div>
+              <div class="min-width-0 flex-grow-1">
+                <div class="mb-1 rounded" style="height: 12px; background: #e9ecef; max-width: 85%;"></div>
+                <div class="rounded" style="height: 10px; background: #f1f3f5; max-width: 55%;"></div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
           {% endfor %}
         </div>
       </div>
     </div>
-    {% endif %}
 
 <!-- 모바일 글쓰기 FAB (당근 스타일) -->
 {% if user.is_authenticated %}

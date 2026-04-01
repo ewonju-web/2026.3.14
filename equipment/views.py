@@ -25,6 +25,7 @@ from .premium_utils import (
     get_premium_user_ids,
     get_premium_equipment_rotation,
     get_premium_equipment_sidebar,
+    pad_premium_sidebar_slots,
 )
 from .listing_filters import (
     exclude_excavator_misclassified_for_non_excavator_tabs,
@@ -393,6 +394,7 @@ def index(request):
         if premium_rotation_list[i : i + 6]
     ]
     premium_sidebar_list = get_premium_equipment_sidebar(limit=6, equipment_type=filter_category or None)
+    premium_sidebar_slots = pad_premium_sidebar_slots(premium_sidebar_list, 6)
 
     # 더보기 목록:
     # - 일반 화면: 21번째부터 per_page개(40/80)
@@ -429,6 +431,7 @@ def index(request):
         'premium_rotation_list': premium_rotation_list,
         'premium_rotation_chunks': premium_rotation_chunks,
         'premium_sidebar_list': premium_sidebar_list,
+        'premium_sidebar_slots': premium_sidebar_slots,
         'premium_author_ids': premium_author_ids,
         # 상세 검색 상태 유지용
         'filter_maker': maker,
@@ -1256,6 +1259,8 @@ def equipment_detail(request, pk):
     author_is_dealer = False
     author_is_premium = False
     author_display = None
+    author_company = ""
+    author_youtube = ""
     if equipment.author:
         try:
             profile = getattr(equipment.author, 'profile', None)
@@ -1271,6 +1276,8 @@ def equipment_detail(request, pk):
                     equipment.author_id in set(get_premium_user_ids())
                 )
                 author_display = getattr(profile, 'company_name', None) or equipment.author.get_full_name() or equipment.author.username
+                author_company = (getattr(profile, "company_name", None) or "").strip()
+                author_youtube = (getattr(profile, "youtube_url", None) or "").strip()
             else:
                 author_display = equipment.author.get_full_name() or equipment.author.username
                 author_is_premium = equipment.author_id in set(get_premium_user_ids())
@@ -1364,8 +1371,10 @@ def equipment_detail(request, pk):
     )
     similar_list = list(similar_qs.order_by('-created_at')[:6])
 
-    # 우측 고정 배너: 유료 회원 매물 명함
-    premium_sidebar_list = get_premium_equipment_sidebar(limit=6)
+    # 상세 우측 레일: 같은 기종 유료 매물 소량만 (빈 슬롯 패딩 없음)
+    premium_sidebar_list = get_premium_equipment_sidebar(
+        limit=3, equipment_type=equipment.equipment_type or None
+    )
 
     # 이 판매자의 다른 매물 6개 미리보기 (본문 제외)
     author_other_listings = []
@@ -1398,6 +1407,8 @@ def equipment_detail(request, pk):
         'author_is_dealer': author_is_dealer,
         'author_is_premium': author_is_premium,
         'author_display': author_display,
+        'author_company': author_company,
+        'author_youtube': author_youtube,
         'similar_stats': similar_stats,
         'similar_list': similar_list,
         'finance_limit': finance_limit,
