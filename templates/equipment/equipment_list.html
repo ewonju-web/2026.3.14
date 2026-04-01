@@ -972,7 +972,7 @@
         </div>
         {% endif %}
         {% if hide_advanced_filters %}
-        <div class="d-none d-md-grid gn-pc-result-toolbar mb-2">
+        <div class="d-none d-md-grid gn-pc-result-toolbar mb-4">
             <div class="d-flex align-items-center gap-2 justify-self-start">
                 <span class="gn-total-count-marker" aria-hidden="true"></span>
                 <span class="small fw-semibold text-muted">
@@ -1527,6 +1527,9 @@
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     width: 100%;
+    margin-top: 1.6rem;
+    margin-bottom: 1.6rem !important;
+    padding-bottom: 0.35rem;
   }
   .gn-index-pc-initial {
     margin-top: 0.35rem;
@@ -1642,6 +1645,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     overflow: hidden;
+    margin-top: 0.8rem;
   }
   .gn-pc-line-table {
     font-size: 0.9rem;
