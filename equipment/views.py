@@ -338,6 +338,37 @@ def index(request):
             effective_order=Coalesce(F('last_bumped_at'), F('created_at'))
         ).order_by('-effective_order')
 
+    # 목록 상단 노출용 총 건수/라벨
+    total_count = equipment_list.count()
+    has_detail_filters = any(
+        bool(v) for v in (
+            maker,
+            sub_type,
+            weight_class,
+            model,
+            year_min,
+            year_max,
+            region_sido,
+            region_sigungu,
+            mast_type,
+        )
+    )
+    if query or has_detail_filters:
+        total_count_label = "검색결과"
+    elif filter_category in valid_categories:
+        category_label_map = {
+            "excavator": "굴삭기",
+            "forklift": "지게차",
+            "dump": "덤프트럭",
+            "loader": "로더/휠로더",
+            "crane": "크레인",
+            "attachment": "어태치먼트",
+            "other": "기타 중장비",
+        }
+        total_count_label = category_label_map.get(filter_category, "전체")
+    else:
+        total_count_label = "전체"
+
     equipment_list = equipment_list.select_related('author__profile')
 
     # 기본 최신 목록에서만 유료 회원 매물을 상단 우선 배치
@@ -391,6 +422,8 @@ def index(request):
         'slice_rest': slice_rest,
         'query': query,
         'sort': sort,
+        'total_count': total_count,
+        'total_count_label': total_count_label,
         'filter_category': filter_category if filter_category in valid_categories else '',
         'favorited_equipment_ids': favorited_ids,
         'premium_rotation_list': premium_rotation_list,

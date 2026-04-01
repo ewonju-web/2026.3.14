@@ -726,16 +726,16 @@
           {% endif %}
         </div>
         {% endif %}
-        <!-- 모바일: 기종 선택 시 매물 영역 오른쪽 위에 정렬 -->
-        {% if filter_category and hide_advanced_filters %}
-        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-2 d-md-none">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 d-md-none">
+            <span class="small fw-semibold text-muted">{{ total_count_label }} {{ total_count|intcomma }}건</span>
+            {% if filter_category and hide_advanced_filters %}
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_desc" class="btn btn-sm {% if sort == 'price_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 높은순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=year_desc" class="btn btn-sm {% if sort == 'year_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">연식 최신순</a>
+            {% endif %}
         </div>
-        {% endif %}
         <!-- 첫화면: 처음 20개만 카드, 이후는 더보기 시 한 줄 목록 -->
         {% if not hide_advanced_filters %}
         <div class="row row-cols-2 g-2 mb-3 gn-index-initial-grid">
@@ -878,15 +878,18 @@
     {% endif %}
     <div class="d-none d-md-flex justify-content-center align-items-center flex-wrap gap-2 mb-3">
         <h2 class="section-title mb-0 gn-recommend-title w-100 text-center">추천 매물</h2>
-        {% if filter_category and hide_advanced_filters %}
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center w-100">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
+            <span class="small fw-semibold text-muted">{{ total_count_label }} {{ total_count|intcomma }}건</span>
+            {% if filter_category and hide_advanced_filters %}
+            <div class="d-flex flex-wrap gap-2 align-items-center">
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_desc" class="btn btn-sm {% if sort == 'price_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 높은순</a>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=year_desc" class="btn btn-sm {% if sort == 'year_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">연식 최신순</a>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
     <!-- PC: 첫 20개 4열 카드 + 더보기 시 21번째부터 한 줄씩 목록 -->
