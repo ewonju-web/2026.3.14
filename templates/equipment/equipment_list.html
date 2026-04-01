@@ -727,7 +727,9 @@
         </div>
         {% endif %}
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 d-md-none">
-            <span class="small fw-semibold text-muted">{{ total_count_label }} {{ total_count|intcomma }}건</span>
+            <span class="small fw-semibold text-muted">
+                {{ total_count_label }} <span class="gn-total-count-num">{{ total_count|intcomma }}</span>건
+            </span>
             {% if filter_category and hide_advanced_filters %}
             <span class="small text-muted me-1">정렬:</span>
             <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
@@ -876,21 +878,20 @@
       </div>
     </div>
     {% endif %}
-    <div class="d-none d-md-flex justify-content-center align-items-center flex-wrap gap-2 mb-3">
-        <h2 class="section-title mb-0 gn-recommend-title w-100 text-center">추천 매물</h2>
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
-            <span class="small fw-semibold text-muted">{{ total_count_label }} {{ total_count|intcomma }}건</span>
-            {% if filter_category and hide_advanced_filters %}
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-            <span class="small text-muted me-1">정렬:</span>
-            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
-            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
-            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_desc" class="btn btn-sm {% if sort == 'price_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 높은순</a>
-            <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=year_desc" class="btn btn-sm {% if sort == 'year_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">연식 최신순</a>
+    {% if not hide_advanced_filters %}
+    <div class="d-none d-md-flex justify-content-center mb-2">
+        <div class="d-flex align-items-center justify-content-between w-100">
+            <div class="d-flex align-items-center gap-2">
+                <span class="gn-total-count-marker" aria-hidden="true"></span>
+                <span class="small fw-semibold text-muted">
+                    {{ total_count_label }} <span class="gn-total-count-num">{{ total_count|intcomma }}</span>건
+                </span>
             </div>
-            {% endif %}
+            <h2 class="mb-0 gn-recommend-title-inline">추천 매물</h2>
+            <span class="gn-recommend-right-spacer" aria-hidden="true"></span>
         </div>
     </div>
+    {% endif %}
 
     <!-- PC: 첫 20개 4열 카드 + 더보기 시 21번째부터 한 줄씩 목록 -->
     <div class="d-none d-md-block mb-5">
@@ -968,6 +969,24 @@
             <button type="button" class="btn btn-outline-secondary px-4 py-2 gn-btn-more-list" aria-expanded="false">
                 <i class="bi bi-chevron-down me-1"></i>더보기
             </button>
+        </div>
+        {% endif %}
+        {% if hide_advanced_filters %}
+        <div class="d-none d-md-grid gn-pc-result-toolbar mb-2">
+            <div class="d-flex align-items-center gap-2 justify-self-start">
+                <span class="gn-total-count-marker" aria-hidden="true"></span>
+                <span class="small fw-semibold text-muted">
+                    {{ total_count_label }} <span class="gn-total-count-num">{{ total_count|intcomma }}</span>건
+                </span>
+            </div>
+            <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                <span class="small text-muted me-1">정렬:</span>
+                <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=new" class="btn btn-sm {% if sort == 'new' %}btn-warning{% else %}btn-outline-secondary{% endif %}">최신순</a>
+                <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_asc" class="btn btn-sm {% if sort == 'price_asc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 낮은순</a>
+                <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=price_desc" class="btn btn-sm {% if sort == 'price_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">가격 높은순</a>
+                <a href="{% url 'index' %}?{% if index_query_base %}{{ index_query_base }}&{% endif %}sort=year_desc" class="btn btn-sm {% if sort == 'year_desc' %}btn-warning{% else %}btn-outline-secondary{% endif %}">연식 최신순</a>
+            </div>
+            <span aria-hidden="true"></span>
         </div>
         {% endif %}
         <div class="gn-more-list-wrap {% if not hide_advanced_filters %}d-none{% endif %} mb-4">
@@ -1480,6 +1499,34 @@
   .gn-recommend-title {
     margin-top: 1rem;
     margin-bottom: 1.35rem;
+  }
+  .gn-total-count-marker {
+    width: 4px;
+    height: 18px;
+    border-radius: 3px;
+    background: var(--gn-accent);
+    display: inline-block;
+  }
+  .gn-total-count-num {
+    font-size: 1.06em;
+    font-weight: 800;
+    color: #111827;
+  }
+  .gn-recommend-title-inline {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.1;
+    text-align: center;
+  }
+  .gn-recommend-right-spacer {
+    width: 120px;
+    display: inline-block;
+  }
+  .gn-pc-result-toolbar {
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: 100%;
   }
   .gn-index-pc-initial {
     margin-top: 0.35rem;
