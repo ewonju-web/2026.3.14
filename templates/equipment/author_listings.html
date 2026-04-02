@@ -1,41 +1,155 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize i18n_extras %}
 {% block content %}
-<div class="container py-4">
-  <h4 class="fw-bold mb-3">
-    <i class="bi bi-person-badge me-2"></i>{{ author_user.get_full_name|default:author_user.username }} 님의 전체 매물
-  </h4>
-  {% if listings %}
-  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-    {% for eq in listings %}
-    <div class="col">
-      <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
-        <div class="card h-100 item-card border rounded overflow-hidden">
-          <div class="position-relative" style="height: 140px; background: #e2e8f0;">
-            {% if eq.images.first %}
-            <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
-            {% else %}
-            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
-            {% endif %}
-            {% if eq.is_sold %}
-            <span class="position-absolute top-0 start-0 badge bg-secondary m-1">판매완료</span>
-            {% endif %}
+<div class="container py-3 py-md-4 gn-author-showcase">
+  <!-- 소개 -->
+  <section class="card border-0 shadow-sm mb-4 overflow-hidden">
+    <div class="row g-0">
+      <div class="col-auto p-3 p-md-4 d-flex align-items-start">
+        <div class="gn-author-showcase-avatar flex-shrink-0 rounded overflow-hidden bg-light border">
+          {% if listings %}
+            {% for eq in listings %}
+              {% if forloop.first %}
+                {% if eq.images.first %}
+                <img src="{{ eq.images.first.image.url }}" alt="" class="w-100 h-100" style="object-fit: cover;">
+                {% else %}
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">사진</div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+          <div class="w-100 h-100 d-flex align-items-center justify-content-center fw-bold text-white gn-author-showcase-avatar-fallback">
+            {{ author_user.username|slice:":1"|upper }}
           </div>
-          <div class="card-body p-2">
-            <div class="fw-bold text-truncate small" style="color: var(--gn-text);">{{ eq.model_name|default:"-" }}</div>
-            <div class="fw-bold text-danger">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
-            <div class="small text-muted">{{ eq.get_equipment_type_display }} · {{ eq.year_manufactured|default:"-" }}년</div>
-          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col p-3 p-md-4">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          {% if author_profile and author_profile.is_premium_active %}
+          <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>유료회원</span>
+          {% endif %}
+          {% if author_profile and author_profile.user_type == 'DEALER' %}
+          <span class="badge bg-danger">매매상</span>
+          {% endif %}
+        </div>
+        <h1 class="h5 fw-bold mb-2">
+          {% if author_profile and author_profile.company_name %}
+            {{ author_profile.company_name }}
+          {% else %}
+            {{ author_user.get_full_name|default:author_user.username }}
+          {% endif %}
+        </h1>
+        {% if author_profile and author_profile.company_name %}
+        <p class="text-muted small mb-2">{{ author_user.get_full_name|default:author_user.username }}</p>
+        {% endif %}
+        <div class="table-responsive gn-author-showcase-table">
+          <table class="table table-sm table-bordered mb-0 bg-white" style="max-width: 520px;">
+            <tbody>
+              <tr>
+                <th class="text-muted small" style="width: 6rem;">연락처</th>
+                <td class="fw-semibold">
+                  {% if author_profile.phone %}
+                    {{ author_profile.phone|format_phone }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+              {% if author_profile and author_profile.company_name %}
+              <tr>
+                <th class="text-muted small">상호</th>
+                <td>{{ author_profile.company_name }}</td>
+              </tr>
+              {% endif %}
+              {% if author_profile and author_profile.business_number %}
+              <tr>
+                <th class="text-muted small">등록번호</th>
+                <td>{{ author_profile.business_number }}</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 매물 리스트 (한 줄씩 아래로) -->
+  <section>
+    <h2 class="h6 fw-bold mb-3 border-start border-4 border-danger ps-2">등록 매물</h2>
+    {% if listings %}
+    <div class="d-flex flex-column gap-2">
+      {% for equipment in listings %}
+      <a href="{% url 'equipment_detail' equipment.pk %}" class="d-flex align-items-center gap-3 p-2 p-md-3 rounded border text-decoration-none gn-author-list-row" style="background: var(--gn-card, #fff); color: var(--gn-text, #111);">
+        {% if equipment.images.all %}
+        <div class="rounded flex-shrink-0 overflow-hidden gn-author-list-thumb">
+          <img src="{{ equipment.images.first.image.url }}" alt="" class="w-100 h-100" style="object-fit: cover; display: block;">
+        </div>
+        {% else %}
+        <div class="rounded flex-shrink-0 d-flex align-items-center justify-content-center bg-secondary text-white small gn-author-list-thumb">없음</div>
+        {% endif %}
+        <div class="flex-grow-1 min-width-0">
+          <span class="fw-bold text-truncate d-block">
+            {% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}
+            <span class="badge bg-secondary text-white ms-1" style="font-size:0.65rem;">{{ equipment.get_equipment_type_display }}</span>
+          </span>
+          <span class="small text-muted d-block text-truncate">
+            {% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %}
+            {% if equipment.year_manufactured %} · {{ equipment.year_manufactured }}년{% endif %}
+            · {% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}
+          </span>
+        </div>
+        <div class="d-flex flex-column align-items-end flex-shrink-0 gap-1">
+          {% if equipment.author_id in premium_author_ids %}
+          <span class="badge bg-warning text-dark small">프리미엄</span>
+          {% endif %}
+          <span class="fw-bold text-danger">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
         </div>
       </a>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p class="text-muted">등록된 매물이 없습니다.</p>
-  {% endif %}
+    {% else %}
+    <p class="text-muted py-4 text-center border rounded bg-light mb-0">등록된 매물이 없습니다.</p>
+    {% endif %}
+  </section>
+
   <div class="mt-4">
     <a href="javascript:history.back()" class="btn btn-outline-secondary">뒤로</a>
+    <a href="{% url 'index' %}" class="btn btn-outline-primary">첫 화면</a>
   </div>
 </div>
+
+<style>
+  .gn-author-showcase-avatar {
+    width: 96px;
+    height: 96px;
+  }
+  @media (min-width: 768px) {
+    .gn-author-showcase-avatar {
+      width: 120px;
+      height: 120px;
+    }
+  }
+  .gn-author-showcase-avatar-fallback {
+    background: linear-gradient(135deg, #64748b, #334155);
+    font-size: 2rem;
+  }
+  .gn-author-list-thumb {
+    width: 88px;
+    height: 88px;
+  }
+  @media (max-width: 575.98px) {
+    .gn-author-list-thumb {
+      width: 72px;
+      height: 72px;
+    }
+  }
+  .gn-author-list-row {
+    transition: box-shadow 0.15s ease;
+  }
+  .gn-author-list-row:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+</style>
 {% endblock %}

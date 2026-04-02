@@ -26,6 +26,7 @@ from .premium_utils import (
     get_premium_equipment_rotation,
     get_premium_equipment_sidebar,
     pad_premium_sidebar_slots,
+    PREMIUM_SIDEBAR_INDEX_TOTAL,
 )
 from .listing_filters import (
     exclude_excavator_misclassified_for_non_excavator_tabs,
@@ -393,8 +394,12 @@ def index(request):
         for i in range(0, len(premium_rotation_list), 6)
         if premium_rotation_list[i : i + 6]
     ]
-    premium_sidebar_list = get_premium_equipment_sidebar(limit=6, equipment_type=filter_category or None)
-    premium_sidebar_slots = pad_premium_sidebar_slots(premium_sidebar_list, 6)
+    premium_sidebar_list = get_premium_equipment_sidebar(
+        limit=PREMIUM_SIDEBAR_INDEX_TOTAL, equipment_type=filter_category or None
+    )
+    premium_sidebar_slots = pad_premium_sidebar_slots(
+        premium_sidebar_list, PREMIUM_SIDEBAR_INDEX_TOTAL
+    )
 
     # 더보기 목록:
     # - 일반 화면: 21번째부터 per_page개(40/80)
@@ -1617,25 +1622,53 @@ def toggle_equipment_favorite(request, pk):
 
 
 def author_listings(request, user_id):
-    """이 회원이 올린 모든 매물 보기 — 유료 회원 전용."""
+    """이 회원이 올린 모든 매물 보기. 유료(프리미엄) 판매자는 비로그인 공개, 그 외는 기존처럼 뷰어 유료만."""
     author_user = get_object_or_404(User, pk=user_id)
-    if not request.user.is_authenticated:
-        messages.info(request, '로그인 후 이용해 주세요.')
-        return redirect('login')
-    if not is_user_premium(request.user):
-        return render(request, 'equipment/premium_required.html', {
-            'title': '이 회원 매물 전체 보기',
-            'message': '유료 회원만 다른 판매자의 매물을 한꺼번에 볼 수 있습니다. 유료 전환 후 이용해 주세요.',
-            'author_display': author_user.get_full_name() or author_user.username,
-        })
-    listings = list(Equipment.objects.visible().filter(author_id=user_id).order_by('-created_at'))
+    author_profile = getattr(author_user, 'profile', None)
+    author_showcase_public = bool(
+        author_profile and getattr(author_profile, 'is_premium_active', False)
+    )
+    if not author_showcase_public:
+        if not request.user.is_authenticated:
+            messages.info(request, '로그인 후 이용해 주세요.')
+            return redirect('login')
+        if not is_user_premium(request.user):
+            return render(request, 'equipment/premium_required.html', {
+                'title': '이 회원 매물 전체 보기',
+                'message': '유료 회원만 다른 판매자의 매물을 한꺼번에 볼 수 있습니다. 유료 전환 후 이용해 주세요.',
+                'author_display': author_user.get_full_name() or author_user.username,
+            })
+
+    qs = (
+        Equipment.objects.visible()
+        .filter(author_id=user_id)
+        .select_related('author')
+        .prefetch_related('images')
+        .order_by('-created_at')
+    )
+    cat = (request.GET.get('category') or '').strip().lower()
+    valid_cats = {c[0] for c in Equipment._meta.get_field('equipment_type').choices}
+    if cat in valid_cats:
+        qs = qs.filter(equipment_type=cat)
+
+    listings = list(qs)
     favorited_ids = set()
     if request.user.is_authenticated:
-        favorited_ids = set(EquipmentFavorite.objects.filter(user=request.user).values_list('equipment_id', flat=True))
+        favorited_ids = set(
+            EquipmentFavorite.objects.filter(user=request.user).values_list(
+                'equipment_id', flat=True
+            )
+        )
+    premium_author_ids = set(get_premium_user_ids())
+
     return render(request, 'equipment/author_listings.html', {
         'author_user': author_user,
+        'author_profile': author_profile,
+        'author_showcase_public': author_showcase_public,
         'listings': listings,
         'favorited_equipment_ids': favorited_ids,
+        'premium_author_ids': premium_author_ids,
+        'filter_category_param': cat if cat in valid_cats else '',
     })
 
 

@@ -4,6 +4,10 @@ from django.utils import timezone
 
 from .models import Equipment, Profile
 
+# 첫화면(굴삭기) 좌우 고정 명함: 총 슬롯 수·한쪽 최대 개수
+PREMIUM_SIDEBAR_INDEX_TOTAL = 20
+PREMIUM_SIDEBAR_INDEX_PER_SIDE = 10
+
 
 def _premium_user_ids():
     today = timezone.now().date()

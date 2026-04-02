@@ -654,78 +654,6 @@
         </div>
         {% endif %}
         {% endif %}
-        <!-- 유료회원 매물 로테이션 (첫 화면 상단, 자동 슬라이드) -->
-        {% if premium_rotation_chunks %}
-        <div class="mb-4">
-          <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
-          {% if hide_advanced_filters %}
-          <div class="row row-cols-2 g-2">
-            {% for eq in premium_rotation_list|slice:":4" %}
-            <div class="col">
-              <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
-                <div class="card h-100 border shadow-sm overflow-hidden">
-                  <div style="height: 100px; background: #e2e8f0;">
-                    {% if eq.images.first %}
-                    <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
-                    {% else %}
-                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
-                    {% endif %}
-                  </div>
-                  <div class="card-body p-2">
-                    <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
-                    <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
-                  </div>
-                </div>
-              </a>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div id="gnPremiumCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-            <div class="carousel-inner">
-              {% for chunk in premium_rotation_chunks %}
-              <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-2 g-md-3">
-                  {% for eq in chunk %}
-                  <div class="col">
-                    <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
-                      <div class="card h-100 border shadow-sm overflow-hidden">
-                        <div style="height: 100px; background: #e2e8f0;">
-                          {% if eq.images.first %}
-                          <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
-                          {% else %}
-                          <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
-                          {% endif %}
-                        </div>
-                        <div class="card-body p-2">
-                          <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
-                          <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-            {% if premium_rotation_chunks|length > 1 %}
-            <button class="carousel-control-prev gn-premium-carousel-btn" type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide="prev" aria-label="이전">
-              <span class="carousel-control-prev-icon bg-dark bg-opacity-50 rounded-circle" aria-hidden="true"></span>
-            </button>
-            <button class="carousel-control-next gn-premium-carousel-btn" type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide="next" aria-label="다음">
-              <span class="carousel-control-next-icon bg-dark bg-opacity-50 rounded-circle" aria-hidden="true"></span>
-            </button>
-            <div class="carousel-indicators gn-premium-indicators">
-              {% for chunk in premium_rotation_chunks %}
-              <button type="button" data-bs-target="#gnPremiumCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="슬라이드 {{ forloop.counter }}"></button>
-              {% endfor %}
-            </div>
-            {% endif %}
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 d-md-none">
             <span class="small fw-semibold text-muted">
                 {{ total_count_label }} <span class="gn-total-count-num">{{ total_count|intcomma }}</span>건
@@ -851,33 +779,6 @@
         {% endif %}
     </div>
 
-    <!-- PC: 기종 선택 시 매물 오른쪽 위에 정렬 -->
-    {% if hide_advanced_filters and premium_rotation_list %}
-    <div class="d-none d-md-block mb-4">
-      <h5 class="section-title mb-2"><i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물</h5>
-      <div class="row row-cols-2 row-cols-lg-4 g-2 g-lg-3">
-        {% for eq in premium_rotation_list|slice:":4" %}
-        <div class="col">
-          <a href="{% url 'equipment_detail' eq.pk %}" class="text-decoration-none">
-            <div class="card h-100 border shadow-sm overflow-hidden">
-              <div style="height: 120px; background: #e2e8f0;">
-                {% if eq.images.first %}
-                <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
-                {% else %}
-                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">이미지 없음</div>
-                {% endif %}
-              </div>
-              <div class="card-body p-2">
-                <div class="fw-bold text-truncate small">{{ eq.model_name|default:"-" }}</div>
-                <div class="text-danger fw-bold">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
-              </div>
-            </div>
-          </a>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
     {% if not hide_advanced_filters %}
     <div class="d-none d-md-flex justify-content-center mb-2">
         <div class="d-flex align-items-center justify-content-between w-100">
@@ -1052,43 +953,90 @@
         {% endif %}
     </div>
 
-    <!-- 우측 고정: 유료회원 매물 명함 배너 (PC만, 스크롤 시 따라다님). 부족 시 빈 카드로 칸 유지 -->
-    <div class="d-none d-md-block gn-premium-sidebar">
-      <div class="card border shadow-sm">
-        <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
-          <i class="bi bi-star-fill text-warning me-1"></i>유료회원 매물
-        </div>
-        <div class="card-body p-2">
-          {% for slot in premium_sidebar_slots %}
-          {% if slot %}
-          <a href="{% url 'equipment_detail' slot.pk %}" class="d-block text-decoration-none border-bottom mb-2 pb-2 {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}">
-            <div class="d-flex gap-2 align-items-center">
-              <div class="flex-shrink-0 rounded overflow-hidden" style="width: 48px; height: 48px; background: #e2e8f0;">
-                {% if slot.images.first %}
-                <img src="{{ slot.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
-                {% endif %}
-              </div>
-              <div class="min-width-0 flex-grow-1">
-                <div class="fw-bold text-truncate small" style="color: var(--gn-text);">{{ slot.model_name|default:"-" }}</div>
-                <div class="text-danger fw-bold small">{{ slot.listing_price|floatformat:0|intcomma }}만원</div>
-              </div>
-            </div>
-          </a>
-          {% else %}
-          <div class="d-block border-bottom mb-2 pb-2 gn-premium-sidebar-placeholder {% if not forloop.last %}{% else %}border-0 mb-0 pb-0{% endif %}" aria-hidden="true">
-            <div class="d-flex gap-2 align-items-center">
-              <div class="flex-shrink-0 rounded" style="width: 48px; height: 48px; background: #e9ecef;"></div>
-              <div class="min-width-0 flex-grow-1">
-                <div class="mb-1 rounded" style="height: 12px; background: #e9ecef; max-width: 85%;"></div>
-                <div class="rounded" style="height: 10px; background: #f1f3f5; max-width: 55%;"></div>
-              </div>
-            </div>
+    {% if filter_category == 'excavator' %}
+    <div class="d-none d-xl-block gn-premium-side-wrap">
+      <aside class="gn-premium-side gn-premium-side-left" aria-label="좌측 유료회원 명함">
+        <div class="card gn-premium-card-shell border-0 shadow-sm overflow-hidden">
+          <div class="card-header py-2 px-2 small fw-bold gn-premium-card-head">
+            <i class="bi bi-person-badge text-warning me-1"></i>유료회원 명함
+            <span class="badge bg-secondary bg-opacity-25 text-dark ms-1" style="font-size:0.65rem;font-weight:600;">좌 10</span>
           </div>
-          {% endif %}
-          {% endfor %}
+          <div class="card-body p-2 gn-premium-side-body">
+            {% for slot in premium_sidebar_slots|slice:":10" %}
+            {% if slot %}
+            <a href="{% if slot.author_id %}{% url 'author_listings' slot.author_id %}{% if filter_category %}?category={{ filter_category }}{% endif %}{% else %}{% url 'equipment_detail' slot.pk %}{% endif %}" class="d-block text-decoration-none border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard {% if forloop.last %}border-0 mb-0 pb-0{% endif %}">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden gn-premium-side-thumb">
+                  {% if slot.images.first %}
+                  <img src="{{ slot.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% else %}
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="font-size: 0.65rem;">—</div>
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate gn-premium-side-title" style="color: var(--gn-text);">{{ slot.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold gn-premium-side-phone">{{ slot|equipment_row_contact|default:"문의" }}</div>
+                </div>
+              </div>
+            </a>
+            {% else %}
+            <div class="border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard gn-premium-bizcard--dummy {% if forloop.last %}border-0 mb-0 pb-0{% endif %}" aria-hidden="true">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded gn-premium-side-thumb gn-premium-dummy-photo"></div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="gn-premium-dummy-line mb-1"></div>
+                  <div class="gn-premium-dummy-line gn-premium-dummy-line--short"></div>
+                </div>
+              </div>
+              <div class="text-muted text-center mt-1" style="font-size:0.62rem;">가상 노출 자리</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
         </div>
-      </div>
+      </aside>
+      <aside class="gn-premium-side gn-premium-side-right" aria-label="우측 유료회원 명함">
+        <div class="card gn-premium-card-shell border-0 shadow-sm overflow-hidden">
+          <div class="card-header py-2 px-2 small fw-bold gn-premium-card-head">
+            <i class="bi bi-person-badge text-warning me-1"></i>유료회원 명함
+            <span class="badge bg-secondary bg-opacity-25 text-dark ms-1" style="font-size:0.65rem;font-weight:600;">우 10</span>
+          </div>
+          <div class="card-body p-2 gn-premium-side-body">
+            {% for slot in premium_sidebar_slots|slice:"10:20" %}
+            {% if slot %}
+            <a href="{% if slot.author_id %}{% url 'author_listings' slot.author_id %}{% if filter_category %}?category={{ filter_category }}{% endif %}{% else %}{% url 'equipment_detail' slot.pk %}{% endif %}" class="d-block text-decoration-none border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard {% if forloop.last %}border-0 mb-0 pb-0{% endif %}">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden gn-premium-side-thumb">
+                  {% if slot.images.first %}
+                  <img src="{{ slot.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% else %}
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="font-size: 0.65rem;">—</div>
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate gn-premium-side-title" style="color: var(--gn-text);">{{ slot.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold gn-premium-side-phone">{{ slot|equipment_row_contact|default:"문의" }}</div>
+                </div>
+              </div>
+            </a>
+            {% else %}
+            <div class="border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard gn-premium-bizcard--dummy {% if forloop.last %}border-0 mb-0 pb-0{% endif %}" aria-hidden="true">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded gn-premium-side-thumb gn-premium-dummy-photo"></div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="gn-premium-dummy-line mb-1"></div>
+                  <div class="gn-premium-dummy-line gn-premium-dummy-line--short"></div>
+                </div>
+              </div>
+              <div class="text-muted text-center mt-1" style="font-size:0.62rem;">가상 노출 자리</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </aside>
     </div>
+    {% endif %}
 
 <!-- 모바일 글쓰기 FAB (당근 스타일) -->
 {% if user.is_authenticated %}
@@ -1198,24 +1146,56 @@
     min-height: 0;
     background: #eef2f7;
   }
-  /* 유료회원 매물 캐러셀 로테이션 */
-  #gnPremiumCarousel { position: relative; }
-  .gn-premium-carousel-btn { width: 44px; height: 44px; top: 50%; transform: translateY(-50%); }
-  .gn-premium-indicators { position: relative; margin-top: 0.75rem; margin-bottom: 0; }
-  .gn-premium-indicators button { width: 8px; height: 8px; border-radius: 50%; background-color: #94a3b8; border: none; }
-  .gn-premium-indicators button.active { background-color: var(--gn-accent, #e8a317); }
-
-  /* 우측 고정 유료회원 매물 배너 */
-  .gn-premium-sidebar {
+  .gn-premium-side {
     position: fixed;
-    right: 12px;
-    top: 76px;
-    width: 220px;
-    max-height: calc(100vh - 90px);
-    overflow-y: auto;
-    z-index: 1020;
+    top: 120px;
+    width: 200px;
+    z-index: 1015;
   }
-  .gn-premium-sidebar .card { max-height: 100%; }
+  .gn-premium-side-left { left: 8px; }
+  .gn-premium-side-right { right: 8px; }
+  /* 많은 명함: 한 열 안에서만 스크롤, 페이지 전체 길이는 제한 */
+  .gn-premium-side-body {
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gn-premium-side-thumb {
+    width: 40px;
+    height: 40px;
+    background: #e9ecef;
+  }
+  .gn-premium-side-title { font-size: 0.72rem; line-height: 1.2; }
+  .gn-premium-side-phone { font-size: 0.72rem; line-height: 1.2; }
+  .gn-premium-side-row:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+  /* 명함 카드 느낌 */
+  .gn-premium-card-shell {
+    background: linear-gradient(145deg, #fffef8 0%, #f8fafc 100%);
+    border: 1px solid rgba(232, 163, 23, 0.35) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  }
+  .gn-premium-card-head {
+    background: linear-gradient(90deg, rgba(255, 237, 179, 0.55), rgba(254, 243, 199, 0.35));
+    border-bottom: 1px solid rgba(232, 163, 23, 0.25);
+  }
+  .gn-premium-bizcard {
+    border-radius: 6px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .gn-premium-bizcard:not(.gn-premium-bizcard--dummy):hover {
+    background: rgba(255, 251, 235, 0.9);
+  }
+  .gn-premium-dummy-photo {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  }
+  .gn-premium-dummy-line {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e2e8f0, #f1f5f9);
+    max-width: 100%;
+  }
+  .gn-premium-dummy-line--short { max-width: 62%; height: 7px; }
   /* PC 카테고리: 컴팩트 레이아웃 + hover/active + 연결 바 */
   @media (min-width: 768px) {
     .gn-index-category-pc {
