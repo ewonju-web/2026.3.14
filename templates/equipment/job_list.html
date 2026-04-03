@@ -85,17 +85,17 @@
                     <tbody>
                         {% for job in job_list %}
                         <tr class="job-row {% if job.is_urgent_highlight %}job-row-urgent{% endif %}" data-href="{% url 'job_detail' job.pk %}">
-                            <td class="text-center">
+                            <td class="text-center job-td-mobile-order-2" data-label="구분">
                                 {% if job.job_type == 'HIRING' %}
                                 <span class="job-cat-badge job-cat-badge-hiring">사람구함</span>
                                 {% else %}
                                 <span class="job-cat-badge job-cat-badge-seeking">일자리구함</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="job-td-mobile-order-3" data-label="급여">
                                 <span class="job-pay-cell">{% if job.pay %}{{ job.pay }}{% else %}협의{% endif %}</span>
                             </td>
-                            <td>
+                            <td class="job-td-mobile-order-1" data-label="제목 / 구인내용">
                                 <div class="d-flex align-items-start flex-wrap gap-2">
                                     {% if job.is_urgent_highlight %}
                                     <span class="job-badge-urgent">급구</span>
@@ -121,7 +121,7 @@
                                 {% if job.location %}<br><span>{{ job.location }}</span>{% elif not job.region_sido and not job.region_sigungu %}<span class="text-muted">—</span>{% endif %}
                             </td>
                             <td class="text-center text-muted small d-none d-lg-table-cell">{{ job.created_at|date:"Y-m-d" }}</td>
-                            <td class="text-end align-middle" onclick="event.stopPropagation();">
+                            <td class="text-end align-middle job-td-actions job-td-mobile-order-4" onclick="event.stopPropagation();">
                                 <a href="{% url 'job_detail' job.pk %}" class="btn btn-sm job-btn-view" onclick="event.stopPropagation();">보기</a>
                                 {% if user.is_authenticated and job.author_id == user.id %}
                                 <a href="{% url 'job_edit' job.pk %}" class="btn btn-sm rounded-pill gn-btn-edit">
@@ -134,7 +134,7 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr>
+                        <tr class="job-empty-row">
                             <td colspan="6" class="text-center py-5 text-muted">등록된 구인구직 공고가 없습니다.</td>
                         </tr>
                         {% endfor %}
