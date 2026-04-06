@@ -27,6 +27,7 @@ from .premium_utils import (
     get_premium_equipment_sidebar,
     pad_premium_sidebar_slots,
     PREMIUM_SIDEBAR_INDEX_TOTAL,
+    PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY,
 )
 from .listing_filters import (
     exclude_excavator_misclassified_for_non_excavator_tabs,
@@ -400,6 +401,9 @@ def index(request):
     premium_sidebar_slots = pad_premium_sidebar_slots(
         premium_sidebar_list, PREMIUM_SIDEBAR_INDEX_TOTAL
     )
+    premium_sidebar_expert_title = PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY.get(
+        filter_category, ""
+    )
 
     # 더보기 목록:
     # - 일반 화면: 21번째부터 per_page개(40/80)
@@ -437,6 +441,7 @@ def index(request):
         'premium_rotation_chunks': premium_rotation_chunks,
         'premium_sidebar_list': premium_sidebar_list,
         'premium_sidebar_slots': premium_sidebar_slots,
+        'premium_sidebar_expert_title': premium_sidebar_expert_title,
         'premium_author_ids': premium_author_ids,
         # 상세 검색 상태 유지용
         'filter_maker': maker,
@@ -1376,10 +1381,34 @@ def equipment_detail(request, pk):
     )
     similar_list = list(similar_qs.order_by('-created_at')[:6])
 
-    # 상세 우측 레일: 같은 기종 유료 매물 소량만 (빈 슬롯 패딩 없음)
-    premium_sidebar_list = get_premium_equipment_sidebar(
-        limit=3, equipment_type=equipment.equipment_type or None
+    # 상세 좌측 레일(굴삭기 전용): 어태치먼트/타이어 전문가 카드
+    left_specialist_cards = []
+    if (equipment.equipment_type or "") == "excavator":
+        left_specialist_cards = list(
+            Equipment.objects.visible()
+            .filter(is_sold=False)
+            .filter(
+                Q(equipment_type="attachment")
+                | Q(equipment_type="excavator", sub_type="EXC_TIRE")
+            )
+            .exclude(pk=equipment.pk)
+            .select_related("author__profile")
+            .order_by("?")[:5]
+        )
+
+    # 상세 우측 레일: 같은 기종 유료 전문가 매물 (첫화면과 동일 문구·현재 매물 제외)
+    _ptype = equipment.equipment_type or None
+    _raw_sidebar = get_premium_equipment_sidebar(
+        limit=16, equipment_type=_ptype
     )
+    premium_sidebar_list = [
+        eq for eq in _raw_sidebar if eq.pk != equipment.pk
+    ][:8]
+    premium_sidebar_expert_title = PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY.get(_ptype or "", "")
+    if not premium_sidebar_expert_title and _ptype:
+        premium_sidebar_expert_title = (
+            f"{equipment.get_equipment_type_display()} 전문가들"
+        )
 
     # 이 판매자의 다른 매물 6개 미리보기 (본문 제외)
     author_other_listings = []
@@ -1418,7 +1447,9 @@ def equipment_detail(request, pk):
         'similar_list': similar_list,
         'finance_limit': finance_limit,
         'finance_monthly_60': finance_monthly_60,
+        'left_specialist_cards': left_specialist_cards,
         'premium_sidebar_list': premium_sidebar_list,
+        'premium_sidebar_expert_title': premium_sidebar_expert_title,
         'author_other_listings': author_other_listings,
         'can_bump': can_bump,
         'next_bump_at': next_bump_at,

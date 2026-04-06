@@ -7,9 +7,40 @@
       <i class="bi bi-arrow-left me-1"></i>목록으로 가기
     </a>
   </div>
-  <!-- 메인(왼쪽) + 바깥 레일(우측, lg+: sticky 명함) -->
+  <!-- 메인 + 바깥 레일(좌측 전문가/우측 판매자·전문가, PC) -->
   <div class="row gn-detail-layout gx-2 gx-lg-3 align-items-start">
-    <div class="col-12 {% if equipment.author %}col-lg-10 col-xl-9{% else %}col-lg-12{% endif %} gn-detail-main-col">
+    {% if equipment.equipment_type == 'excavator' and left_specialist_cards %}
+    <aside class="col-12 col-xl-2 d-none d-xl-block" aria-label="좌측 어태치먼트·타이어 전문가">
+      <div class="gn-detail-sticky-rail">
+        <div class="card gn-card-sharp border shadow-sm gn-detail-left-experts overflow-hidden" style="border-color: rgba(232, 163, 23, 0.35) !important;">
+          <div class="card-header py-2 px-2 small fw-bold gn-detail-premium-experts-head">
+            <i class="bi bi-tools text-warning me-1"></i>어태치먼트·타이어 전문가
+          </div>
+          <div class="card-body p-2">
+            {% for eq in left_specialist_cards %}
+            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none {% if not forloop.last %}border-bottom mb-2 pb-2{% endif %}" style="border-color: rgba(226, 232, 240, 0.9);">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden" style="width: 40px; height: 40px; background: #e2e8f0;">
+                  {% if eq.images.first %}
+                  <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% else %}
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="font-size: 0.6rem;">—</div>
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate text-dark" style="font-size: 0.72rem;">{{ eq.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold" style="font-size: 0.72rem;">{{ eq|equipment_row_contact|default:"문의" }}</div>
+                </div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </aside>
+    {% endif %}
+
+    <div class="col-12 {% if equipment.author and equipment.equipment_type == 'excavator' and left_specialist_cards %}col-lg-10 col-xl-8{% elif equipment.author %}col-lg-10 col-xl-9{% elif equipment.equipment_type == 'excavator' and left_specialist_cards %}col-lg-12 col-xl-10{% else %}col-lg-12{% endif %} gn-detail-main-col">
   <div class="row g-4 gn-detail-top">
     <!-- 왼쪽: 메인 이미지 + 썸네일 -->
     <div class="col-12 col-lg-8 gn-detail-left">
@@ -315,7 +346,7 @@
 
     <!-- PC 전용: 본문 바깥 우측 레일 — 스크롤 시 따라오는 판매자 명함 -->
     {% if equipment.author %}
-    <aside class="col-12 col-lg-2 col-xl-3 gn-detail-outer-rail d-none d-lg-block" aria-label="판매자 정보">
+    <aside class="col-12 col-lg-2 {% if equipment.equipment_type == 'excavator' and left_specialist_cards %}col-xl-2{% else %}col-xl-3{% endif %} gn-detail-outer-rail d-none d-lg-block" aria-label="판매자 정보">
       <div class="gn-detail-sticky-rail">
         <div class="card gn-card-sharp border shadow-sm gn-seller-rail-card overflow-hidden">
           <div class="gn-seller-rail-head text-center py-3 px-2">
@@ -356,27 +387,33 @@
           </div>
         </div>
 
-        {% if premium_sidebar_list %}
-        <div class="card gn-card-sharp border shadow-sm mt-3">
-          <div class="card-header py-2 small fw-bold bg-warning bg-opacity-25">
-            <i class="bi bi-star-fill text-warning me-1"></i>같은 기종 유료 매물
+        {% if premium_sidebar_expert_title %}
+        <div class="card gn-card-sharp border shadow-sm mt-3 gn-detail-premium-experts overflow-hidden" style="border-color: rgba(232, 163, 23, 0.35) !important;">
+          <div class="card-header py-2 px-2 small fw-bold gn-detail-premium-experts-head">
+            <i class="bi bi-person-badge text-warning me-1"></i>{{ premium_sidebar_expert_title }}
           </div>
           <div class="card-body p-2">
+            {% if premium_sidebar_list %}
             {% for eq in premium_sidebar_list %}
-            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none {% if not forloop.last %}border-bottom mb-2 pb-2{% endif %}">
+            <a href="{% url 'equipment_detail' eq.pk %}" class="d-block text-decoration-none {% if not forloop.last %}border-bottom mb-2 pb-2{% endif %}" style="border-color: rgba(226, 232, 240, 0.9);">
               <div class="d-flex gap-2 align-items-center">
                 <div class="flex-shrink-0 rounded overflow-hidden" style="width: 40px; height: 40px; background: #e2e8f0;">
                   {% if eq.images.first %}
                   <img src="{{ eq.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% else %}
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="font-size: 0.6rem;">—</div>
                   {% endif %}
                 </div>
                 <div class="min-width-0 flex-grow-1">
-                  <div class="fw-bold text-truncate" style="font-size: 0.7rem;">{{ eq.model_name|default:"-" }}</div>
-                  <div class="text-danger fw-bold" style="font-size: 0.7rem;">{{ eq.listing_price|floatformat:0|intcomma }}만원</div>
+                  <div class="fw-bold text-truncate text-dark" style="font-size: 0.72rem;">{{ eq.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold" style="font-size: 0.72rem;">{{ eq|equipment_row_contact|default:"문의" }}</div>
                 </div>
               </div>
             </a>
             {% endfor %}
+            {% else %}
+            <p class="text-muted small mb-0 text-center py-2 px-1">노출 중인 유료 전문가 매물이 없습니다.</p>
+            {% endif %}
           </div>
         </div>
         {% endif %}
@@ -490,6 +527,15 @@
   }
   .gn-seller-rail-card { border-radius: 10px !important; }
   .gn-seller-rail-head { background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%); }
+  /* 상세 우측: 첫화면과 동일 톤의 전문가 패널 */
+  .gn-detail-premium-experts {
+    background: linear-gradient(145deg, #fffef8 0%, #f8fafc 100%);
+  }
+  .gn-detail-premium-experts-head {
+    background: linear-gradient(90deg, rgba(255, 237, 179, 0.55), rgba(254, 243, 199, 0.35));
+    border-bottom: 1px solid rgba(232, 163, 23, 0.25);
+    color: #111827;
+  }
   .gn-seller-rail-avatar {
     width: 72px;
     height: 72px;

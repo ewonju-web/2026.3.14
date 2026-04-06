@@ -8,6 +8,15 @@ from .models import Equipment, Profile
 PREMIUM_SIDEBAR_INDEX_TOTAL = 20
 PREMIUM_SIDEBAR_INDEX_PER_SIDE = 10
 
+# 첫화면 좌우 패널 제목 — 기종 탭별로 해당 기종 유료 매물만 노출 + 문구 분리
+PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY = {
+    "excavator": "굴삭기 전문가들",
+    "forklift": "지게차 전문가들",
+    "dump": "덤프트럭 전문가들",
+    "loader": "로더·휠로더 전문가들",
+    "crane": "크레인 전문가들",
+}
+
 
 def _premium_user_ids():
     today = timezone.now().date()
