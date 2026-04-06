@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4 py-md-5" style="max-width: 920px;">
+  <div class="text-center mb-4">
+    <h2 class="fw-bold mb-2">유료회원 안내</h2>
+    <p class="text-muted mb-0">필요할 때 바로 적용할 수 있는 단일 유료 상품입니다.</p>
+  </div>
+
+  <div class="row g-3 g-md-4 mb-4">
+    <div class="col-12 col-md-6">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+          <div class="small text-muted mb-1">월 요금제</div>
+          <div class="h5 fw-bold mb-0">월 100,000원</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="card h-100 border-0 shadow-sm rounded-4 position-relative">
+        <span class="badge text-bg-warning position-absolute top-0 end-0 translate-middle-y me-3 px-3 py-2">추천</span>
+        <div class="card-body p-4">
+          <div class="small text-muted mb-1">연 요금제</div>
+          <div class="h5 fw-bold mb-1">연 800,000원</div>
+          <div class="small text-success fw-bold">연간 결제 시 2개월 무료</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+      <h5 class="fw-bold mb-3">혜택 4가지</h5>
+      <ol class="mb-0 text-muted" style="line-height: 1.8;">
+        <li>매물 검색 상단 우선 노출</li>
+        <li>메인 화면 프리미엄 영역 노출</li>
+        <li>주 1회 끌어올리기</li>
+        <li>매물 등록 무제한 (무료: 월 10건)</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4 text-center">
+      <h5 class="fw-bold mb-2">신청 방법</h5>
+      <p class="text-muted mb-4">Tel. 010-2469-3800 으로 연락주시면 안내해드립니다.</p>
+      <div class="d-flex flex-column flex-md-row gap-2 justify-content-center">
+        <a href="tel:010-2469-3800" class="btn btn-primary px-4">전화 문의하기</a>
+        <a href="{{ kakao_inquiry_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark px-4">카카오 문의</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

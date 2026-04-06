@@ -85,7 +85,7 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold">기종 선택</label>
-                    <select name="equipment_category" class="form-select" style="border-radius: 10px;">
+                    <select name="equipment_category" id="id_equipment_category" class="form-select" style="border-radius: 10px;">
                         {% for val, lbl in job_equipment_form_choices %}
                         <option value="{{ val }}" {% if equipment_category_selected == val %}selected{% endif %}>{{ lbl }}</option>
                         {% endfor %}
@@ -247,6 +247,33 @@
 })();
 var JOB_TITLE_PLACEHOLDER_HIRE = '예: 굴삭기 기사 모십니다';
 var JOB_TITLE_PLACEHOLDER_SEEK = '예: 굴삭기 운전 일자리 구합니다';
+var IS_EDIT_MODE = '{% if mode == "edit" %}1{% else %}0{% endif %}' === '1';
+
+function getSelectedEquipmentLabel() {
+    var equipmentEl = document.getElementById('id_equipment_category');
+    if (!equipmentEl) return '';
+    var selected = equipmentEl.options[equipmentEl.selectedIndex];
+    return selected ? selected.textContent.trim() : '';
+}
+
+function buildAutoTitle(mode) {
+    var equipmentLabel = getSelectedEquipmentLabel();
+    if (!equipmentLabel || equipmentLabel === '전체') {
+        return mode === 'seek' ? '기사 일자리 구합니다.' : '기사 모십니다.';
+    }
+    if (mode === 'seek') {
+        return equipmentLabel + ' 기사 일자리 구합니다.';
+    }
+    return equipmentLabel + ' 기사 모십니다.';
+}
+
+function applyAutoTitle(mode) {
+    var titleEl = document.getElementById('id_job_title');
+    if (!titleEl) return;
+    if (IS_EDIT_MODE && titleEl.value.trim()) return;
+    titleEl.value = buildAutoTitle(mode);
+}
+
 function toggleForm(type) {
     var hire = document.querySelectorAll('.form-hire');
     var seek = document.querySelectorAll('.form-seek');
@@ -261,6 +288,7 @@ function toggleForm(type) {
         if (btnSeek) btnSeek.classList.remove('active');
         if (input) input.value = 'hire';
         if (titleEl) titleEl.placeholder = JOB_TITLE_PLACEHOLDER_HIRE;
+        applyAutoTitle('hire');
     } else {
         hire.forEach(function(el){ el.classList.add('d-none'); });
         seek.forEach(function(el){ el.classList.remove('d-none'); });
@@ -268,11 +296,20 @@ function toggleForm(type) {
         if (btnHire) btnHire.classList.remove('active');
         if (input) input.value = 'seek';
         if (titleEl) titleEl.placeholder = JOB_TITLE_PLACEHOLDER_SEEK;
+        applyAutoTitle('seek');
     }
 }
 document.addEventListener('DOMContentLoaded', function() {
     var input = document.getElementById('id_job_mode');
     if (input && input.value === 'seek') toggleForm('seek');
+    else toggleForm('hire');
+    var equipmentEl = document.getElementById('id_equipment_category');
+    if (equipmentEl) {
+        equipmentEl.addEventListener('change', function() {
+            var mode = (input && input.value === 'seek') ? 'seek' : 'hire';
+            applyAutoTitle(mode);
+        });
+    }
     var deadlineType = document.getElementById('id_deadline_type');
     var deadlineDate = document.getElementById('id_deadline_date');
     if (deadlineType && deadlineDate) {

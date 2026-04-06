@@ -8,6 +8,24 @@ from django.utils import timezone
 from .models import Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog
 
 
+class EquipmentOwnerFilter(admin.SimpleListFilter):
+    title = '작성자(소유)'
+    parameter_name = 'equipment_owner'
+
+    def lookups(self, request, model_admin):
+        return [
+            ('unclaimed', '미연결 (작성자 없음)'),
+            ('claimed', '연결됨'),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'unclaimed':
+            return queryset.filter(author__isnull=True)
+        if self.value() == 'claimed':
+            return queryset.filter(author__isnull=False)
+        return queryset
+
+
 # 1. 매물 관리
 class EquipmentImageInline(admin.TabularInline):
     model = EquipmentImage
@@ -19,10 +37,23 @@ class EquipmentImageInline(admin.TabularInline):
 class EquipmentAdmin(admin.ModelAdmin):
     list_display = [
         'id', 'equipment_type', 'model_name', 'manufacturer', 'year_manufactured', 'listing_price_display',
-        'current_location', 'vehicle_number', 'listing_status', 'is_sold', 'author', 'last_bumped_at', 'created_at',
+        'current_location', 'vehicle_number', 'listing_status', 'is_sold', 'author',
+        'unclaimed_phone_norm', 'ownership_claimed_at', 'last_bumped_at', 'created_at',
     ]
-    list_filter = ('equipment_type', 'listing_status', 'is_sold', 'manufacturer')
-    search_fields = ('model_name', 'manufacturer', 'current_location', 'description')
+    list_filter = ('equipment_type', EquipmentOwnerFilter, 'author', 'listing_status', 'is_sold', 'manufacturer')
+    search_fields = (
+        '=id',
+        '=legacy_listing_id',
+        'model_name',
+        'manufacturer',
+        'current_location',
+        'description',
+        'author__username',
+        'author__first_name',
+        'author__last_name',
+        'author__profile__phone',
+        'unclaimed_phone_norm',
+    )
     date_hierarchy = 'created_at'
     list_per_page = 50
     inlines = [EquipmentImageInline]
@@ -31,6 +62,10 @@ class EquipmentAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('author', 'equipment_type', 'model_name', 'manufacturer', 'year_manufactured', 'month_manufactured', 'operating_hours')}),
         ('가격·위치·차량번호', {'fields': ('listing_price', 'current_location', 'vehicle_number', 'description')}),
+        ('미연결·소유권 이전', {
+            'fields': ('unclaimed_phone_norm', 'ownership_claimed_at', 'legacy_listing_id'),
+            'description': '작성자 없이 남길 때: 연락처 숫자만 입력. 가입자가 본인 전화로 「내 매물 찾기」에서 연결하면 작성자가 채워집니다.',
+        }),
         ('상태', {'fields': ('listing_status', 'is_sold', 'password', 'created_at')}),
     )
 

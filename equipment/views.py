@@ -29,6 +29,7 @@ from .premium_utils import (
     PREMIUM_SIDEBAR_INDEX_TOTAL,
     PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY,
 )
+from .claim_utils import normalize_phone_digits
 from .listing_filters import (
     exclude_excavator_misclassified_for_non_excavator_tabs,
     exclude_attachment_like_from_non_attachment_tabs,
@@ -703,6 +704,91 @@ def my_page(request):
 
 
 @login_required(login_url='/login/')
+def billing_upgrade(request):
+    """유료 회원 안내 페이지(로그인 필수)."""
+    return render(request, 'billing/upgrade.html', {
+        'kakao_inquiry_url': getattr(settings, 'KAKAO_INQUIRY_URL', 'https://open.kakao.com/'),
+    })
+
+
+@login_required(login_url='/login/')
+def find_my_listings(request):
+    """
+    기존 매물(작성자 없음 + unclaimed_phone_norm)을 프로필 전화번호로 찾아 계정에 연결.
+    소셜 가입자는 본인인증 완료 후 이용.
+    """
+    if _user_has_social_account(request.user):
+        need = _require_phone_verified(request, reverse('find_my_listings'))
+        if need:
+            return need
+
+    try:
+        profile = Profile.objects.get(user=request.user)
+    except Profile.DoesNotExist:
+        profile = Profile.objects.create(user=request.user)
+
+    norm = normalize_phone_digits(profile.phone)
+    if not norm:
+        messages.error(
+            request,
+            '연락처가 등록되어 있어야 합니다. 마이페이지에서 전화번호를 입력한 뒤 휴대폰 본인인증을 완료해 주세요.',
+        )
+        return redirect('my_page')
+
+    candidates = (
+        Equipment.objects.filter(author__isnull=True, unclaimed_phone_norm=norm)
+        .order_by('-created_at')
+    )
+
+    if request.method == 'POST':
+        from django.db import transaction
+
+        raw_ids = request.POST.getlist('equipment_id')
+        id_list = []
+        for x in raw_ids:
+            try:
+                id_list.append(int(x))
+            except (TypeError, ValueError):
+                continue
+        if not id_list:
+            messages.warning(request, '연결할 매물을 선택해 주세요.')
+            return redirect('find_my_listings')
+
+        claimed = 0
+        with transaction.atomic():
+            for eid in id_list:
+                eq = (
+                    Equipment.objects.select_for_update()
+                    .filter(pk=eid, author__isnull=True, unclaimed_phone_norm=norm)
+                    .first()
+                )
+                if not eq:
+                    continue
+                eq.author = request.user
+                eq.unclaimed_phone_norm = ''
+                eq.ownership_claimed_at = timezone.now()
+                eq.save(
+                    update_fields=['author', 'unclaimed_phone_norm', 'ownership_claimed_at']
+                )
+                claimed += 1
+
+        if claimed:
+            messages.success(request, f'{claimed}건의 매물을 내 계정에 연결했습니다.')
+        else:
+            messages.warning(request, '연결할 수 있는 매물이 없습니다. 이미 연결되었거나 조건이 맞지 않습니다.')
+        return redirect('my_page')
+
+    return render(
+        request,
+        'registration/find_my_listings.html',
+        {
+            'candidates': candidates,
+            'profile_phone_norm': norm,
+        },
+    )
+
+
+@login_required(login_url='/login/')
 def verify_phone_page(request):
     """
     휴대폰 본인인증 페이지. 매물 등록·유료 결제 전 필수.
@@ -1246,6 +1332,10 @@ def parts_as(request):
 # [4] 매물 관련
 def equipment_detail(request, pk):
     equipment = get_object_or_404(Equipment, pk=pk)
+    if equipment.author_id is None and not (
+        request.user.is_authenticated and request.user.is_staff
+    ):
+        raise Http404()
     is_favorited = False
     if request.user.is_authenticated:
         is_favorited = EquipmentFavorite.objects.filter(user=request.user, equipment=equipment).exists()

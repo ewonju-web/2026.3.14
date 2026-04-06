@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+  <h2 class="section-title mb-3">내 매물 찾기</h2>
+  <p class="text-muted small mb-4">
+    본인인증된 전화번호와 동일한 연락처로 남아 있는 <strong>미연결 매물</strong>만 표시됩니다.
+    연결하면 해당 매물의 작성자가 현재 로그인 계정으로 설정됩니다.
+  </p>
+
+  {% if not candidates %}
+  <div class="alert alert-light border shadow-sm rounded-3">
+    <p class="mb-0 small">연결 가능한 매물이 없습니다. 연락처가 옛 등록 정보와 같은지 확인하거나 운영자에게 문의해 주세요.</p>
+  </div>
+  <a href="{% url 'my_page' %}" class="btn btn-outline-secondary">마이페이지</a>
+  {% else %}
+  <form method="post" action="{% url 'find_my_listings' %}">
+    {% csrf_token %}
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-3">
+      <div class="table-responsive mb-0">
+        <table class="table table-hover align-middle mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 2.5rem;"></th>
+              <th>매물</th>
+              <th>가격</th>
+              <th>등록일</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in candidates %}
+            <tr>
+              <td>
+                <input class="form-check-input" type="checkbox" name="equipment_id" value="{{ e.pk }}" id="eq{{ e.pk }}" checked>
+              </td>
+              <td>
+                <label class="form-check-label fw-semibold mb-0" for="eq{{ e.pk }}">
+                  {% if e.model_name %}{{ e.model_name }}{% else %}{{ e.get_equipment_type_display }}{% endif %}
+                  {% if e.legacy_listing_id %}<span class="text-muted">· 구번호 {{ e.legacy_listing_id }}</span>{% endif %}
+                </label>
+              </td>
+              <td class="text-danger fw-bold">{% if e.listing_price is not None %}{{ e.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</td>
+              <td class="text-muted">{{ e.created_at|date:"Y-m-d" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary">선택한 매물 연결하기</button>
+      <a href="{% url 'my_page' %}" class="btn btn-outline-secondary">취소</a>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -66,7 +66,8 @@ class EquipmentQuerySet(models.QuerySet):
     """목록/검색용: NORMAL만 노출. 상세 URL 직접 접근은 별도 허용."""
 
     def visible(self):
-        return self.filter(listing_status=ListingStatus.NORMAL)
+        # 작성자 없는 미연결 매물은 목록/검색에 나오지 않음(소유권 연결 전)
+        return self.filter(listing_status=ListingStatus.NORMAL).exclude(author__isnull=True)
 
 
 class Equipment(models.Model):
@@ -150,6 +151,21 @@ class Equipment(models.Model):
     last_bumped_at = models.DateTimeField(null=True, blank=True, verbose_name="마지막 끌어올리기 시각")
     # direct-nara 이관: 기존 매물 PK. 재이관·중복 방지용
     legacy_listing_id = models.IntegerField(null=True, blank=True, db_index=True, verbose_name="(이관) 기존 매물 PK")
+    # 회원 재가입·소유권 이전: 작성자 없음 + 아래 정규화 전화번호로 본인인증 후 '내 매물 찾기'로 연결
+    unclaimed_phone_norm = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        db_index=True,
+        verbose_name="미연결 연락처(숫자만)",
+        help_text="기존 매물만 남길 때 등록 연락처. 숫자만 저장해 프로필 전화와 매칭합니다.",
+    )
+    ownership_claimed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="소유권 연결 시각",
+        help_text="가입자가 내 매물 찾기로 본인 계정에 연결한 시각",
+    )
 
     objects = EquipmentQuerySet.as_manager()
 

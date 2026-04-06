@@ -984,6 +984,17 @@
               </div>
             </a>
             {% else %}
+            {% if filter_category == 'excavator' and forloop.first %}
+            <a href="{% url 'author_listings' 1 %}?category=excavator" class="d-block text-decoration-none border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard {% if forloop.last %}border-0 mb-0 pb-0{% endif %}">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded gn-premium-side-thumb d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #0d6efd 0%, #2b8cff 100%); color: #fff; font-size: 0.65rem; font-weight: 700;">TEST</div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate gn-premium-side-title" style="color: var(--gn-text);">굴삭기 전문가 테스트 노출</div>
+                  <div class="text-danger fw-bold gn-premium-side-phone">클릭 동선 확인</div>
+                </div>
+              </div>
+            </a>
+            {% else %}
             <div class="border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard gn-premium-bizcard--dummy {% if forloop.last %}border-0 mb-0 pb-0{% endif %}" aria-hidden="true">
               <div class="d-flex gap-2 align-items-center">
                 <div class="flex-shrink-0 rounded gn-premium-side-thumb gn-premium-dummy-photo"></div>
@@ -994,6 +1005,7 @@
               </div>
               <div class="text-muted text-center mt-1" style="font-size:0.62rem;">가상 노출 자리</div>
             </div>
+            {% endif %}
             {% endif %}
             {% endfor %}
           </div>
@@ -1157,15 +1169,13 @@
     top: var(--gn-premium-top, 120px);
     width: 200px;
     z-index: 1015;
-    --gn-premium-gap: 12px;
-    --gn-premium-main-half: 600px; /* max-width 1200px / 2, .gn-index-container 와 동일 */
   }
-  /* 50vw - (반폭 + 명함폭 + 간격): 넓은 화면에서만 양수 → 매물 열 바로 옆; 좁으면 max 로 최소 여백 */
+  /* vw 기반 계산을 제거해 초기 로드시 미세 위치 이동(자리잡기) 방지 */
   .gn-premium-side-left {
-    left: max(0.5rem, calc(50vw - var(--gn-premium-main-half) - 200px - var(--gn-premium-gap)));
+    left: 0.75rem;
   }
   .gn-premium-side-right {
-    right: max(0.5rem, calc(50vw - var(--gn-premium-main-half) - 200px - var(--gn-premium-gap)));
+    right: 0.75rem;
   }
   /* 많은 명함: 한 열 안에서만 스크롤, 페이지 전체 길이는 제한 */
   .gn-premium-side-body {
@@ -1895,54 +1905,6 @@
     wireWeightFilter('gn-mo-sub-type', 'gn-mo-weight-class');
   })();
 
-  // PC xl: 유료 명함 세로 시작을 "추천 매물" 행 상단에 맞춤 (고정 top 대신 측정)
-  (function() {
-    var sides = document.querySelectorAll('.gn-premium-side');
-    if (!sides.length) return;
-
-    function resolveAnchor() {
-      var rec = document.getElementById('gn-recommend-block');
-      if (rec) {
-        var st = window.getComputedStyle(rec);
-        if (st.display !== 'none' && st.visibility !== 'hidden' && rec.offsetParent !== null) {
-          return rec;
-        }
-      }
-      var grid = document.querySelector('.gn-index-pc-initial');
-      if (grid && grid.offsetParent !== null) return grid;
-      var toolbar = document.querySelector('.gn-pc-result-toolbar');
-      if (toolbar && toolbar.offsetParent !== null) return toolbar;
-      return null;
-    }
-
-    function syncPremiumTop() {
-      var el = resolveAnchor();
-      var topPx = 120;
-      if (el) {
-        var r = el.getBoundingClientRect();
-        if (r.height >= 0) {
-          topPx = Math.max(56, Math.round(r.top));
-        }
-      }
-      document.documentElement.style.setProperty('--gn-premium-top', topPx + 'px');
-    }
-
-    syncPremiumTop();
-    window.addEventListener('resize', syncPremiumTop);
-    window.addEventListener('load', syncPremiumTop);
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(syncPremiumTop);
-    }
-    if (window.ResizeObserver) {
-      var c = document.querySelector('.gn-index-container');
-      if (c) {
-        var ro = new ResizeObserver(syncPremiumTop);
-        ro.observe(c);
-      }
-    }
-    requestAnimationFrame(syncPremiumTop);
-    setTimeout(syncPremiumTop, 80);
-  })();
 </script>
 
 {% endblock %}
