@@ -1146,14 +1146,22 @@
     min-height: 0;
     background: #eef2f7;
   }
+  /* 유료 명함: 뷰포트 양끝이 아니라 .gn-index-container(최대 1200px) 바깥에 붙임 — 매물 그리드와 겹치지 않게 */
   .gn-premium-side {
     position: fixed;
     top: 120px;
     width: 200px;
     z-index: 1015;
+    --gn-premium-gap: 12px;
+    --gn-premium-main-half: 600px; /* max-width 1200px / 2, .gn-index-container 와 동일 */
   }
-  .gn-premium-side-left { left: 8px; }
-  .gn-premium-side-right { right: 8px; }
+  /* 50vw - (반폭 + 명함폭 + 간격): 넓은 화면에서만 양수 → 매물 열 바로 옆; 좁으면 max 로 최소 여백 */
+  .gn-premium-side-left {
+    left: max(0.5rem, calc(50vw - var(--gn-premium-main-half) - 200px - var(--gn-premium-gap)));
+  }
+  .gn-premium-side-right {
+    right: max(0.5rem, calc(50vw - var(--gn-premium-main-half) - 200px - var(--gn-premium-gap)));
+  }
   /* 많은 명함: 한 열 안에서만 스크롤, 페이지 전체 길이는 제한 */
   .gn-premium-side-body {
     max-height: calc(100vh - 140px);
