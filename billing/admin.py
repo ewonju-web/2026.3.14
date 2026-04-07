@@ -8,22 +8,65 @@ from django.utils.formats import number_format
 from .models import (
     Product, Order, OrderItem, Payment,
     PremiumPlacement, EquipmentUpgrade, DealerMembership, RevenueDaily,
-    ConversionEvent,
+    ConversionEvent, ProductType,
 )
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'product_type', 'slot_type', 'duration_days', 'price_display', 'is_recurring', 'is_active', 'sort_order')
-    list_filter = ('product_type', 'slot_type', 'is_active')
+    list_filter = ('is_active',)
     search_fields = ('code', 'name')
     ordering = ('sort_order', 'pk')
     list_per_page = 50
     list_editable = ('is_active', 'sort_order')
+    readonly_fields = ('plan_guide',)
+    fieldsets = (
+        ('유료회원 단일 상품 안내', {'fields': ('plan_guide',)}),
+        ('상품 설정', {
+            'fields': (
+                'code', 'name', 'product_type', 'price', 'duration_days',
+                'is_recurring', 'is_active', 'sort_order',
+            )
+        }),
+    )
 
     def price_display(self, obj):
         return f"{number_format(obj.price, use_l10n=True)}원" if obj.price is not None else "-"
     price_display.short_description = '판매가'
+
+    def get_queryset(self, request):
+        # 어드민에서도 단일 유료회원 상품(딜러 멤버십)만 관리
+        return super().get_queryset(request).filter(product_type=ProductType.DEALER_MEMBERSHIP)
+
+    def save_model(self, request, obj, form, change):
+        # 운영 정책: 상품 유형은 딜러 멤버십으로 고정
+        obj.product_type = ProductType.DEALER_MEMBERSHIP
+        obj.slot_type = None
+        super().save_model(request, obj, form, change)
+
+    def plan_guide(self, obj):
+        return format_html(
+            """
+            <div style="line-height:1.7;">
+              <div><strong>제목:</strong> 유료회원 안내</div>
+              <div><strong>요금:</strong> 월 100,000원 / 연 800,000원 (연간 결제 시 2개월 무료)</div>
+              <div><strong>혜택 4가지:</strong></div>
+              <ol style="margin:6px 0 6px 18px;">
+                <li>매물 검색 상단 우선 노출</li>
+                <li>메인 화면 프리미엄 영역 노출</li>
+                <li>주 1회 끌어올리기</li>
+                <li>매물 등록 무제한 (무료: 월 10건)</li>
+              </ol>
+              <div><strong>신청 방법:</strong> Tel. 010-2469-3800</div>
+              <div style="margin-top:4px;">
+                <a href="tel:010-2469-3800">전화 문의하기</a> ·
+                <a href="https://open.kakao.com/" target="_blank" rel="noopener noreferrer">카카오 문의</a>
+              </div>
+            </div>
+            """
+        )
+    plan_guide.short_description = '운영 기준'
 
 
 class OrderItemInline(admin.TabularInline):
@@ -186,3 +229,11 @@ class ConversionEventAdmin(admin.ModelAdmin):
             return "-"
         return obj.session_key[:16] + "…" if len(obj.session_key) > 16 else obj.session_key
     session_key_short.short_description = '세션'
+
+
+# 단일 유료회원 운영 기준: 불필요한 메뉴는 어드민 좌측에서 숨김
+for _model in (PremiumPlacement, EquipmentUpgrade, RevenueDaily, ConversionEvent):
+    try:
+        admin.site.unregister(_model)
+    except admin.sites.NotRegistered:
+        pass

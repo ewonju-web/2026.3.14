@@ -424,6 +424,7 @@
   // ----- 기종 버튼: 기본 선택 굴삭기, 클릭 시 동기화 -----
   if (equipmentTypeSelect) {
     var btns = document.querySelectorAll('.gn-equipment-type-btn');
+    var typeScroller = document.querySelector('.gn-equipment-type-btns');
     var currentValue = (equipmentTypeSelect.value || '').trim();
     if (!currentValue || currentValue === '---------') {
       currentValue = 'excavator';
@@ -433,6 +434,15 @@
       btns.forEach(function(btn) {
         btn.classList.toggle('active', btn.getAttribute('data-value') === val);
       });
+    }
+    function nudgeTypeScroller(targetBtn) {
+      if (!typeScroller || !targetBtn) return;
+      var cRect = typeScroller.getBoundingClientRect();
+      var bRect = targetBtn.getBoundingClientRect();
+      // 선택한 버튼이 가려지지 않게 중앙 쪽으로 부드럽게 이동
+      var delta = (bRect.left + (bRect.width / 2)) - (cRect.left + (cRect.width / 2));
+      var nextLeft = Math.max(0, typeScroller.scrollLeft + delta);
+      typeScroller.scrollTo({ left: nextLeft, behavior: 'smooth' });
     }
     function updateTypeUI() {
       var val = (equipmentTypeSelect.value || '').trim();
@@ -580,6 +590,7 @@
         equipmentTypeSelect.value = val;
         updateTypeButtons(val);
         updateTypeUI();
+        nudgeTypeScroller(this);
       });
     });
     equipmentTypeSelect.addEventListener('change', function() {

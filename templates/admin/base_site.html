@@ -5,163 +5,95 @@
 <script>
 (function () {
   var KEY = "admin_nav_sidebar_scroll_top";
-  var KEY_LINK = "admin_nav_sidebar_last_link";
-  var RESTORE_TIMES = [0, 80, 200, 450, 900, 1500, 2200];
-  var PIN_PATH_RE = /\/admin\/accounts\/(subscription|membershipgrade)\//;
+  var LOCK_MS = 5000;
+  var TICK_MS = 80;
 
   function getSidebarEl() {
     return document.getElementById("nav-sidebar");
   }
 
-  function saveSidebarScroll(sidebar) {
-    sidebar = sidebar || getSidebarEl();
-    if (!sidebar) return;
+  function saveTop(top) {
     try {
-      sessionStorage.setItem(KEY, String(sidebar.scrollTop || 0));
+      sessionStorage.setItem(KEY, String(top));
     } catch (e) {}
   }
 
-  function saveLastClickedLink(href) {
-    if (!href) return;
+  function loadTop() {
     try {
-      sessionStorage.setItem(KEY_LINK, href);
-    } catch (e) {}
-  }
-
-  function getLastClickedLink() {
-    try {
-      return sessionStorage.getItem(KEY_LINK) || "";
+      var raw = sessionStorage.getItem(KEY);
+      if (raw === null) return 0;
+      var top = parseInt(raw, 10);
+      return Number.isNaN(top) ? 0 : top;
     } catch (e) {
-      return "";
+      return 0;
     }
   }
 
-  function restoreSidebarScroll(sidebar) {
-    sidebar = sidebar || getSidebarEl();
-    if (!sidebar) return;
-    try {
-      var raw = sessionStorage.getItem(KEY);
-      if (raw === null) return;
-      var top = parseInt(raw, 10);
-      if (!Number.isNaN(top)) {
-        sidebar.scrollTop = top;
-      }
-    } catch (e) {}
-  }
-
-  function keepActiveMenuInView(sidebar) {
-    sidebar = sidebar || getSidebarEl();
-    if (!sidebar) return;
-    var activeLink =
-      sidebar.querySelector("a[aria-current='page']") ||
-      sidebar.querySelector(".current-model a") ||
-      sidebar.querySelector(".current-app a") ||
-      sidebar.querySelector("a[href='" + window.location.pathname + "']");
-    if (!activeLink) return;
-    try {
-      var sbRect = sidebar.getBoundingClientRect();
-      var elRect = activeLink.getBoundingClientRect();
-      var isOutOfView = elRect.top < sbRect.top + 12 || elRect.bottom > sbRect.bottom - 12;
-      if (isOutOfView) {
-        activeLink.scrollIntoView({ block: "nearest", inline: "nearest" });
-      }
-    } catch (e) {}
-  }
-
-  function keepLastClickedLinkInView(sidebar) {
-    sidebar = sidebar || getSidebarEl();
-    if (!sidebar) return;
-    var href = getLastClickedLink();
-    if (!href) return;
-    var escaped = href.replace(/"/g, '\\"');
-    var link = sidebar.querySelector('a[href="' + escaped + '"]');
-    if (!link) return;
-    try {
-      var sbRect = sidebar.getBoundingClientRect();
-      var elRect = link.getBoundingClientRect();
-      var isOutOfView = elRect.top < sbRect.top + 12 || elRect.bottom > sbRect.bottom - 12;
-      if (isOutOfView) {
-        link.scrollIntoView({ block: "nearest", inline: "nearest" });
-      }
-    } catch (e) {}
+  // nav-sidebar 내부 요소 강제 scrollIntoView 차단 (자동 내려감 방지)
+  if (!window.__gnBlockNavSidebarScrollIntoView && window.Element && Element.prototype.scrollIntoView) {
+    window.__gnBlockNavSidebarScrollIntoView = true;
+    var orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function () {
+      try {
+        if (this && this.closest && this.closest("#nav-sidebar")) return;
+      } catch (e) {}
+      return orig.apply(this, arguments);
+    };
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     var sidebar = getSidebarEl();
     if (!sidebar) return;
-    var userInteracted = false;
-    var lockUntil = Date.now() + 2200;
-    var shouldPinLink = PIN_PATH_RE.test(window.location.pathname);
 
-    // Django admin 스크립트가 사이드바 상태를 다시 만지는 경우가 있어
-    // 초기 로드 후 짧은 시간 동안 여러 번 복원해 점프를 방지한다.
-    RESTORE_TIMES.forEach(function (ms) {
-      setTimeout(function () {
-        restoreSidebarScroll(sidebar);
-        if (shouldPinLink) {
-          keepLastClickedLinkInView(sidebar);
-          keepActiveMenuInView(sidebar);
-        }
-      }, ms);
-    });
+    var savedTop = loadTop();
+    var lockUntil = Date.now() + LOCK_MS;
+    var manualMode = false;
+    var internalSet = false;
 
-    // 렌더 지연/재정렬이 있는 페이지(구독/회원등급) 대응: 초반 5초간 주기적 고정
+    function setTop(top) {
+      internalSet = true;
+      sidebar.scrollTop = top;
+      internalSet = false;
+    }
+
+    setTop(savedTop);
+
     var pinTimer = setInterval(function () {
-      if (Date.now() > lockUntil || userInteracted) {
+      if (Date.now() > lockUntil || manualMode) {
         clearInterval(pinTimer);
         return;
       }
-      restoreSidebarScroll(sidebar);
-      if (shouldPinLink) {
-        keepLastClickedLinkInView(sidebar);
-        keepActiveMenuInView(sidebar);
-      }
-    }, 140);
+      setTop(savedTop);
+    }, TICK_MS);
 
     sidebar.addEventListener("scroll", function () {
-      // 초기 렌더 동안 스크립트가 강제로 스크롤을 바꿔도 저장 위치로 되돌림.
-      if (!userInteracted && Date.now() < lockUntil) {
-        restoreSidebarScroll(sidebar);
+      if (internalSet) return;
+      if (!manualMode && Date.now() < lockUntil) {
+        setTop(savedTop);
         return;
       }
-      saveSidebarScroll(sidebar);
+      savedTop = sidebar.scrollTop || 0;
+      saveTop(savedTop);
     }, { passive: true });
-    sidebar.addEventListener("click", function (event) {
-      var target = event.target;
-      var linkEl = target && target.closest ? target.closest("a") : null;
-      if (linkEl) {
-        saveLastClickedLink(linkEl.getAttribute("href") || "");
-        saveSidebarScroll(sidebar);
-      }
-    });
 
-    // 링크 기본 동작 전에 먼저 저장해 페이지 전환 누락을 줄인다.
     document.addEventListener("pointerdown", function (event) {
       var link = event.target && event.target.closest ? event.target.closest("#nav-sidebar a") : null;
       if (link) {
-        saveLastClickedLink(link.getAttribute("href") || "");
-        saveSidebarScroll(sidebar);
+        savedTop = sidebar.scrollTop || 0;
+        saveTop(savedTop);
       }
     }, true);
-    sidebar.addEventListener("wheel", function () {
-      userInteracted = true;
-    }, { passive: true });
-    sidebar.addEventListener("touchstart", function () {
-      userInteracted = true;
-    }, { passive: true });
-    sidebar.addEventListener("pointerdown", function () {
-      userInteracted = true;
-    }, { passive: true });
+
+    // 휠/터치로 실제 스크롤 의도가 있을 때만 lock 해제
+    sidebar.addEventListener("wheel", function () { manualMode = true; }, { passive: true });
+    sidebar.addEventListener("touchstart", function () { manualMode = true; }, { passive: true });
 
     window.addEventListener("beforeunload", function () {
-      saveSidebarScroll(sidebar);
+      saveTop(sidebar.scrollTop || 0);
     });
     window.addEventListener("pageshow", function () {
-      restoreSidebarScroll(sidebar);
-      if (shouldPinLink) {
-        keepLastClickedLinkInView(sidebar);
-        keepActiveMenuInView(sidebar);
-      }
+      savedTop = loadTop();
+      setTop(savedTop);
     });
   });
 })();

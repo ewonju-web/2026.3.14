@@ -5,7 +5,12 @@ from django.utils.html import format_html
 from django.utils.formats import number_format
 from django.db.models import Count, Q
 from django.utils import timezone
-from .models import Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog
+from .models import (
+    Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop,
+    EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, EquipmentType,
+    ExcavatorEquipment, ForkliftEquipment, DumpEquipment, LoaderEquipment,
+    CraneEquipment, AttachmentEquipment, OtherEquipment,
+)
 
 
 class EquipmentOwnerFilter(admin.SimpleListFilter):
@@ -31,6 +36,40 @@ class EquipmentImageInline(admin.TabularInline):
     model = EquipmentImage
     extra = 1
     show_change_link = True
+    fields = ('image_preview', 'image')
+    readonly_fields = ('image_preview',)
+
+    def image_preview(self, obj):
+        if not obj or not getattr(obj, 'pk', None) or not getattr(obj, 'image', None):
+            return "-"
+        try:
+            return format_html(
+                '<img src="{}" style="width:72px;height:54px;object-fit:cover;border-radius:6px;border:1px solid #ddd;" alt="preview">',
+                obj.image.url,
+            )
+        except Exception:
+            return "-"
+    image_preview.short_description = '미리보기'
+
+
+@admin.register(EquipmentImage)
+class EquipmentImageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'equipment', 'image_preview', 'image')
+    search_fields = ('equipment__model_name', 'equipment__author__username')
+    list_select_related = ('equipment',)
+    list_per_page = 100
+
+    def image_preview(self, obj):
+        if not obj or not getattr(obj, 'image', None):
+            return "-"
+        try:
+            return format_html(
+                '<img src="{}" style="width:84px;height:63px;object-fit:cover;border-radius:6px;border:1px solid #ddd;" alt="thumb">',
+                obj.image.url,
+            )
+        except Exception:
+            return "-"
+    image_preview.short_description = '미리보기'
 
 
 @admin.register(Equipment)
@@ -74,6 +113,74 @@ class EquipmentAdmin(admin.ModelAdmin):
             return "-"
         return f"{number_format(obj.listing_price, use_l10n=True)}원"
     listing_price_display.short_description = '판매가'
+
+    def get_search_results(self, request, queryset, search_term):
+        """
+        기본 search_fields 결과 + 숫자 검색 보강.
+        - 매물번호(id), 이관번호(legacy_listing_id)
+        - 작성자 전화번호(author__profile__phone, 하이픈/공백 제거 후)
+        """
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        term = (search_term or "").strip()
+        digits = "".join(ch for ch in term if ch.isdigit())
+        if digits:
+            digit_qs = self.model.objects.filter(
+                Q(id=int(digits)) |
+                Q(legacy_listing_id=int(digits)) |
+                Q(author__profile__phone__icontains=digits)
+            )
+            queryset = queryset | digit_qs
+        return queryset, use_distinct
+
+
+class EquipmentTypeProxyAdmin(EquipmentAdmin):
+    equipment_type_value = None
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if self.equipment_type_value:
+            qs = qs.filter(equipment_type=self.equipment_type_value)
+        return qs
+
+    def save_model(self, request, obj, form, change):
+        if self.equipment_type_value:
+            obj.equipment_type = self.equipment_type_value
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ExcavatorEquipment)
+class ExcavatorEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.EXCAVATOR
+
+
+@admin.register(ForkliftEquipment)
+class ForkliftEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.FORKLIFT
+
+
+@admin.register(DumpEquipment)
+class DumpEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.DUMP
+
+
+@admin.register(LoaderEquipment)
+class LoaderEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.LOADER
+
+
+@admin.register(CraneEquipment)
+class CraneEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.CRANE
+
+
+@admin.register(AttachmentEquipment)
+class AttachmentEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.ATTACHMENT
+
+
+@admin.register(OtherEquipment)
+class OtherEquipmentAdmin(EquipmentTypeProxyAdmin):
+    equipment_type_value = EquipmentType.OTHER
 
 
 # 2. 부품 관리 (사진 포함)

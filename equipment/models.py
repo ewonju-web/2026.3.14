@@ -177,6 +177,55 @@ class Equipment(models.Model):
         return self.model_name or self.get_equipment_type_display() or "매물"
 
 
+class ExcavatorEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "굴삭기 매물"
+        verbose_name_plural = "2-1. 굴삭기 매물 관리"
+
+
+class ForkliftEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "지게차 매물"
+        verbose_name_plural = "2-2. 지게차 매물 관리"
+
+
+class DumpEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "덤프트럭 매물"
+        verbose_name_plural = "2-3. 덤프트럭 매물 관리"
+
+
+class LoaderEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "로더/휠로더 매물"
+        verbose_name_plural = "2-4. 로더/휠로더 매물 관리"
+
+
+class CraneEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "크레인 매물"
+        verbose_name_plural = "2-5. 크레인 매물 관리"
+
+
+class AttachmentEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "어태치먼트 매물"
+        verbose_name_plural = "2-6. 어태치먼트 매물 관리"
+
+
+class OtherEquipment(Equipment):
+    class Meta:
+        proxy = True
+        verbose_name = "기타 중장비 매물"
+        verbose_name_plural = "2-7. 기타 중장비 매물 관리"
+
+
 class EquipmentImage(models.Model):
     equipment = models.ForeignKey(Equipment, related_name='images', on_delete=models.CASCADE, verbose_name="해당 장비")
     image = models.ImageField(upload_to='equipment_images/', verbose_name="장비 사진")
@@ -279,6 +328,10 @@ class JobPost(models.Model):
     def __str__(self):
         return f"[{self.get_job_type_display()}] {self.title}"
 
+    class Meta:
+        verbose_name = "구인구직"
+        verbose_name_plural = "구인구직"
+
     def check_password(self, raw_password):
         if not self.password_hash:
             return False
@@ -326,9 +379,17 @@ class Part(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        verbose_name = "부품"
+        verbose_name_plural = "부품"
+
 class PartImage(models.Model):
     part = models.ForeignKey(Part, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='parts/')
+
+    class Meta:
+        verbose_name = "부품 사진"
+        verbose_name_plural = "부품 사진"
 
 
 class PartsShop(models.Model):
