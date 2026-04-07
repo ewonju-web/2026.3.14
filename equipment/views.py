@@ -1510,6 +1510,14 @@ def equipment_detail(request, pk):
             .order_by('-created_at')[:6]
         )
 
+    # 우측 레일: 전국 부품점 A/S 센터(지도 이동 링크용)
+    shops_qs = PartsShop.objects.all().order_by('region', 'name')
+    nearby_parts_shops = []
+    if equipment.region_sido:
+        nearby_parts_shops = list(shops_qs.filter(region__icontains=equipment.region_sido)[:6])
+    if not nearby_parts_shops:
+        nearby_parts_shops = list(shops_qs[:6])
+
     # 끌어올리기: 본인 매물 + 유료회원 + 주 1회 제한
     can_bump = False
     next_bump_at = None
@@ -1541,6 +1549,7 @@ def equipment_detail(request, pk):
         'premium_sidebar_list': premium_sidebar_list,
         'premium_sidebar_expert_title': premium_sidebar_expert_title,
         'author_other_listings': author_other_listings,
+        'nearby_parts_shops': nearby_parts_shops,
         'can_bump': can_bump,
         'next_bump_at': next_bump_at,
     })
