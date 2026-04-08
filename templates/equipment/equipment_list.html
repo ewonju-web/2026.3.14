@@ -708,7 +708,7 @@
                             <tr><td class="gn-list-label">위치</td><td class="gn-list-value text-truncate">{% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}</td></tr>
                         </tbody>
                     </table>
-                    <p class="mb-0 mt-1 text-end d-flex align-items-center justify-content-end gap-1 flex-wrap">
+                    <p class="mb-0 mt-1 text-end d-flex align-items-center justify-content-end gap-1 flex-wrap gn-list-price-row">
                         {% if equipment.author_id in premium_author_ids %}<span class="badge bg-warning text-dark small">프리미엄</span>{% endif %}
                         {% if equipment.vehicle_number %}<span class="badge badge-verified">번호등록</span>{% endif %}
                         <span class="gn-list-price">
@@ -1181,6 +1181,8 @@
   }
   /* 많은 명함: 한 열 안에서만 스크롤, 페이지 전체 길이는 제한 */
   .gn-premium-side-body {
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: calc(100vh - var(--gn-premium-top, 120px) - 24px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -1195,6 +1197,9 @@
   .gn-premium-side-row:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
   /* 명함 카드 느낌 */
   .gn-premium-card-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     background: linear-gradient(145deg, #fffef8 0%, #f8fafc 100%);
     border: 1px solid rgba(232, 163, 23, 0.35) !important;
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
@@ -1567,6 +1572,8 @@
   .gn-list-card .gn-card-fav { position: relative; z-index: 2; }
   /* 모바일 direct-nara 스타일 카드: 흰 배경, 이미지 상단, 그리드 */
   .gn-list-card {
+    display: flex;
+    flex-direction: column;
     background: #fff !important;
     border-radius: 2px;
     border: 1px solid #d1d5db !important;
@@ -1588,6 +1595,9 @@
   /* 카드 본문: 여백·줄간격 축소해서 카드 높이 줄임 */
   .gn-list-card-body {
     padding: 0.35rem 0.5rem !important;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
   }
   .gn-list-card-body .gn-list-title {
     font-size: 0.86rem;
@@ -1605,6 +1615,7 @@
   .gn-list-card-body .gn-list-spec {
     font-size: 0.8rem;
     line-height: 1.2;
+    margin-bottom: 0 !important;
   }
   .gn-list-card-body .gn-list-spec td {
     padding-top: 0.1rem !important;
@@ -1622,11 +1633,18 @@
     color: #0f172a !important;
     font-weight: 600;
   }
+  .gn-list-card-body .gn-list-price-row {
+    margin-top: auto !important;
+    min-height: 1.95rem;
+  }
   .gn-list-card-body .gn-list-price {
     font-weight: 500;
     line-height: 1;
-    margin-top: 0.2rem !important;
+    margin-top: 0 !important;
     color: #ff0000 !important;
+    display: inline-flex;
+    align-items: flex-end;
+    white-space: nowrap;
   }
   .gn-list-card-body .gn-list-price-num {
     font-size: 1.539rem;

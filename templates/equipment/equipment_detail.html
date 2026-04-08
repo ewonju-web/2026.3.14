@@ -33,7 +33,7 @@
             {% for image in detail_images %}
             <button type="button"
                     class="p-0 border rounded flex-shrink-0 detail-thumb {% if forloop.first %}border-primary{% endif %}"
-                    style="width: 72px; height: 72px; overflow: hidden; {% if forloop.first %}border-width: 2px !important;{% endif %}"
+                    style="width: 90px; height: 90px; overflow: hidden; {% if forloop.first %}border-width: 2px !important;{% endif %}"
                     data-src="{{ image.image.url }}"
                     data-index="{{ forloop.counter0 }}"
                     aria-label="사진 {{ forloop.counter }}">
@@ -615,18 +615,18 @@
   .gn-detail-thumbs { white-space: nowrap; -webkit-overflow-scrolling: touch; }
   #detailMainImg:hover { opacity: 0.98; }
   .gn-detail-main-wrap {
-    min-height: 420px;
+    min-height: 460px;
   }
   .gn-detail-main-img {
-    max-height: 470px;
+    max-height: 520px;
     object-fit: contain;
   }
   @media (min-width: 992px) {
     .gn-detail-main-wrap {
-      min-height: 680px;
+      min-height: 760px;
     }
     .gn-detail-main-img {
-      max-height: 760px;
+      max-height: 820px;
     }
   }
 
