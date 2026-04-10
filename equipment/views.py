@@ -226,6 +226,7 @@ def index(request):
     region_sido = (request.GET.get('region_sido', '') or '').strip()
     region_sigungu = (request.GET.get('region_sigungu', '') or '').strip()
     mast_type = (request.GET.get('mast_type', '') or '').strip()
+    premium_only = request.GET.get('premium_only') == '1'
     # 상세검색 실행 후에는 목록 화면에서 상세검색 바를 숨기고 정렬만 남긴다.
     hide_advanced_filters = request.GET.get('expand') == '1' or any(
         bool(v) for v in (
@@ -342,6 +343,10 @@ def index(request):
             effective_order=Coalesce(F('last_bumped_at'), F('created_at'))
         ).order_by('-effective_order')
 
+    premium_author_ids = set(get_premium_user_ids())
+    if premium_only:
+        equipment_list = equipment_list.filter(author_id__in=premium_author_ids)
+
     # 목록 상단 노출용 총 건수/라벨
     total_count = equipment_list.count()
     has_detail_filters = any(
@@ -357,7 +362,9 @@ def index(request):
             mast_type,
         )
     )
-    if query or has_detail_filters:
+    if premium_only and not query and not has_detail_filters:
+        total_count_label = "유료회원"
+    elif query or has_detail_filters:
         total_count_label = "검색결과"
     elif filter_category in valid_categories:
         category_label_map = {
@@ -377,7 +384,6 @@ def index(request):
 
     # 기본 최신 목록에서만 유료 회원 매물을 상단 우선 배치
     # (상세검색/정렬 결과에서는 사용자가 선택한 정렬 순서를 그대로 유지)
-    premium_author_ids = set(get_premium_user_ids())
     if sort == 'new' and not hide_advanced_filters and not query:
         equipment_list = list(equipment_list)
         equipment_list = [e for e in equipment_list if e.author_id in premium_author_ids] + [
@@ -456,8 +462,51 @@ def index(request):
         'filter_mast_type': mast_type,
         'index_query_base': index_query_base,
         'hide_advanced_filters': hide_advanced_filters,
+        'premium_only': premium_only,
     })
 
+
+def premium_experts_test_view(request):
+    """TEST 버튼 전용: 샘플 30개(사진 포함) 미리보기 화면."""
+    seeds = list(
+        Equipment.objects.visible()
+        .filter(equipment_type='excavator')
+        .select_related('author')
+        .prefetch_related('images')
+        .order_by('-created_at')[:30]
+    )
+
+    sample_items = []
+    if seeds:
+        for i in range(30):
+            base = seeds[i % len(seeds)]
+            first_image = base.images.first()
+            sample_items.append({
+                'id': i + 1,
+                'title': f"[TEST {i + 1:02d}] {base.model_name or '굴삭기 샘플 매물'}",
+                'manufacturer': base.manufacturer or '테스트제조사',
+                'year': base.year_manufactured or '-',
+                'location': base.current_location or base.region_sido or '테스트지역',
+                'price': base.listing_price,
+                'image_url': first_image.image.url if first_image else '',
+                'detail_url': reverse('equipment_detail', args=[base.pk]),
+            })
+    else:
+        for i in range(30):
+            sample_items.append({
+                'id': i + 1,
+                'title': f"[TEST {i + 1:02d}] 굴삭기 샘플 매물",
+                'manufacturer': '테스트제조사',
+                'year': '-',
+                'location': '테스트지역',
+                'price': None,
+                'image_url': '',
+                'detail_url': reverse('index'),
+            })
+
+    return render(request, 'equipment/premium_experts_test.html', {
+        'sample_items': sample_items,
+    })
 
 
 # [2] 로그인 관련
@@ -1486,19 +1535,25 @@ def equipment_detail(request, pk):
             .order_by("?")[:5]
         )
 
-    # 상세 우측 레일: 같은 기종 유료 전문가 매물 (첫화면과 동일 문구·현재 매물 제외)
+    # 상세 레일·연동: 같은 기종 유료 전문가 (현재 매물 제외). 굴삭기는 좌우 10+10 슬롯용으로 20칸 패딩
     _ptype = equipment.equipment_type or None
     _raw_sidebar = get_premium_equipment_sidebar(
-        limit=16, equipment_type=_ptype
+        limit=max(24, PREMIUM_SIDEBAR_INDEX_TOTAL + 4), equipment_type=_ptype
     )
-    premium_sidebar_list = [
-        eq for eq in _raw_sidebar if eq.pk != equipment.pk
-    ][:8]
+    filtered_sidebar = [eq for eq in _raw_sidebar if eq.pk != equipment.pk]
+    premium_sidebar_list = filtered_sidebar[:8]
     premium_sidebar_expert_title = PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY.get(_ptype or "", "")
     if not premium_sidebar_expert_title and _ptype:
         premium_sidebar_expert_title = (
             f"{equipment.get_equipment_type_display()} 전문가들"
         )
+    if _ptype == "excavator":
+        premium_sidebar_slots = pad_premium_sidebar_slots(
+            filtered_sidebar[:PREMIUM_SIDEBAR_INDEX_TOTAL],
+            PREMIUM_SIDEBAR_INDEX_TOTAL,
+        )
+    else:
+        premium_sidebar_slots = []
 
     # 이 판매자의 다른 매물 6개 미리보기 (본문 제외)
     author_other_listings = []
@@ -1547,6 +1602,7 @@ def equipment_detail(request, pk):
         'finance_monthly_60': finance_monthly_60,
         'left_specialist_cards': left_specialist_cards,
         'premium_sidebar_list': premium_sidebar_list,
+        'premium_sidebar_slots': premium_sidebar_slots,
         'premium_sidebar_expert_title': premium_sidebar_expert_title,
         'author_other_listings': author_other_listings,
         'nearby_parts_shops': nearby_parts_shops,

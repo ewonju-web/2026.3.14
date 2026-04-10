@@ -36,6 +36,7 @@ urlpatterns = [
         name="board_detail",
     ),
     path('', views.index, name='index'),
+    path('test/premium-experts/', views.premium_experts_test_view, name='premium_experts_test'),
     path('equipment/<int:pk>/', views.equipment_detail, name='equipment_detail'),
     path('equipment/create/', views.equipment_create, name='equipment_create'),
     path('new/', views.equipment_create, name='equipment_create_legacy'),

@@ -7,9 +7,52 @@
       <i class="bi bi-arrow-left me-1"></i>목록으로 가기
     </a>
   </div>
-  <!-- 메인 + 바깥 레일(좌측 전문가/우측 판매자·전문가, PC) -->
+  <!-- 메인 + 바깥 레일(좌·우 굴삭기 전문가, 우측 하단 어태치먼트·부품 — PC) -->
   <div class="row gn-detail-layout gx-1 gx-lg-2 align-items-start">
-    <div class="col-12 {% if equipment.equipment_type == 'excavator' %}col-lg-10 col-xl-10 gn-detail-main-col--rail-balance{% else %}col-lg-12{% endif %} gn-detail-main-col">
+    {% if equipment.equipment_type == 'excavator' and premium_sidebar_expert_title %}
+    <aside class="col-12 col-lg-2 col-xl-2 gn-detail-outer-rail gn-detail-left-rail d-none d-lg-block" aria-label="좌측 {{ premium_sidebar_expert_title }}">
+      <div class="gn-detail-sticky-rail gn-detail-rail">
+        <div class="card gn-card-sharp border shadow-sm gn-detail-premium-experts overflow-hidden mb-1" style="border-color: rgba(232, 163, 23, 0.35) !important;">
+          <div class="card-header py-2 px-2 gn-detail-premium-experts-head d-flex align-items-center justify-content-between gap-2">
+            <span class="gn-rail-card-title"><i class="bi bi-person-badge text-warning me-1"></i>{{ premium_sidebar_expert_title }}</span>
+            <a href="{% url 'billing_upgrade' %}" class="btn btn-sm btn-outline-primary py-1 px-2 gn-rail-btn-outline">등록안내</a>
+          </div>
+          <div class="card-body p-2 gn-rail-card-body">
+            {% for slot in premium_sidebar_slots|slice:":10" %}
+            {% if slot %}
+            <a href="{% if slot.author_id %}{% url 'author_listings' slot.author_id %}?category=excavator{% else %}{% url 'equipment_detail' slot.pk %}{% endif %}" class="d-block text-decoration-none gn-rail-ad-row {% if not forloop.last %}border-bottom mb-2 pb-2{% endif %}" style="border-color: rgba(226, 232, 240, 0.9);">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden gn-rail-ad-thumb" style="background: #e2e8f0;">
+                  {% if slot.images.first %}
+                  <img src="{{ slot.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% else %}
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted gn-rail-thumb-fallback">—</div>
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate text-dark gn-rail-text">{{ slot.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold gn-rail-text">{{ slot|equipment_row_contact|default:"문의" }}</div>
+                </div>
+              </div>
+            </a>
+            {% else %}
+            <div class="border-bottom mb-2 pb-2 gn-rail-ad-row gn-premium-bizcard--dummy" style="border-color: rgba(226, 232, 240, 0.9);" aria-hidden="true">
+              <div class="d-flex gap-2 align-items-center opacity-50">
+                <div class="flex-shrink-0 rounded gn-rail-ad-thumb gn-premium-dummy-photo"></div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="gn-premium-dummy-line mb-1"></div>
+                  <div class="gn-premium-dummy-line gn-premium-dummy-line--short"></div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </aside>
+    {% endif %}
+    <div class="col-12 {% if equipment.equipment_type == 'excavator' %}col-lg-8 col-xl-8 gn-detail-main-col--rails-both{% else %}col-lg-12{% endif %} gn-detail-main-col">
   <div class="row g-3 gn-detail-top">
     <!-- 왼쪽: 메인 이미지 + 썸네일 -->
     <div class="col-12 {% if equipment.equipment_type == 'excavator' %}col-lg-9{% else %}col-lg-8{% endif %} gn-detail-left">
@@ -309,9 +352,48 @@
 
     <!-- PC 전용: 본문 바깥 우측 레일 — 어태치먼트/타이어 전문가 -->
     {% if equipment.equipment_type == 'excavator' %}
-    <aside class="col-12 col-lg-2 col-xl-2 gn-detail-outer-rail gn-detail-outer-rail--balance d-none d-lg-block" aria-label="우측 어태치먼트·타이어 전문가">
+    <aside class="col-12 col-lg-2 col-xl-2 gn-detail-outer-rail gn-detail-outer-rail--balance d-none d-lg-block" aria-label="우측 전문가·어태치먼트·부품">
       <div class="gn-detail-sticky-rail gn-detail-rail">
-        <div class="card gn-card-sharp border shadow-sm gn-detail-premium-experts overflow-hidden" style="border-color: rgba(232, 163, 23, 0.35) !important;">
+        {% if premium_sidebar_expert_title %}
+        <div class="card gn-card-sharp border shadow-sm gn-detail-premium-experts overflow-hidden mb-1" style="border-color: rgba(232, 163, 23, 0.35) !important;">
+          <div class="card-header py-2 px-2 gn-detail-premium-experts-head d-flex align-items-center justify-content-between gap-2">
+            <span class="gn-rail-card-title"><i class="bi bi-person-badge text-warning me-1"></i>{{ premium_sidebar_expert_title }}</span>
+            <a href="{% url 'billing_upgrade' %}" class="btn btn-sm btn-outline-primary py-1 px-2 gn-rail-btn-outline">등록안내</a>
+          </div>
+          <div class="card-body p-2 gn-rail-card-body">
+            {% for slot in premium_sidebar_slots|slice:"10:20" %}
+            {% if slot %}
+            <a href="{% if slot.author_id %}{% url 'author_listings' slot.author_id %}?category=excavator{% else %}{% url 'equipment_detail' slot.pk %}{% endif %}" class="d-block text-decoration-none gn-rail-ad-row {% if not forloop.last %}border-bottom mb-2 pb-2{% endif %}" style="border-color: rgba(226, 232, 240, 0.9);">
+              <div class="d-flex gap-2 align-items-center">
+                <div class="flex-shrink-0 rounded overflow-hidden gn-rail-ad-thumb" style="background: #e2e8f0;">
+                  {% if slot.images.first %}
+                  <img src="{{ slot.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+                  {% else %}
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted gn-rail-thumb-fallback">—</div>
+                  {% endif %}
+                </div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="fw-bold text-truncate text-dark gn-rail-text">{{ slot.model_name|default:"-" }}</div>
+                  <div class="text-danger fw-bold gn-rail-text">{{ slot|equipment_row_contact|default:"문의" }}</div>
+                </div>
+              </div>
+            </a>
+            {% else %}
+            <div class="border-bottom mb-2 pb-2 gn-rail-ad-row gn-premium-bizcard--dummy" style="border-color: rgba(226, 232, 240, 0.9);" aria-hidden="true">
+              <div class="d-flex gap-2 align-items-center opacity-50">
+                <div class="flex-shrink-0 rounded gn-rail-ad-thumb gn-premium-dummy-photo"></div>
+                <div class="min-width-0 flex-grow-1">
+                  <div class="gn-premium-dummy-line mb-1"></div>
+                  <div class="gn-premium-dummy-line gn-premium-dummy-line--short"></div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="card gn-card-sharp border shadow-sm gn-detail-premium-experts gn-detail-attachment-ad-card overflow-hidden" style="border-color: rgba(232, 163, 23, 0.35) !important;">
           <div class="card-header py-2 px-2 gn-detail-premium-experts-head d-flex align-items-center justify-content-between gap-2">
             <span class="gn-ad-card-title gn-rail-card-title"><i class="bi bi-megaphone text-warning me-1"></i>어태치먼트·타이어 광고</span>
             <a href="{% url 'billing_upgrade' %}" class="btn btn-sm btn-outline-primary py-1 px-2 gn-rail-btn-outline">
@@ -460,7 +542,7 @@
 <script>
 (function() {
   function syncRightAdCardHeight() {
-    var adCard = document.querySelector('.gn-detail-premium-experts');
+    var adCard = document.querySelector('.gn-detail-attachment-ad-card');
     var refCard = document.querySelector('.gn-detail-right > .card:nth-of-type(2)');
     if (!adCard) return;
 
@@ -497,7 +579,8 @@
     padding-bottom: 1rem;
   }
   @media (min-width: 992px) {
-    .gn-detail-outer-rail {
+    .gn-detail-outer-rail,
+    .gn-detail-left-rail {
       position: sticky;
       top: 4.9rem;
       align-self: flex-start;
@@ -508,10 +591,15 @@
       top: auto;
     }
     /* 메인(사진·가격) 살짝 축소, 우측 광고 열 ~5% 확대 (기본 10/2 그리드 대비) */
-    .gn-detail-layout > .gn-detail-main-col--rail-balance {
+    .gn-detail-layout > .gn-detail-main-col--rails-both {
       flex: 0 0 auto;
-      width: 82.5%;
-      max-width: 82.5%;
+      width: 65%;
+      max-width: 65%;
+    }
+    .gn-detail-layout > .gn-detail-left-rail {
+      flex: 0 0 auto;
+      width: 17.5%;
+      max-width: 17.5%;
     }
     .gn-detail-layout > .gn-detail-outer-rail--balance {
       flex: 0 0 auto;
@@ -520,10 +608,15 @@
     }
   }
   @media (min-width: 1200px) {
-    .gn-detail-layout > .gn-detail-main-col--rail-balance {
+    .gn-detail-layout > .gn-detail-main-col--rails-both {
       flex: 0 0 auto;
-      width: 82.5%;
-      max-width: 82.5%;
+      width: 65%;
+      max-width: 65%;
+    }
+    .gn-detail-layout > .gn-detail-left-rail {
+      flex: 0 0 auto;
+      width: 17.5%;
+      max-width: 17.5%;
     }
     .gn-detail-layout > .gn-detail-outer-rail--balance {
       flex: 0 0 auto;
@@ -537,9 +630,25 @@
   .gn-detail-premium-experts {
     background: linear-gradient(145deg, #fffef8 0%, #f8fafc 100%);
     width: 100%;
-    min-height: 360px;
+    min-height: 0;
     margin-left: 0;
     margin-right: 0;
+  }
+  .gn-detail-attachment-ad-card {
+    min-height: 360px;
+  }
+  .gn-detail-page .gn-premium-dummy-photo {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  }
+  .gn-detail-page .gn-premium-dummy-line {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e2e8f0, #f1f5f9);
+    max-width: 100%;
+  }
+  .gn-detail-page .gn-premium-dummy-line--short {
+    max-width: 62%;
+    height: 7px;
   }
   .gn-detail-parts-as-card {
     width: 100%;

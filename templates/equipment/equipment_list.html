@@ -958,7 +958,7 @@
     </div>
 
     {% if premium_sidebar_expert_title %}
-    <div class="d-none d-xl-block gn-premium-side-wrap">
+    <div class="d-none d-xl-block gn-premium-side-wrap{% if filter_category == 'excavator' %} gn-premium-side--detail-rail-font{% endif %}">
       <aside class="gn-premium-side gn-premium-side-left" aria-label="좌측 {{ premium_sidebar_expert_title }}">
         <div class="card gn-premium-card-shell border-0 shadow-sm overflow-hidden">
           <div class="card-header py-2 px-2 small fw-bold gn-premium-card-head">
@@ -985,12 +985,12 @@
             </a>
             {% else %}
             {% if filter_category == 'excavator' and forloop.first %}
-            <a href="{% url 'author_listings' 1 %}?category=excavator" class="d-block text-decoration-none border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard {% if forloop.last %}border-0 mb-0 pb-0{% endif %}">
+            <a href="{% url 'premium_experts_test' %}" class="d-block text-decoration-none border-bottom mb-1 pb-1 gn-premium-side-row gn-premium-bizcard {% if forloop.last %}border-0 mb-0 pb-0{% endif %}">
               <div class="d-flex gap-2 align-items-center">
                 <div class="flex-shrink-0 rounded gn-premium-side-thumb d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #0d6efd 0%, #2b8cff 100%); color: #fff; font-size: 0.65rem; font-weight: 700;">TEST</div>
                 <div class="min-width-0 flex-grow-1">
                   <div class="fw-bold text-truncate gn-premium-side-title" style="color: var(--gn-text);">굴삭기 전문가 테스트 노출</div>
-                  <div class="text-danger fw-bold gn-premium-side-phone">클릭 동선 확인</div>
+                  <div class="text-danger fw-bold gn-premium-side-phone">유료회원 매물 보러가기</div>
                 </div>
               </div>
             </a>
@@ -1194,6 +1194,22 @@
   }
   .gn-premium-side-title { font-size: 0.72rem; line-height: 1.2; }
   .gn-premium-side-phone { font-size: 0.72rem; line-height: 1.2; }
+  /* 굴삭기 탭: 상세 어태치먼트·타이어 레일과 동일한 명함 크기 */
+  .gn-premium-side--detail-rail-font .gn-premium-side-thumb {
+    width: 44px;
+    height: 44px;
+  }
+  .gn-premium-side--detail-rail-font .gn-premium-side-title,
+  .gn-premium-side--detail-rail-font .gn-premium-side-phone {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    letter-spacing: -0.5px;
+    font-weight: 700;
+  }
+  .gn-premium-side--detail-rail-font .gn-premium-card-head {
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+  }
   .gn-premium-side-row:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
   /* 명함 카드 느낌 */
   .gn-premium-card-shell {

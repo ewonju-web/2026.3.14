@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h2 class="mb-0 fw-bold">굴삭기 전문가 TEST 뷰 (샘플 30개)</h2>
+    <a href="{% url 'index' %}?category=excavator" class="btn btn-outline-secondary btn-sm">목록으로</a>
+  </div>
+
+  <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3">
+    {% for item in sample_items %}
+    <div class="col">
+      <a href="{{ item.detail_url }}" class="card h-100 text-decoration-none text-dark border shadow-sm overflow-hidden gn-test-card">
+        <div class="position-relative gn-test-thumb-wrap">
+          {% if item.image_url %}
+          <img src="{{ item.image_url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ item.title }}">
+          {% else %}
+          <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small bg-light">TEST IMAGE</div>
+          {% endif %}
+          <span class="position-absolute top-0 start-0 m-1 badge bg-warning text-dark">TEST {{ item.id }}</span>
+        </div>
+        <div class="card-body p-2">
+          <div class="fw-bold text-truncate mb-1">{{ item.title }}</div>
+          <div class="small text-muted text-truncate">{{ item.manufacturer }} · {{ item.year }}년</div>
+          <div class="small text-muted text-truncate">{{ item.location }}</div>
+          <div class="fw-bold text-danger mt-1">
+            {% if item.price %}{{ item.price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+.gn-test-card { border-radius: 12px; }
+.gn-test-thumb-wrap { height: 150px; background: #eef2f7; }
+.gn-test-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, .12) !important; }
+</style>
+{% endblock %}
