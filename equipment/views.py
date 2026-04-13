@@ -1863,6 +1863,10 @@ def author_listings(request, user_id):
 
     listings = list(qs)
     featured_listings = list(base_qs.order_by('-created_at')[:3])
+    total_count = len(listings)
+    sold_count = sum(1 for item in listings if item.is_sold)
+    trust_score = 5 if (author_profile and author_profile.is_premium_active) else 4
+    avg_response_text = "빠름"
     favorited_ids = set()
     if request.user.is_authenticated:
         favorited_ids = set(
@@ -1882,6 +1886,10 @@ def author_listings(request, user_id):
         'filter_category_param': cat if cat in valid_cats else '',
         'featured_listings': featured_listings,
         'sort_param': sort,
+        'total_count': total_count,
+        'sold_count': sold_count,
+        'trust_score': trust_score,
+        'avg_response_text': avg_response_text,
     })
 
 
