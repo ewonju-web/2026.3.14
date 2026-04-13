@@ -17,6 +17,7 @@ class Profile(models.Model):
     company_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="상호명")  # ✅ null 허용 (마이그레이션 멈춤 방지)
     business_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="등록번호")
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="연락처")
+    bio = models.TextField(blank=True, default="", verbose_name="소개글")
     is_approved = models.BooleanField(default=False, verbose_name="승인여부")
     youtube_url = models.URLField(blank=True, null=True, verbose_name='유튜브 채널 주소')
     # 유료 회원: 무제한 매물 등록, 첫화면/우측 배너 노출, "이 회원 매물 전체 보기" 이용 가능
@@ -138,6 +139,7 @@ class Equipment(models.Model):
     is_sold = models.BooleanField(default=False, verbose_name="판매 완료 여부")
     password = models.CharField(max_length=100, blank=True, default="", verbose_name="비밀번호(수정용, 레거시)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="등록일")
+    view_count = models.PositiveIntegerField(default=0, verbose_name="조회수")
 
     # 유료화 V2: 무료 만료 시 삭제 대신 EXPIRED_HIDDEN. 목록/검색은 NORMAL만. 상세 직접 URL은 연장/업그레이드 CTA 노출
     listing_status = models.CharField(

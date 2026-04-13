@@ -2,21 +2,13 @@
 {% load humanize i18n_extras %}
 {% block content %}
 <div class="container py-3 py-md-4 gn-author-showcase">
-  <!-- 소개 -->
-  <section class="card border-0 shadow-sm mb-4 overflow-hidden">
+  {% with first_listing=listings|first %}
+  <section class="card border-0 shadow-sm mb-4 overflow-hidden gn-author-profile-card">
     <div class="row g-0">
       <div class="col-auto p-3 p-md-4 d-flex align-items-start">
         <div class="gn-author-showcase-avatar flex-shrink-0 rounded overflow-hidden bg-light border">
-          {% if listings %}
-            {% for eq in listings %}
-              {% if forloop.first %}
-                {% if eq.images.first %}
-                <img src="{{ eq.images.first.image.url }}" alt="" class="w-100 h-100" style="object-fit: cover;">
-                {% else %}
-                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">사진</div>
-                {% endif %}
-              {% endif %}
-            {% endfor %}
+          {% if first_listing and first_listing.images.first %}
+          <img src="{{ first_listing.images.first.image.url }}" alt="" class="w-100 h-100" style="object-fit: cover;">
           {% else %}
           <div class="w-100 h-100 d-flex align-items-center justify-content-center fw-bold text-white gn-author-showcase-avatar-fallback">
             {{ author_user.username|slice:":1"|upper }}
@@ -26,87 +18,143 @@
       </div>
       <div class="col p-3 p-md-4">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <h1 class="h5 fw-bold mb-0">
+            {% if author_profile and author_profile.company_name %}
+              {{ author_profile.company_name }}
+            {% else %}
+              {{ author_user.get_full_name|default:author_user.username }}
+            {% endif %}
+          </h1>
           {% if author_profile and author_profile.is_premium_active %}
-          <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>유료회원</span>
+          <span class="badge bg-warning text-dark fw-bold"><i class="bi bi-check-circle-fill me-1"></i>유료회원</span>
           {% endif %}
+        </div>
+        <div class="small text-muted mb-1">
+          <i class="bi bi-geo-alt me-1"></i>
+          {% if first_listing and first_listing.current_location %}
+            {{ first_listing.current_location }}
+          {% elif first_listing and first_listing.region_sido %}
+            {{ first_listing.region_sido }}{% if first_listing.region_sigungu %} {{ first_listing.region_sigungu }}{% endif %}
+          {% else %}
+            지역 정보 없음
+          {% endif %}
+        </div>
+        <div class="small mb-2">
+          <i class="bi bi-telephone me-1"></i>
+          {% if author_profile and author_profile.phone %}
+            <span class="fw-semibold">{{ author_profile.phone|format_phone }}</span>
+          {% else %}
+            -
+          {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <span class="badge bg-light text-dark border">총 매물 {{ listings|length }}건</span>
           {% if author_profile and author_profile.user_type == 'DEALER' %}
           <span class="badge bg-danger">매매상</span>
           {% endif %}
         </div>
-        <h1 class="h5 fw-bold mb-2">
-          {% if author_profile and author_profile.company_name %}
-            {{ author_profile.company_name }}
+        <p class="mb-0 text-muted small">
+          {% if author_profile and author_profile.bio %}
+            {{ author_profile.bio }}
           {% else %}
-            {{ author_user.get_full_name|default:author_user.username }}
+            중고 중장비 전문 딜러
           {% endif %}
-        </h1>
-        {% if author_profile and author_profile.company_name %}
-        <p class="text-muted small mb-2">{{ author_user.get_full_name|default:author_user.username }}</p>
-        {% endif %}
-        <div class="table-responsive gn-author-showcase-table">
-          <table class="table table-sm table-bordered mb-0 bg-white" style="max-width: 520px;">
-            <tbody>
-              <tr>
-                <th class="text-muted small" style="width: 6rem;">연락처</th>
-                <td class="fw-semibold">
-                  {% if author_profile.phone %}
-                    {{ author_profile.phone|format_phone }}
-                  {% else %}
-                    -
-                  {% endif %}
-                </td>
-              </tr>
-              {% if author_profile and author_profile.company_name %}
-              <tr>
-                <th class="text-muted small">상호</th>
-                <td>{{ author_profile.company_name }}</td>
-              </tr>
-              {% endif %}
-              {% if author_profile and author_profile.business_number %}
-              <tr>
-                <th class="text-muted small">등록번호</th>
-                <td>{{ author_profile.business_number }}</td>
-              </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
+        </p>
       </div>
     </div>
   </section>
+  {% endwith %}
 
-  <!-- 매물 리스트 (한 줄씩 아래로) -->
+  {% if featured_listings %}
+  <section class="mb-4">
+    <div id="authorFeaturedCarousel" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-inner rounded-3 overflow-hidden border">
+        {% for equipment in featured_listings %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+          <a href="{% url 'equipment_detail' equipment.pk %}" class="d-block text-decoration-none">
+            <div class="position-relative gn-author-featured-slide">
+              {% if equipment.images.first %}
+              <img src="{{ equipment.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="">
+              {% else %}
+              <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-secondary text-white">이미지 없음</div>
+              {% endif %}
+              <div class="position-absolute bottom-0 start-0 end-0 p-3 gn-author-featured-caption">
+                <div class="fw-bold text-white">{{ equipment.model_name|default:"모름" }}</div>
+                <div class="small text-white-50">
+                  {% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#authorFeaturedCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">이전</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#authorFeaturedCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">다음</span>
+      </button>
+    </div>
+  </section>
+  {% endif %}
+
   <section>
-    <h2 class="h6 fw-bold mb-3 border-start border-4 border-danger ps-2">등록 매물</h2>
+    <h2 class="h6 fw-bold mb-3 border-start border-4 border-danger ps-2">
+      {% if author_profile and author_profile.company_name %}
+        {{ author_profile.company_name }}
+      {% else %}
+        {{ author_user.get_full_name|default:author_user.username }}
+      {% endif %}의 매물 ({{ listings|length }}건)
+    </h2>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <a href="?{% if filter_category_param %}category={{ filter_category_param }}&{% endif %}sort=latest"
+         class="btn btn-sm {% if sort_param == 'latest' %}btn-danger{% else %}btn-outline-secondary{% endif %}">최신순</a>
+      <a href="?{% if filter_category_param %}category={{ filter_category_param }}&{% endif %}sort=price_low"
+         class="btn btn-sm {% if sort_param == 'price_low' %}btn-danger{% else %}btn-outline-secondary{% endif %}">가격낮은순</a>
+      <a href="?{% if filter_category_param %}category={{ filter_category_param }}&{% endif %}sort=price_high"
+         class="btn btn-sm {% if sort_param == 'price_high' %}btn-danger{% else %}btn-outline-secondary{% endif %}">가격높은순</a>
+    </div>
     {% if listings %}
-    <div class="d-flex flex-column gap-2">
+    <div class="row g-3">
       {% for equipment in listings %}
-      <a href="{% url 'equipment_detail' equipment.pk %}" class="d-flex align-items-center gap-3 p-2 p-md-3 rounded border text-decoration-none gn-author-list-row" style="background: var(--gn-card, #fff); color: var(--gn-text, #111);">
-        {% if equipment.images.all %}
-        <div class="rounded flex-shrink-0 overflow-hidden gn-author-list-thumb">
-          <img src="{{ equipment.images.first.image.url }}" alt="" class="w-100 h-100" style="object-fit: cover; display: block;">
-        </div>
-        {% else %}
-        <div class="rounded flex-shrink-0 d-flex align-items-center justify-content-center bg-secondary text-white small gn-author-list-thumb">없음</div>
-        {% endif %}
-        <div class="flex-grow-1 min-width-0">
-          <span class="fw-bold text-truncate d-block">
-            {% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}
-            <span class="badge bg-secondary text-white ms-1" style="font-size:0.65rem;">{{ equipment.get_equipment_type_display }}</span>
-          </span>
-          <span class="small text-muted d-block text-truncate">
-            {% if equipment.manufacturer %}{{ equipment.manufacturer }}{% endif %}
-            {% if equipment.year_manufactured %} · {{ equipment.year_manufactured }}년{% endif %}
-            · {% if equipment.current_location %}{{ equipment.current_location }}{% elif equipment.region_sido %}{{ equipment.region_sido }}{% if equipment.region_sigungu %} {{ equipment.region_sigungu }}{% endif %}{% else %}모름{% endif %}
-          </span>
-        </div>
-        <div class="d-flex flex-column align-items-end flex-shrink-0 gap-1">
-          {% if equipment.author_id in premium_author_ids %}
-          <span class="badge bg-warning text-dark small">프리미엄</span>
-          {% endif %}
-          <span class="fw-bold text-danger">{% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}</span>
-        </div>
-      </a>
+      <div class="col-12 col-md-6 col-xl-4">
+        <a href="{% url 'equipment_detail' equipment.pk %}" class="card h-100 text-decoration-none gn-author-grid-card">
+          <div class="position-relative">
+            {% if equipment.images.first %}
+            <img src="{{ equipment.images.first.image.url }}" alt="" class="card-img-top gn-author-grid-thumb">
+            {% else %}
+            <div class="gn-author-grid-thumb d-flex align-items-center justify-content-center bg-secondary text-white">이미지 없음</div>
+            {% endif %}
+            <span class="badge position-absolute top-0 start-0 m-2
+              {% if equipment.is_sold %}bg-secondary
+              {% elif equipment.operating_hours <= 4000 %}bg-success
+              {% elif equipment.operating_hours <= 8000 %}bg-warning text-dark
+              {% else %}bg-danger{% endif %}">
+              {% if equipment.is_sold %}판매완료
+              {% elif equipment.operating_hours <= 4000 %}상
+              {% elif equipment.operating_hours <= 8000 %}중
+              {% else %}하{% endif %}
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="fw-bold text-dark mb-1 text-truncate">{{ equipment.model_name|default:"모름" }}</div>
+            <div class="small text-muted mb-2 text-truncate">
+              {{ equipment.get_equipment_type_display }}
+              {% if equipment.year_manufactured %} · {{ equipment.year_manufactured }}년{% endif %}
+              {% if equipment.current_location %} · {{ equipment.current_location }}{% endif %}
+            </div>
+            <div class="fw-bold text-danger fs-5 mb-2">
+              {% if equipment.listing_price is not None %}{{ equipment.listing_price|floatformat:0|intcomma }}만원{% else %}문의{% endif %}
+            </div>
+            <div class="small text-muted">
+              <i class="bi bi-eye me-1"></i>조회수 {{ equipment.view_count|intcomma }}
+            </div>
+          </div>
+        </a>
+      </div>
       {% endfor %}
     </div>
     {% else %}
@@ -119,8 +167,16 @@
     <a href="{% url 'index' %}" class="btn btn-outline-primary">첫 화면</a>
   </div>
 </div>
+{% if author_profile and author_profile.phone %}
+<a href="tel:{{ author_profile.phone|format_phone|cut:'-'|cut:' ' }}" class="gn-floating-call-btn">
+  📞 전화문의
+</a>
+{% endif %}
 
 <style>
+  .gn-author-profile-card {
+    border: 1px solid #e5e7eb;
+  }
   .gn-author-showcase-avatar {
     width: 96px;
     height: 96px;
@@ -135,21 +191,43 @@
     background: linear-gradient(135deg, #64748b, #334155);
     font-size: 2rem;
   }
-  .gn-author-list-thumb {
-    width: 88px;
-    height: 88px;
+  .gn-author-grid-card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  @media (max-width: 575.98px) {
-    .gn-author-list-thumb {
-      width: 72px;
-      height: 72px;
-    }
+  .gn-author-grid-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   }
-  .gn-author-list-row {
-    transition: box-shadow 0.15s ease;
+  .gn-author-grid-thumb {
+    width: 100%;
+    height: 210px;
+    object-fit: cover;
   }
-  .gn-author-list-row:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  .gn-author-featured-slide {
+    height: 320px;
+    background: #111827;
+  }
+  .gn-author-featured-caption {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75));
+  }
+  .gn-floating-call-btn {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1030;
+    background: #f59e0b;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 800;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  }
+  .gn-floating-call-btn:hover {
+    color: #fff;
+    background: #d97706;
   }
 </style>
 {% endblock %}

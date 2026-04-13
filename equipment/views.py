@@ -740,11 +740,23 @@ def my_page(request):
     if not request.user.is_authenticated:
         return redirect('login')
 
+    try:
+        profile = Profile.objects.get(user=request.user)
+    except Profile.DoesNotExist:
+        profile = Profile.objects.create(user=request.user)
+
+    if request.method == 'POST' and request.POST.get('action') == 'update_bio':
+        profile.bio = (request.POST.get('bio') or '').strip()
+        profile.save(update_fields=['bio'])
+        messages.success(request, '소개글이 저장되었습니다.')
+        return redirect('my_page')
+
     my_equipments = Equipment.objects.filter(author=request.user).order_by('-created_at')
     fav_equipments = Equipment.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
     fav_parts = Part.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
     is_legacy_user = request.user.username.startswith('legacy_')
     return render(request, 'registration/my_page.html', {
+        'profile': profile,
         'my_equipments': my_equipments,
         'fav_equipments': fav_equipments,
         'fav_parts': fav_parts,
@@ -1404,6 +1416,10 @@ def equipment_detail(request, pk):
             )
         return redirect('equipment_detail', pk=pk)
 
+    if request.method == 'GET':
+        Equipment.objects.filter(pk=equipment.pk).update(view_count=F('view_count') + 1)
+        equipment.refresh_from_db(fields=['view_count'])
+
     author_phone = None
     author_is_dealer = False
     author_is_premium = False
@@ -1825,19 +1841,28 @@ def author_listings(request, user_id):
                 'author_display': author_user.get_full_name() or author_user.username,
             })
 
-    qs = (
+    base_qs = (
         Equipment.objects.visible()
         .filter(author_id=user_id)
         .select_related('author')
         .prefetch_related('images')
-        .order_by('-created_at')
     )
     cat = (request.GET.get('category') or '').strip().lower()
     valid_cats = {c[0] for c in Equipment._meta.get_field('equipment_type').choices}
     if cat in valid_cats:
-        qs = qs.filter(equipment_type=cat)
+        base_qs = base_qs.filter(equipment_type=cat)
+
+    sort = (request.GET.get('sort') or 'latest').strip().lower()
+    if sort == 'price_low':
+        qs = base_qs.order_by('listing_price', '-created_at')
+    elif sort == 'price_high':
+        qs = base_qs.order_by('-listing_price', '-created_at')
+    else:
+        sort = 'latest'
+        qs = base_qs.order_by('-created_at')
 
     listings = list(qs)
+    featured_listings = list(base_qs.order_by('-created_at')[:3])
     favorited_ids = set()
     if request.user.is_authenticated:
         favorited_ids = set(
@@ -1855,6 +1880,8 @@ def author_listings(request, user_id):
         'favorited_equipment_ids': favorited_ids,
         'premium_author_ids': premium_author_ids,
         'filter_category_param': cat if cat in valid_cats else '',
+        'featured_listings': featured_listings,
+        'sort_param': sort,
     })
 
 
