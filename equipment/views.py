@@ -1824,22 +1824,12 @@ def toggle_equipment_favorite(request, pk):
 
 
 def author_listings(request, user_id):
-    """이 회원이 올린 모든 매물 보기. 유료(프리미엄) 판매자는 비로그인 공개, 그 외는 기존처럼 뷰어 유료만."""
+    """이 회원이 올린 모든 매물 보기."""
     author_user = get_object_or_404(User, pk=user_id)
     author_profile = getattr(author_user, 'profile', None)
     author_showcase_public = bool(
         author_profile and getattr(author_profile, 'is_premium_active', False)
     )
-    if not author_showcase_public:
-        if not request.user.is_authenticated:
-            messages.info(request, '로그인 후 이용해 주세요.')
-            return redirect('login')
-        if not is_user_premium(request.user):
-            return render(request, 'equipment/premium_required.html', {
-                'title': '이 회원 매물 전체 보기',
-                'message': '유료 회원만 다른 판매자의 매물을 한꺼번에 볼 수 있습니다. 유료 전환 후 이용해 주세요.',
-                'author_display': author_user.get_full_name() or author_user.username,
-            })
 
     base_qs = (
         Equipment.objects.visible()
