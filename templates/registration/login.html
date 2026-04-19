@@ -26,10 +26,10 @@
                         <button type="submit" class="btn w-100 fw-bold py-2 mb-3 text-dark" style="background: var(--gn-accent); border-radius: 10px;">로그인</button>
                         <p class="text-center small text-muted mb-2">또는</p>
                         <div class="d-grid gap-2">
-                            <a href="{{ kakao_login_url }}" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #FEE500; color: #191919; border-radius: 10px; border: none;">
+                            <a href="/accounts/kakao/login/?process=login" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #FEE500; color: #191919; border-radius: 10px; border: none;">
                                 <i class="bi bi-chat-dots-fill"></i> 카카오로 로그인
                             </a>
-                            <a href="{{ naver_login_url }}" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #03C75A; color: #fff; border-radius: 10px; border: none;">
+                            <a href="/accounts/naver/login/?process=login" class="btn btn-lg py-2 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: #03C75A; color: #fff; border-radius: 10px; border: none;">
                                 <span style="font-size: 1.1rem; font-weight: 800;">N</span> 네이버로 로그인
                             </a>
                             {% comment %} 구글 추가 시 뷰에 google_login_url 추가 후 아래 주석 해제

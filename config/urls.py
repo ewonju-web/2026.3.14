@@ -3,11 +3,27 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponseRedirect
 from equipment.views import user_login, user_logout, signup, check_username, find_username
+
+
+def _social_callback_alias(request, provider: str):
+    """Developer console callback aliases -> allauth callback URL."""
+    provider = (provider or "").strip().lower()
+    if provider not in ("kakao", "naver"):
+        return HttpResponseRedirect("/login/")
+    query = request.META.get("QUERY_STRING", "")
+    target = f"/accounts/{provider}/login/callback/"
+    if query:
+        target = f"{target}?{query}"
+    return HttpResponseRedirect(target)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),  # 소셜 로그인: /accounts/login/ 에서 카카오/네이버
+    # 소셜 콜백 별칭: 개발자센터 등록 URL을 /auth/... 로 써도 동작하게 함
+    path('auth/kakao/callback', lambda request: _social_callback_alias(request, 'kakao')),
+    path('auth/naver/callback', lambda request: _social_callback_alias(request, 'naver')),
     path('chat/', include('chat.urls')),
     path('soil/', include('soil.urls')),
     path('', include('equipment.urls')),

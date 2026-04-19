@@ -221,8 +221,10 @@ LOGOUT_REDIRECT_URL = 'index'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
 # 휴대폰 인증 문자 (equipment.phone_verify_service.send_sms)
-# SMS_API_KEY 또는 SENS_SERVICE_KEY 등이 있으면 실제 발송 연동, 없으면 DEBUG 시 콘솔 출력
-# 문자 업체: 선택 → 계정·발신번호 등록 → API 키 발급 → phone_verify_service.send_sms() 연동
+# Solapi 연동 (.env)
+SOLAPI_API_KEY = _env_str("SOLAPI_API_KEY")
+SOLAPI_API_SECRET = _env_str("SOLAPI_API_SECRET")
+SOLAPI_SENDER = _env_str("SOLAPI_SENDER")
 
 # 비밀번호 찾기 메일: .env에 EMAIL_HOST 있으면 SMTP 발송, 없으면 콘솔 출력
 # .env 예시 (실제 발송 시):
