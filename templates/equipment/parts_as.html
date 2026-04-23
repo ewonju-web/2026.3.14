@@ -13,6 +13,17 @@
     margin-bottom: 0.85rem;
   }
   .gn-partsas-title-wrap { min-width: 0; }
+  .gn-partsas-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.42rem;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+  }
+  .gn-partsas-back:hover { color: #1f2937; }
   .gn-partsas-title {
     margin: 0;
     color: var(--gn-text);
@@ -191,6 +202,7 @@
   <div class="container">
     <div class="gn-partsas-header">
       <div class="gn-partsas-title-wrap">
+        <a href="#" id="backToDetailBtn" class="gn-partsas-back">← 이전페이지로</a>
         <h2 class="gn-partsas-title">부품 / AS 센터 찾기</h2>
         <div class="gn-partsas-sub">장비 기종과 지역을 선택하면 가까운 업체를 지도에서 확인할 수 있어요</div>
       </div>
@@ -269,6 +281,48 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const backBtn = document.getElementById("backToDetailBtn");
+    if (!backBtn) return;
+    const returnTo = "{{ request.GET.return_to|default:''|escapejs }}";
+    let canGoBack = false;
+    if (returnTo) {
+      canGoBack = true;
+    } else if (document.referrer) {
+      try {
+        const refUrl = new URL(document.referrer);
+        canGoBack = refUrl.origin === window.location.origin;
+      } catch (err) {
+        canGoBack = false;
+      }
+    }
+    if (!canGoBack) {
+      backBtn.style.display = "none";
+      return;
+    }
+
+    backBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (returnTo) {
+        window.location.href = returnTo;
+        return;
+      }
+      if (document.referrer) {
+        try {
+          const refUrl = new URL(document.referrer);
+          if (refUrl.origin === window.location.origin) {
+            window.history.back();
+            return;
+          }
+        } catch (err) {
+          // Ignore malformed referrer and use fallback path.
+        }
+      }
+      window.location.href = "/";
+    });
+  });
+</script>
 {% if kakao_map_js_key %}
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_map_js_key }}&autoload=false&libraries=services,clusterer"></script>
 <script>

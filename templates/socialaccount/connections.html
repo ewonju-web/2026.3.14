@@ -7,42 +7,86 @@
 {% block extra_css %}
 <style>
   .gn-social-wrap {
-    max-width: 760px;
+    max-width: 720px;
     margin: 2rem auto;
   }
   .gn-social-card {
     border: 1px solid var(--gn-border);
-    border-radius: 16px;
+    border-radius: 14px;
     background: #fff;
-    box-shadow: var(--gn-shadow-hover);
-    padding: 1.25rem;
+    box-shadow: var(--gn-shadow);
+    padding: 1.1rem;
   }
   .gn-social-title {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 800;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
   }
   .gn-social-sub {
     color: var(--gn-muted);
-    font-size: 0.95rem;
+    font-size: 0.88rem;
+    margin-bottom: 0.9rem;
   }
-  .gn-social-connected-item {
-    border: 1px solid #e2e8f0;
+  .gn-social-row {
     border-radius: 12px;
-    padding: 0.8rem 0.9rem;
-    margin-bottom: 0.65rem;
-    background: #f8fafc;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.55rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .gn-social-row.connected {
+    background: #fffdf5;
+    border: 1px solid #F5A623;
+  }
+  .gn-social-row.disconnected {
+    background: #fff;
+    border: 1px solid #d1d5db;
+  }
+  .gn-social-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+  }
+  .gn-social-icon.naver { background: #03c75a; color: #fff; }
+  .gn-social-icon.kakao { background: #fee500; color: #1f2937; }
+  .gn-social-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0 0 0.1rem;
+    color: #111827;
+  }
+  .gn-social-email {
+    font-size: 0.82rem;
+    color: #6b7280;
+  }
+  .gn-connected-badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    border-radius: 999px;
+    padding: 0.12rem 0.5rem;
+    background: #FFF3CD;
+    color: #856404;
+    font-size: 0.72rem;
+    font-weight: 700;
   }
   .gn-provider-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: 38px;
     border-radius: 10px;
-    padding: 0.55rem 1rem;
+    padding: 0.4rem 0.8rem;
     text-decoration: none;
     font-weight: 700;
-    border: 1px solid transparent;
+    border: 1px solid #d1d5db;
+    font-size: 0.82rem;
   }
   .gn-provider-btn--kakao {
     background: #fee500;
@@ -53,6 +97,11 @@
     background: #03c75a;
     color: #ffffff;
     border-color: #02b451;
+  }
+  .gn-provider-btn--disconnect {
+    background: #fff;
+    border-color: #e74c3c;
+    color: #e74c3c;
   }
   .gn-provider-btn:hover {
     filter: brightness(0.97);
@@ -65,55 +114,62 @@
   <div class="gn-social-wrap">
     <div class="gn-social-card">
       <h1 class="gn-social-title">소셜 계정 연결</h1>
-      <p class="gn-social-sub mb-4">기존 굴삭기나라 계정에 네이버/카카오 로그인을 연결할 수 있습니다.</p>
+      <p class="gn-social-sub">네이버·카카오 간편 로그인을 연결하세요</p>
 
-      {% if form.accounts %}
-        <div class="alert alert-light border mb-3">
-          현재 연결된 소셜 계정입니다. 연결 해제를 원하면 항목을 선택하고 아래 버튼을 눌러주세요.
-        </div>
-        <form method="post" action="{% url 'socialaccount_connections' %}">
-          {% csrf_token %}
-          {% for choice in form.fields.account.choices %}
-            {% with account=choice.0.instance.get_provider_account %}
-              <label class="gn-social-connected-item w-100 d-flex align-items-center justify-content-between" for="id_account_{{ account.account.pk }}">
-                <span>
-                  <strong>{{ account.get_brand.name }}</strong>
-                  <span class="text-muted ms-2">{{ account }}</span>
-                </span>
-                <input
-                  type="radio"
-                  id="id_account_{{ account.account.pk }}"
-                  name="account"
-                  value="{{ account.account.pk }}"
-                  {% if forloop.first %}checked{% endif %}
-                >
-              </label>
-            {% endwith %}
-          {% endfor %}
-          <button type="submit" class="btn btn-outline-danger mt-2">선택 계정 연결 해제</button>
-        </form>
-      {% else %}
-        <div class="alert alert-warning mb-3">
-          아직 연결된 소셜 계정이 없습니다.
-        </div>
-      {% endif %}
-
-      <hr class="my-4">
-      <h2 class="h5 fw-bold mb-3">소셜 계정 추가 연결</h2>
-      <p class="text-muted small mb-3">기존 계정으로 로그인한 상태에서 아래 버튼으로 연결하세요.</p>
-
-      {% get_providers as socialaccount_providers %}
-      <div class="d-flex flex-wrap gap-2">
-        {% for provider in socialaccount_providers %}
-          {% if provider.id == "kakao" %}
-            <a class="gn-provider-btn gn-provider-btn--kakao" href="{% provider_login_url provider.id process='connect' %}">카카오 연결</a>
-          {% elif provider.id == "naver" %}
-            <a class="gn-provider-btn gn-provider-btn--naver" href="{% provider_login_url provider.id process='connect' %}">네이버 연결</a>
+      {% get_social_accounts user as socialaccounts %}
+      {% with naver_account=socialaccounts.naver.0 kakao_account=socialaccounts.kakao.0 %}
+        <div class="gn-social-row {% if naver_account %}connected{% else %}disconnected{% endif %}">
+          <div class="gn-social-icon naver">N</div>
+          <div>
+            <p class="gn-social-name">
+              네이버
+              {% if naver_account %}<span class="gn-connected-badge">연결됨</span>{% endif %}
+            </p>
+            <div class="gn-social-email">
+              {% if naver_account %}
+                {{ naver_account.extra_data.email|default:naver_account.uid|default:"연결됨" }}
+              {% else %}
+                미연결
+              {% endif %}
+            </div>
+          </div>
+          {% if naver_account %}
+          <form method="post" action="{% url 'socialaccount_connections' %}" class="m-0">
+            {% csrf_token %}
+            <input type="hidden" name="account" value="{{ naver_account.pk }}">
+            <button type="submit" class="gn-provider-btn gn-provider-btn--disconnect">해제</button>
+          </form>
           {% else %}
-            <a class="btn btn-outline-secondary" href="{% provider_login_url provider.id process='connect' %}">{{ provider.name }} 연결</a>
+          <a class="gn-provider-btn gn-provider-btn--naver" href="{% provider_login_url 'naver' process='connect' %}">연결하기</a>
           {% endif %}
-        {% endfor %}
-      </div>
+        </div>
+
+        <div class="gn-social-row {% if kakao_account %}connected{% else %}disconnected{% endif %}">
+          <div class="gn-social-icon kakao">K</div>
+          <div>
+            <p class="gn-social-name">
+              카카오
+              {% if kakao_account %}<span class="gn-connected-badge">연결됨</span>{% endif %}
+            </p>
+            <div class="gn-social-email">
+              {% if kakao_account %}
+                {{ kakao_account.extra_data.kakao_account.email|default:kakao_account.uid|default:"연결됨" }}
+              {% else %}
+                미연결
+              {% endif %}
+            </div>
+          </div>
+          {% if kakao_account %}
+          <form method="post" action="{% url 'socialaccount_connections' %}" class="m-0">
+            {% csrf_token %}
+            <input type="hidden" name="account" value="{{ kakao_account.pk }}">
+            <button type="submit" class="gn-provider-btn gn-provider-btn--disconnect">해제</button>
+          </form>
+          {% else %}
+          <a class="gn-provider-btn gn-provider-btn--kakao" href="{% provider_login_url 'kakao' process='connect' %}">연결하기</a>
+          {% endif %}
+        </div>
+      {% endwith %}
     </div>
   </div>
 </div>

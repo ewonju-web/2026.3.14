@@ -3,315 +3,205 @@
 {% load i18n_extras %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="section-title">{{ LANG|tr:"mypage_title" }}</h2>
-    <div class="gn-profile-card mb-4">
-        <div class="gn-profile-card-inner">
-            <div class="gn-profile-header">
-                <div class="gn-profile-avatar" aria-hidden="true">{{ user.username|slice:":1"|upper }}</div>
-                <div class="gn-profile-info">
-                    <p class="gn-profile-greeting">안녕하세요, {{ user.username }}님</p>
-                    <p class="gn-profile-meta">아이디: {{ user.username }} · 가입일: {{ user.date_joined|date:"Y-m-d" }}</p>
-                    {% if is_legacy_user %}
-                    <p class="mt-2 mb-0"><a href="{% url 'legacy_convert' %}" class="btn btn-sm btn-warning">정식 회원 전환 (아이디·이메일·비밀번호 설정)</a></p>
-                    {% endif %}
-                </div>
+<div class="container py-4 gn-mypage">
+    <div class="gn-profile-card mb-3">
+        <div class="gn-profile-left">
+            <div class="gn-avatar">{{ user.username|slice:":1"|upper }}</div>
+            <div>
+                <p class="gn-name mb-1">{{ user.first_name|default:user.username }}</p>
+                <p class="gn-meta mb-1">아이디 {{ user.username }} · 가입일 {{ user.date_joined|date:"Y-m-d" }}</p>
+                <span class="gn-badge-free">{% if profile.is_premium_active %}유료회원{% else %}무료회원{% endif %}</span>
+                {% if is_legacy_user %}
+                <a href="{% url 'legacy_convert' %}" class="btn btn-sm btn-outline-light ms-2">정식 회원 전환</a>
+                {% endif %}
             </div>
-            <div class="gn-profile-actions">
-                <a href="{% url 'index' %}" class="gn-profile-btn gn-profile-btn-home"><i class="bi bi-house me-1"></i>{{ LANG|tr:"mobile_home" }}</a>
-                <a href="{% url 'find_my_listings' %}" class="gn-profile-btn" style="border-color:#ca8a04;color:#a16207;"><i class="bi bi-link-45deg me-1"></i>내 매물 찾기</a>
-                <a href="/accounts/3rdparty/" class="gn-profile-btn gn-profile-btn-social"><i class="bi bi-person-check me-1"></i>소셜 계정 연결</a>
-                <a href="{% url 'chat_room_list' %}" class="gn-profile-btn gn-profile-btn-chat"><i class="bi bi-chat-dots me-1"></i>{{ LANG|tr:"nav_chat" }}</a>
-                <form action="{% url 'logout' %}" method="post" class="gn-profile-btn-form">
-                    {% csrf_token %}
-                    <button type="submit" class="gn-profile-btn gn-profile-btn-logout">{{ LANG|tr:"nav_logout" }}</button>
-                </form>
-            </div>
-            <p class="small text-muted mt-2 mb-0">
-                네이버/카카오 로그인 중복 안내가 뜨면, 먼저 기존 계정으로 로그인 후 <strong>소셜 계정 연결</strong>에서 연동해 주세요.
-            </p>
         </div>
-    </div>
-    <hr class="my-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h5 class="fw-bold mb-0">{{ LANG|tr:"mypage_my_listings" }}</h5>
-        <a href="{% url 'equipment_create' %}" class="btn text-white fw-bold gn-my-listings-register" style="background: var(--gn-accent); border-radius: 10px; min-height: 42px; padding: 0.4rem 1rem;">{{ LANG|tr:"nav_register" }}</a>
+        <a href="{% url 'billing_upgrade' %}" class="btn gn-upgrade-btn">✨ 유료회원 업그레이드</a>
     </div>
 
-            {% if my_equipments %}
-            <div class="table-responsive gn-my-listings-table-wrap">
-                <table class="table table-hover align-middle gn-my-listings-table">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="gn-th-model">모델명</th>
-                            <th class="gn-th-price">가격</th>
-                            <th class="gn-th-date">등록일</th>
-                            <th class="gn-th-actions">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for e in my_equipments %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'equipment_detail' e.pk %}" class="text-decoration-none fw-bold">
-                                    {% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}
-                                </a>
-                            </td>
-                            <td>{{ e.listing_price|floatformat:0|intcomma }}만원</td>
-                            <td class="text-muted small">{{ e.created_at|date:"Y-m-d" }}</td>
-                            <td>
-                                <a class="btn btn-sm rounded-pill gn-btn-edit" href="{% url 'equipment_edit' e.pk %}"><i class="bi bi-pencil me-1"></i>수정</a>
-                                <a class="btn btn-sm rounded-pill gn-btn-delete" href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}"><i class="bi bi-trash me-1"></i>삭제</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <p class="text-muted">아직 등록한 매물이 없습니다.</p>
-            {% endif %}
+    <div class="gn-stats-grid mb-3">
+        <div class="gn-stat-card"><div class="gn-stat-num">{{ stats.my_count }}</div><div class="gn-stat-label">등록 매물 수</div></div>
+        <div class="gn-stat-card"><div class="gn-stat-num">{{ stats.fav_count }}</div><div class="gn-stat-label">찜한 매물 수</div></div>
+        <div class="gn-stat-card"><div class="gn-stat-num">{{ stats.total_views|intcomma }}</div><div class="gn-stat-label">총 조회수</div></div>
+        <div class="gn-stat-card"><div class="gn-stat-num">{{ stats.grade_label }}</div><div class="gn-stat-label">회원 등급</div></div>
+    </div>
 
-            {% if profile.is_premium_active %}
-            <div class="card border-0 shadow-sm rounded-3 mt-4">
-                <div class="card-body p-3 p-md-4">
-                    <div class="fw-bold mb-2">소개글 설정</div>
-                    <form method="post" class="gn-bio-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="update_bio">
-                        <textarea name="bio" rows="3" class="form-control mb-2" placeholder="판매자 소개를 입력해 주세요.">{{ profile.bio|default:'' }}</textarea>
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary btn-sm">저장</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
+    <div class="gn-quick-grid mb-4">
+        <a href="{% url 'index' %}" class="gn-quick-item"><i class="bi bi-house"></i><span>홈</span></a>
+        <a href="{% url 'find_my_listings' %}" class="gn-quick-item"><i class="bi bi-link-45deg"></i><span>내 매물 찾기</span></a>
+        <a href="/accounts/3rdparty/" class="gn-quick-item"><i class="bi bi-person-check"></i><span>소셜 연결</span></a>
+        <a href="{% url 'chat_room_list' %}" class="gn-quick-item"><i class="bi bi-chat-dots"></i><span>채팅</span></a>
+        <a href="#account-settings" class="gn-quick-item"><i class="bi bi-gear"></i><span>설정</span></a>
+    </div>
 
-            <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-heart-fill text-danger"></i> {{ LANG|tr:"mypage_favorites" }}</h5>
-            {% if fav_equipments or fav_parts %}
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
-                {% for e in fav_equipments %}
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                        <div style="height:120px; background:#e2e8f0;">
-                            {% if e.images.all %}<img src="{{ e.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
-                        </div>
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-1">{% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}</h6>
-                            <p class="text-danger fw-bold mb-2">{{ e.listing_price|floatformat:0|intcomma }}만원</p>
-                            <a href="{% url 'equipment_detail' e.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
-                            <a href="{% url 'toggle_equipment_favorite' e.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-                {% for p in fav_parts %}
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                        <div style="height:120px; background:#e2e8f0;">
-                            {% if p.images.all %}<img src="{{ p.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
-                        </div>
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-1">{{ p.title }}</h6>
-                            <p class="text-danger fw-bold mb-2">{{ p.price }}</p>
-                            <a href="{% url 'part_detail' p.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
-                            <a href="{% url 'toggle_part_favorite' p.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted mb-4">찜한 매물이 없습니다. 목록에서 하트를 눌러 저장하세요.</p>
-            {% endif %}
-
-            <div class="card border-0 shadow-sm rounded-3 mt-4">
-                <div class="card-body p-3 p-md-4">
-                    <div class="fw-bold mb-3">회원 등급별 혜택 비교</div>
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded-3 h-100 p-3 bg-light">
-                                <div class="fw-bold mb-2">무료회원</div>
-                                <ul class="small text-muted mb-0" style="padding-left: 1.1rem; line-height: 1.6;">
-                                    <li>매물 등록 월 {{ free_listing_limit|default:10 }}건</li>
-                                    <li>일반 목록 노출</li>
-                                    <li>판매자 페이지(이 회원 매물 전체 보기) 비공개</li>
-                                    <li>끌어올리기 미지원</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded-3 h-100 p-3" style="border-color: rgba(232, 163, 23, 0.45) !important; background: #fffdf3;">
-                                <div class="fw-bold mb-2" style="color:#a16207;">유료회원</div>
-                                <ul class="small text-muted mb-0" style="padding-left: 1.1rem; line-height: 1.6;">
-                                    <li>매물 등록 무제한</li>
-                                    <li>매물 검색 상단 우선 노출</li>
-                                    <li>메인 화면 프리미엄 영역 노출</li>
-                                    <li>주 1회 끌어올리기</li>
-                                    <li>각 기종별 전문가 명함 노출</li>
-                                    <li>상세페이지에서 이 회원이 판매하는 다른 매물 보기</li>
-                                    <li>판매자 페이지 공개</li>
-                                </ul>
-                            </div>
-                        </div>
+    <section class="gn-section-card mb-4">
+        <div class="gn-section-head">
+            <h5 class="gn-section-title">내가 올린 매물</h5>
+            <a href="{% url 'equipment_create' %}" class="btn gn-gold-btn">매물등록 +</a>
+        </div>
+        {% if my_equipments %}
+        <div class="row g-3">
+            {% for e in my_equipments %}
+            <div class="col-12 col-md-6">
+                <div class="gn-listing-card">
+                    <p class="fw-bold mb-1">{% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}</p>
+                    <p class="small text-muted mb-2">{{ e.created_at|date:"Y-m-d" }} · {{ e.listing_price|floatformat:0|intcomma }}만원</p>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'equipment_detail' e.pk %}" class="btn btn-sm btn-outline-secondary">보기</a>
+                        <a href="{% url 'equipment_edit' e.pk %}" class="btn btn-sm btn-outline-primary">수정</a>
+                        <a href="{% url 'equipment_delete' e.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-danger">삭제</a>
                     </div>
                 </div>
             </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <p class="text-muted mb-2">아직 등록한 매물이 없습니다.</p>
+            <a href="{% url 'equipment_create' %}" class="btn gn-gold-btn">첫 매물 등록하기</a>
+        </div>
+        {% endif %}
+    </section>
 
-            <hr class="mt-5">
-            <div class="d-flex justify-content-end">
-                <a href="{% url 'account_delete' %}" class="text-danger small text-decoration-underline">{{ LANG|tr:"account_delete" }}</a>
+    <section class="gn-section-card mb-4">
+        <div class="gn-section-head">
+            <h5 class="gn-section-title">찜한 매물</h5>
+        </div>
+        {% if fav_equipments or fav_parts %}
+        <div class="row g-3">
+            {% for e in fav_equipments %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="gn-fav-card">
+                    <p class="fw-bold mb-1">{% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}</p>
+                    <p class="small text-muted mb-2">{{ e.listing_price|floatformat:0|intcomma }}만원</p>
+                    <a href="{% url 'equipment_detail' e.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
+                </div>
             </div>
+            {% endfor %}
+            {% for p in fav_parts %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="gn-fav-card">
+                    <p class="fw-bold mb-1">{{ p.title }}</p>
+                    <p class="small text-muted mb-2">{{ p.price }}</p>
+                    <a href="{% url 'part_detail' p.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">찜한 매물이 없습니다. 목록에서 하트를 눌러 저장하세요.</p>
+        {% endif %}
+    </section>
+
+    <section class="gn-section-card mb-4">
+        <div class="gn-section-head">
+            <h5 class="gn-section-title">회원 등급 혜택 비교</h5>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <div class="gn-grade-card">
+                    <div class="fw-bold mb-2">무료회원</div>
+                    <ul class="small text-muted mb-3">
+                        <li>매물 등록 월 {{ free_listing_limit|default:10 }}건</li>
+                        <li>일반 목록 노출</li>
+                        <li>끌어올리기 미지원</li>
+                    </ul>
+                    <button class="btn btn-secondary btn-sm w-100" disabled>현재 이용중</button>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="gn-grade-card-pro">
+                    <div class="fw-bold mb-2" style="color:#a16207;">유료회원</div>
+                    <ul class="small mb-2">
+                        <li>✓ 매물 등록 무제한</li>
+                        <li>✓ 상단 우선 노출</li>
+                        <li>✓ 주 1회 끌어올리기</li>
+                        <li>✓ 판매자 페이지 공개</li>
+                    </ul>
+                    <div class="fw-bold mb-2">100,000원/월</div>
+                    <a href="{% url 'billing_upgrade' %}" class="btn gn-gold-btn w-100">지금 업그레이드</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="account-settings" class="gn-section-card mb-4">
+        <div class="gn-section-head">
+            <h5 class="gn-section-title">계정 설정</h5>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'phone_verify' %}" class="btn btn-outline-secondary">휴대폰 인증 관리</a>
+            <a href="/accounts/3rdparty/" class="btn btn-outline-secondary">소셜 계정 연결</a>
+            <a href="/password-reset/" class="btn btn-outline-secondary">비밀번호 재설정</a>
+        </div>
+    </section>
+
+    <div class="d-flex justify-content-end">
+        <a href="{% url 'account_delete' %}" class="text-danger small text-decoration-underline">{{ LANG|tr:"account_delete" }}</a>
+    </div>
 </div>
 <style>
-  /* 마이페이지 상단 프로필 카드 (고급 카드형) */
-  .gn-profile-card {
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 4px 20px rgba(0,0,0,.25);
-    background: linear-gradient(165deg, #f0f2f5 0%, #e8eaef 100%);
-    padding: 1.25rem;
-  }
-  .gn-profile-card-inner { background: transparent; }
-  .gn-profile-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  .gn-profile-avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--gn-accent) 0%, #d49410 100%);
-    color: #1a1a1a;
-    font-weight: 800;
-    font-size: 1.35rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .gn-mypage { background: #f5f5f3; padding: 14px; border-radius: 14px; }
+  .gn-profile-card { background: #3d4a5c; border-radius: 14px; padding: 1rem 1.1rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
+  .gn-profile-left { display: flex; align-items: center; gap: 0.9rem; min-width: 0; }
+  .gn-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #F5A623; color: #1f2937; font-weight: 800; font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .gn-profile-info { min-width: 0; flex: 1; }
-  .gn-profile-greeting {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 0.2rem 0;
-    line-height: 1.3;
+  .gn-name { color: #fff; font-size: 1.05rem; font-weight: 700; }
+  .gn-meta { color: rgba(255,255,255,.78); font-size: 0.82rem; }
+  .gn-badge-free {
+    display: inline-block; border-radius: 999px; padding: 0.14rem 0.55rem;
+    background: #e5e7eb; color: #475569; font-size: 0.74rem; font-weight: 700;
   }
-  .gn-profile-meta {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin: 0;
-    line-height: 1.4;
+  .gn-upgrade-btn {
+    background: #F5A623; color: #1f2937; border-radius: 10px; font-weight: 700; border: none;
+    white-space: nowrap;
   }
-  .gn-profile-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: stretch;
-  }
-  .gn-profile-btn,
-  .gn-profile-btn-form { flex: 1; min-width: 0; }
-  .gn-profile-btn-form { display: flex; margin: 0; }
-  .gn-profile-btn-form .gn-profile-btn { flex: 1; width: 100%; }
-  .gn-profile-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    border-radius: 10px;
-    text-decoration: none;
-    border: 1px solid #cbd5e1;
-    background: #fff;
-    color: #334155;
-    transition: background .2s, border-color .2s, color .2s;
-    cursor: pointer;
-  }
-  .gn-profile-btn:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #1e293b;
-  }
-  .gn-profile-btn-home:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
-  .gn-profile-btn-chat:hover { background: #f8fafc; border-color: #64748b; }
-  .gn-profile-btn-social:hover { background: #ecfeff; border-color: #22d3ee; color: #0e7490; }
-  .gn-profile-btn-logout {
-    background: #1e293b;
-    border-color: #1e293b;
-    color: #fff;
-  }
-  .gn-profile-btn-logout:hover {
-    background: #334155;
-    border-color: #334155;
-    color: #fff;
-  }
-  @media (min-width: 768px) {
-    .gn-profile-card { padding: 1.5rem; }
-    .gn-profile-greeting { font-size: 1.35rem; }
-    .gn-profile-meta { font-size: 0.8125rem; }
-    .gn-profile-btn { min-height: 46px; font-size: 0.95rem; }
-  }
+  .gn-upgrade-btn:hover { background: #e3a12d; color: #1f2937; }
+  .gn-stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 0.65rem; }
+  .gn-stat-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 0.8rem; text-align: center; }
+  .gn-stat-num { color: #F5A623; font-weight: 800; font-size: 1.03rem; margin-bottom: 0.2rem; }
+  .gn-stat-label { color: #6b7280; font-size: 0.78rem; }
 
-  /* 내 매물 테이블: 모바일 헤더 줄바꿈 방지 + 정렬 */
-  .gn-my-listings-table th {
-    white-space: nowrap;
-    font-size: 0.85rem;
+  .gn-quick-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 0.6rem; }
+  .gn-quick-item {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 0.8rem 0.55rem;
+    text-align: center; text-decoration: none; color: #334155;
+    display: flex; flex-direction: column; gap: 0.28rem; align-items: center; justify-content: center;
+    min-height: 82px;
   }
-  .gn-my-listings-table .gn-th-model { min-width: 4rem; }
-  .gn-my-listings-table .gn-th-price { min-width: 3.5rem; }
-  .gn-my-listings-table .gn-th-vehicle { min-width: 4.5rem; }
-  .gn-my-listings-table .gn-th-date { min-width: 3.5rem; }
-  .gn-my-listings-table .gn-th-actions { width: 1px; white-space: nowrap; }
-  @media (max-width: 767px) {
-    .gn-my-listings-table th { font-size: 0.8rem; padding: 0.5rem 0.35rem; }
-    .gn-my-listings-table td { font-size: 0.875rem; padding: 0.5rem 0.35rem; }
+  .gn-quick-item i { font-size: 1.1rem; color: #475569; }
+  .gn-quick-item span { font-size: 0.8rem; font-weight: 700; line-height: 1.2; }
+  .gn-quick-item:hover { border-color: #F5A623; color: #1f2937; }
+
+  .gn-section-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 0.95rem; }
+  .gn-section-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin-bottom: 0.7rem; }
+  .gn-section-title {
+    margin: 0; font-size: 1.02rem; font-weight: 800; color: #1f2937; display: flex; align-items: center;
   }
-  /* 수정/삭제 버튼: 참고 이미지 톤(연한 외곽선 + 둥근 pill + 아이콘) */
-  .gn-my-listings-table .gn-btn-edit,
-  .gn-my-listings-table .gn-btn-delete {
-    min-height: 32px;
-    padding: 0.26rem 0.78rem;
-    font-weight: 600;
-    font-size: 0.82rem;
-    border-width: 1px;
-    border-style: solid;
-    background: #f8fafc;
-    display: inline-flex;
-    align-items: center;
-    line-height: 1.1;
+  .gn-section-title::before {
+    content: ""; width: 4px; height: 16px; border-radius: 2px; background: #F5A623; margin-right: 8px;
   }
-  .gn-my-listings-table .gn-btn-edit {
-    color: #2563eb;
-    border-color: #93c5fd;
+  .gn-gold-btn { background: #F5A623; color: #1f2937; border: none; font-weight: 700; border-radius: 10px; }
+  .gn-gold-btn:hover { background: #e3a12d; color: #1f2937; }
+
+  .gn-listing-card, .gn-fav-card {
+    border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; padding: 0.75rem;
   }
-  .gn-my-listings-table .gn-btn-edit:hover {
-    background: #eff6ff;
-    border-color: #60a5fa;
-    color: #1d4ed8;
+  .gn-grade-card { border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 0.85rem; height: 100%; }
+  .gn-grade-card-pro { border: 1px solid #F5A623; border-radius: 12px; background: #fffdf5; padding: 0.85rem; height: 100%; }
+
+  @media (max-width: 991px) {
+    .gn-stats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .gn-quick-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
   }
-  .gn-my-listings-table .gn-btn-delete {
-    color: #dc2626;
-    border-color: #fecaca;
-  }
-  .gn-my-listings-table .gn-btn-delete:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
-    color: #b91c1c;
-  }
-  .gn-my-listings-table td:last-child {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.35rem;
-    align-items: center;
-    justify-content: flex-end;
-    white-space: nowrap;
+  @media (max-width: 575px) {
+    .gn-profile-card { flex-direction: column; align-items: stretch; }
+    .gn-upgrade-btn { width: 100%; }
+    .gn-quick-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   }
 </style>
 {% endblock %}

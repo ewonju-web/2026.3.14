@@ -4,7 +4,7 @@ from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.db.models import Q, Min, Max, Avg, Count, F
+from django.db.models import Q, Min, Max, Avg, Count, F, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
@@ -788,12 +788,20 @@ def my_page(request):
     my_equipments = Equipment.objects.filter(author=request.user).order_by('-created_at')
     fav_equipments = Equipment.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
     fav_parts = Part.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
+    total_views = my_equipments.aggregate(total=Coalesce(Sum('view_count'), 0))['total'] or 0
+    stats = {
+        'my_count': my_equipments.count(),
+        'fav_count': fav_equipments.count() + fav_parts.count(),
+        'total_views': total_views,
+        'grade_label': '유료회원' if profile.is_premium_active else '무료회원',
+    }
     is_legacy_user = request.user.username.startswith('legacy_')
     return render(request, 'registration/my_page.html', {
         'profile': profile,
         'my_equipments': my_equipments,
         'fav_equipments': fav_equipments,
         'fav_parts': fav_parts,
+        'stats': stats,
         'is_legacy_user': is_legacy_user,
         'free_listing_limit': FREE_LISTING_LIMIT,
     })
