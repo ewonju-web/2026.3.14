@@ -22,7 +22,7 @@
                         <i class="bi bi-truck-flatbed"></i><span>덤프트럭</span>
                     </a>
                     <a href="{% url 'index' %}?category=loader" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'loader' %}active{% endif %}">
-                        <i class="bi bi-box2-heart-fill"></i><span>로더/휠로더</span>
+                        <i class="bi bi-box2-heart-fill"></i><span>스키로더/로더</span>
                     </a>
                     <a href="{% url 'index' %}?category=crane" class="gn-cat-pill gn-cat-pill-pc {% if filter_category == 'crane' %}active{% endif %}">
                         <i class="bi bi-truck"></i><span>크레인</span>
@@ -344,7 +344,7 @@
                 <i class="bi bi-truck-flatbed"></i><span>덤프트럭</span>
             </a>
             <a href="{% url 'index' %}?category=loader" class="gn-cat-pill {% if filter_category == 'loader' %}active{% endif %}">
-                <i class="bi bi-box2-heart-fill"></i><span>로더/휠로더</span>
+                <i class="bi bi-box2-heart-fill"></i><span>스키로더/로더</span>
             </a>
             <a href="{% url 'index' %}?category=crane" class="gn-cat-pill {% if filter_category == 'crane' %}active{% endif %}">
                 <i class="bi bi-truck"></i><span>크레인</span>
@@ -694,11 +694,6 @@
                     <p class="gn-list-title mb-1">
                         <span class="gn-list-title-bar">|</span>
                         {% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}
-                        {% if not filter_category or equipment.equipment_type != filter_category %}
-                        <span class="badge bg-secondary text-white ms-2" style="font-size:0.65rem; vertical-align:baseline;">
-                            {{ equipment.get_equipment_type_display }}
-                        </span>
-                        {% endif %}
                     </p>
                     <table class="table table-sm table-borderless mb-0 gn-list-spec">
                         <tbody>
@@ -812,11 +807,6 @@
                     <h5 class="fw-bold gn-pc-card-title mb-1 mb-md-2" style="font-size: 1.02rem;">
                         <span class="text-danger me-1" style="border-left: 3px solid #c00; padding-left: 4px;">|</span>
                         {% if equipment.model_name %}{{ equipment.model_name }}{% else %}모름{% endif %}
-                        {% if not filter_category or equipment.equipment_type != filter_category %}
-                        <span class="badge bg-secondary text-white ms-2" style="font-size:0.65rem; vertical-align:baseline;">
-                            {{ equipment.get_equipment_type_display }}
-                        </span>
-                        {% endif %}
                     </h5>
                     <table class="table table-sm table-borderless mb-0 small gn-pc-card-table" style="font-size: 0.86rem;">
                         <tbody>
@@ -962,7 +952,7 @@
       <aside class="gn-premium-side gn-premium-side-left" aria-label="좌측 {{ premium_sidebar_expert_title }}">
         <div class="card gn-premium-card-shell border-0 shadow-sm overflow-hidden">
           <div class="card-header py-2 px-2 small fw-bold gn-premium-card-head d-flex align-items-center justify-content-between gap-2">
-            <div class="d-flex align-items-center gap-1 min-width-0">
+            <div class="d-flex align-items-center gap-1 min-width-0 gn-premium-head-main">
               <i class="bi bi-person-badge text-warning me-1"></i><span class="gn-premium-expert-title">{{ premium_sidebar_expert_title }}</span>
             </div>
             <a href="{% url 'billing_upgrade' %}" class="btn btn-sm btn-outline-primary py-1 px-2 gn-rail-btn-outline text-nowrap flex-shrink-0">등록안내</a>
@@ -1004,7 +994,7 @@
       <aside class="gn-premium-side gn-premium-side-right" aria-label="우측 {{ premium_sidebar_expert_title }}">
         <div class="card gn-premium-card-shell border-0 shadow-sm overflow-hidden">
           <div class="card-header py-2 px-2 small fw-bold gn-premium-card-head d-flex align-items-center justify-content-between gap-2">
-            <div class="d-flex align-items-center gap-1 min-width-0">
+            <div class="d-flex align-items-center gap-1 min-width-0 gn-premium-head-main">
               <i class="bi bi-person-badge text-warning me-1"></i><span class="gn-premium-expert-title">{{ premium_sidebar_expert_title }}</span>
             </div>
             <a href="{% url 'billing_upgrade' %}" class="btn btn-sm btn-outline-primary py-1 px-2 gn-rail-btn-outline text-nowrap flex-shrink-0">등록안내</a>
@@ -1226,7 +1216,15 @@
     white-space: nowrap;
     margin-right: 2px;
   }
+  .gn-premium-card-head .gn-premium-head-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
   .gn-premium-card-head .gn-premium-expert-title {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .gn-premium-bizcard {

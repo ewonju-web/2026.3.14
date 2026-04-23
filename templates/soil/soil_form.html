@@ -1,35 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4" style="max-width: 560px;">
-    <h2 class="section-title mb-4">{% if is_edit %}{% if LANG == 'en' %}Edit post{% else %}글 수정{% endif %}{% else %}{% if LANG == 'en' %}New post{% else %}흙 받으실분 글쓰기{% endif %}{% endif %}</h2>
+    <h2 class="section-title mb-4">{% if is_edit %}현장 자재 글 수정{% else %}현장 자재 글쓰기{% endif %}</h2>
     <div class="card border shadow-sm p-4" style="border-radius: 10px;">
-        <form method="post" action="">
+        <form method="post" enctype="multipart/form-data" action="">
             {% csrf_token %}
             <div class="mb-3">
-                <label for="id_title" class="form-label fw-bold">{% if LANG == 'en' %}Title{% else %}제목{% endif %} <span class="text-danger">*</span></label>
+                <label for="id_post_type" class="form-label fw-bold">게시유형 <span class="text-danger">*</span></label>
+                {{ form.post_type }}
+            </div>
+            <div class="mb-3">
+                <label for="id_material_type" class="form-label fw-bold">자재유형 <span class="text-danger">*</span></label>
+                {{ form.material_type }}
+            </div>
+            <div class="mb-3">
+                <label for="id_title" class="form-label fw-bold">제목 <span class="text-danger">*</span></label>
                 {{ form.title }}
                 {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
             </div>
             <div class="mb-3">
-                <label for="id_location" class="form-label fw-bold">{% if LANG == 'en' %}Location{% else %}지역{% endif %} <span class="text-danger">*</span></label>
+                <label for="id_quantity" class="form-label fw-bold">수량</label>
+                {{ form.quantity }}
+            </div>
+            <div class="mb-3">
+                <label for="id_location" class="form-label fw-bold">지역 <span class="text-danger">*</span></label>
                 {{ form.location }}
                 {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>{% endif %}
             </div>
             <div class="mb-3">
-                <label for="id_quantity" class="form-label text-muted">{% if LANG == 'en' %}Quantity{% else %}수량{% endif %}</label>
-                {{ form.quantity }}
+                <label for="id_contact" class="form-label fw-bold">연락처</label>
+                {{ form.contact }}
             </div>
             <div class="mb-3">
-                <label for="id_soil_type" class="form-label text-muted">{% if LANG == 'en' %}Soil type{% else %}흙 종류{% endif %}</label>
-                {{ form.soil_type }}
+                <label for="id_note" class="form-label fw-bold">메모</label>
+                {{ form.note }}
             </div>
             <div class="mb-4">
-                <label for="id_description" class="form-label text-muted">{% if LANG == 'en' %}Description{% else %}내용{% endif %}</label>
+                <label for="id_description" class="form-label fw-bold">상세내용</label>
                 {{ form.description }}
             </div>
+            <div class="mb-4">
+                <label for="id_image" class="form-label fw-bold">사진 업로드 (선택)</label>
+                {{ form.image }}
+            </div>
             <div class="d-flex gap-2">
-                <button type="submit" class="btn text-white fw-bold px-4" style="background: var(--gn-accent); border-radius: 10px;">{% if is_edit %}{% if LANG == 'en' %}Save{% else %}저장{% endif %}{% else %}{% if LANG == 'en' %}Post{% else %}등록{% endif %}{% endif %}</button>
-                <a href="{% if is_edit %}{% url 'soil_detail' form.instance.pk %}{% else %}{% url 'soil_list' %}{% endif %}" class="btn btn-outline-secondary" style="border-radius: 10px;">{% if LANG == 'en' %}Cancel{% else %}취소{% endif %}</a>
+                <button type="submit" class="btn text-white fw-bold px-4" style="background: var(--gn-accent); border-radius: 10px;">{% if is_edit %}저장{% else %}등록{% endif %}</button>
+                <a href="{% if is_edit %}{% url 'soil_detail' form.instance.pk %}{% else %}{% url 'soil_list' %}{% endif %}" class="btn btn-outline-secondary" style="border-radius: 10px;">취소</a>
             </div>
         </form>
     </div>

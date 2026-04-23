@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+{% if provider.id == "naver" %}네이버 로그인 | 굴삭기나라{% else %}카카오 로그인 | 굴삭기나라{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .social-login-wrap {
+    min-height: calc(100vh - 220px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+  }
+  .kakao-login-card {
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid var(--gn-border);
+    border-radius: 16px;
+    box-shadow: var(--gn-shadow-hover);
+    background: #fff;
+    padding: 1.75rem 1.25rem;
+  }
+  .social-logo-badge {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 0.9rem;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .social-logo-badge--kakao {
+    background: #fee500;
+  }
+  .social-logo-badge--naver {
+    background: #03c75a;
+  }
+  .social-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.4rem;
+  }
+  .social-title--kakao {
+    color: #191919;
+  }
+  .social-title--naver {
+    color: #03c75a;
+  }
+  .social-desc {
+    font-size: 0.96rem;
+    text-align: center;
+    margin-bottom: 1.1rem;
+  }
+  .social-desc--kakao {
+    color: #4b5563;
+  }
+  .social-desc--naver {
+    color: #047857;
+  }
+  .social-provider--kakao {
+    color: #191919;
+    font-weight: 700;
+  }
+  .social-provider--naver {
+    color: #03c75a;
+    font-weight: 700;
+  }
+  .social-continue-btn {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 0.85rem 1rem;
+    transition: filter 0.15s ease-in-out;
+  }
+  .social-continue-btn--kakao {
+    background: #fee500;
+    color: #191919;
+  }
+  .social-continue-btn--kakao:hover {
+    filter: brightness(0.96);
+    color: #191919;
+  }
+  .social-continue-btn--naver {
+    background: #03c75a;
+    color: #ffffff;
+  }
+  .social-continue-btn--naver:hover {
+    filter: brightness(0.96);
+    color: #ffffff;
+  }
+  .social-continue-btn:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+  }
+  .social-note {
+    margin-top: 0.9rem;
+    text-align: center;
+    color: var(--gn-muted);
+    font-size: 0.82rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container social-login-wrap">
+  <div class="kakao-login-card">
+    <div class="social-logo-badge {% if provider.id == "naver" %}social-logo-badge--naver{% else %}social-logo-badge--kakao{% endif %}" aria-hidden="true">
+      {% if provider.id == "naver" %}
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M6 4H11.2L17.4 13.1V4H22V20H16.8L10.6 10.9V20H6V4Z" fill="#FFFFFF"/>
+      </svg>
+      {% else %}
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3C6.75 3 2.5 6.34 2.5 10.45C2.5 13.11 4.33 15.45 7.08 16.75L6.09 20.39C6.01 20.69 6.35 20.93 6.62 20.75L10.99 17.82C11.32 17.85 11.66 17.86 12 17.86C17.25 17.86 21.5 14.52 21.5 10.45C21.5 6.34 17.25 3 12 3Z" fill="#191919"/>
+      </svg>
+      {% endif %}
+    </div>
+
+    <p class="social-title {% if provider.id == "naver" %}social-title--naver{% else %}social-title--kakao{% endif %}">
+      {% if provider.id == "naver" %}네이버 계정으로 로그인을 진행합니다{% else %}카카오 계정으로 로그인을 진행합니다{% endif %}
+    </p>
+    <p class="social-desc {% if provider.id == "naver" %}social-desc--naver{% else %}social-desc--kakao{% endif %}">
+      <span class="{% if provider.id == "naver" %}social-provider--naver{% else %}social-provider--kakao{% endif %}">{{ provider.name }}</span> 계정 인증 후 굴삭기나라로 돌아옵니다.
+    </p>
+
+    <form method="post" id="kakaoSocialLoginForm">
+      {% csrf_token %}
+      {% if form %}
+        {% for hidden in form.hidden_fields %}
+          {{ hidden }}
+        {% endfor %}
+      {% endif %}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+      <button type="submit" id="kakaoContinueBtn" class="social-continue-btn {% if provider.id == "naver" %}social-continue-btn--naver{% else %}social-continue-btn--kakao{% endif %}">
+        <span class="btn-label">계속</span>
+        <span class="spinner-border spinner-border-sm ms-2 d-none" id="kakaoLoginSpinner" role="status" aria-hidden="true"></span>
+      </button>
+    </form>
+
+    <p class="social-note">안전한 로그인을 위해 {{ provider.name }} 인증 페이지로 이동합니다.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var form = document.getElementById("kakaoSocialLoginForm");
+    var button = document.getElementById("kakaoContinueBtn");
+    var spinner = document.getElementById("kakaoLoginSpinner");
+    var label = button ? button.querySelector(".btn-label") : null;
+
+    if (!form || !button || !spinner) return;
+
+    form.addEventListener("submit", function () {
+      button.disabled = true;
+      spinner.classList.remove("d-none");
+      if (label) label.textContent = "이동 중";
+    });
+  })();
+</script>
+{% endblock %}

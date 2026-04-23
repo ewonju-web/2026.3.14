@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'equipment.middleware.admin_session_isolation.AdminSessionIsolationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
@@ -157,7 +158,10 @@ ACCOUNT_EMAIL_REQUIRED = False
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username'
-SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_FORMS = {
+    'signup': 'equipment.social_forms.RequiredSocialSignupForm',
+}
 # 카카오/네이버 키는 Admin > Sites > Social applications 에서 등록하거나, 여기 APP으로 env 설정
 # 카카오: https://developers.kakao.com/apps → REST API 키, 리다이렉트: /accounts/kakao/login/callback/
 # 네이버: https://developers.naver.com/appinfo → Client ID/Secret, 리다이렉트: /accounts/naver/login/callback/
@@ -208,8 +212,18 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 
+# 인증번호/재발송 제한 등은 멀티워커 환경에서 공유 캐시가 필요합니다.
+# 기본 LocMemCache(프로세스별 메모리) 대신 파일 기반 캐시를 사용합니다.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": str(BASE_DIR / ".django_cache"),
+    }
+}
+
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "http")
+# 프록시가 X-Forwarded-Proto: https 일 때만 SSL로 간주. 두 번째 값이 "http"이면 http 요청이 secure로 오인되어 OAuth redirect_uri가 https://로 잘못 생성됨.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = ['http://www.s2022.co.kr', 'https://www.s2022.co.kr', 'https://s2022.co.kr', 'http://s2022.co.kr', 'http://211.110.140.201', 'http://211.110.140.201:8001']
 LANGUAGE_CODE = 'ko-kr'
 USE_I18N = True
@@ -225,6 +239,8 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 SOLAPI_API_KEY = _env_str("SOLAPI_API_KEY")
 SOLAPI_API_SECRET = _env_str("SOLAPI_API_SECRET")
 SOLAPI_SENDER = _env_str("SOLAPI_SENDER")
+# 카카오맵 JS SDK 키 (없으면 카카오 로그인 REST 키를 임시로 사용)
+KAKAO_MAP_JS_KEY = _env_str("KAKAO_MAP_JS_KEY", _env_str("KAKAO_REST_API_KEY"))
 
 # 비밀번호 찾기 메일: .env에 EMAIL_HOST 있으면 SMTP 발송, 없으면 콘솔 출력
 # .env 예시 (실제 발송 시):

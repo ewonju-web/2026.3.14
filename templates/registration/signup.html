@@ -9,6 +9,11 @@
                     <form method="post" action="{% url 'signup' %}" id="signup-form">
                         {% csrf_token %}
                         <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">이름</label>
+                            <input type="text" name="name" class="form-control" placeholder="이름" value="{{ form.name.value|default:'' }}" required style="border-radius: 10px;">
+                            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">아이디</label>
                             <div class="d-flex gap-2">
                                 <input type="text" name="username" id="id_username" class="form-control" placeholder="아이디" value="{{ form.username.value|default:'' }}" required style="border-radius: 10px;">

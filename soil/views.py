@@ -6,20 +6,56 @@ from .forms import SoilPostForm
 
 
 def soil_list(request):
-    """흙 받으실분 목록 (1차: need만)."""
-    posts = SoilPost.objects.filter(post_type='need', is_active=True).select_related('author').order_by('-created_at')
-    return render(request, 'soil/soil_list.html', {'posts': posts})
+    """현장 자재 나눔 목록."""
+    material = (request.GET.get('material') or 'all').strip().lower()
+    post_type = (request.GET.get('type') or 'all').strip().lower()
+
+    material_tabs = [
+        ('all', '전체'),
+        ('soil', '흙·토사'),
+        ('sand', '모래'),
+        ('gravel', '자갈'),
+        ('crushed', '잔석·쇄석'),
+        ('block', '블록·벽돌'),
+        ('concrete', '콘크리트 잔재'),
+        ('other', '기타'),
+    ]
+    post_type_tabs = [
+        ('all', '전체'),
+        ('give', '드립니다'),
+        ('take', '가져가실분'),
+    ]
+
+    valid_material = {k for k, _ in material_tabs}
+    valid_post_type = {k for k, _ in post_type_tabs}
+    if material not in valid_material:
+        material = 'all'
+    if post_type not in valid_post_type:
+        post_type = 'all'
+
+    posts = SoilPost.objects.filter(is_active=True).select_related('author').order_by('-created_at')
+    if material != 'all':
+        posts = posts.filter(material_type=material)
+    if post_type != 'all':
+        posts = posts.filter(post_type=post_type)
+
+    return render(request, 'soil/soil_list.html', {
+        'posts': posts,
+        'material_tabs': material_tabs,
+        'post_type_tabs': post_type_tabs,
+        'selected_material': material,
+        'selected_post_type': post_type,
+    })
 
 
 @login_required(login_url='/login/')
 def soil_create(request):
     """등록 (로그인 필수)."""
     if request.method == 'POST':
-        form = SoilPostForm(request.POST)
+        form = SoilPostForm(request.POST, request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
-            post.post_type = 'need'
             post.save()
             return redirect('soil_detail', pk=post.pk)
     else:
@@ -41,7 +77,7 @@ def soil_edit(request, pk):
     if post.author_id != request.user.id:
         raise Http404()
     if request.method == 'POST':
-        form = SoilPostForm(request.POST, instance=post)
+        form = SoilPostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
             form.save()
             return redirect('soil_detail', pk=pk)

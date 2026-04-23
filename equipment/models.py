@@ -28,6 +28,8 @@ class Profile(models.Model):
     # 휴대폰 본인인증: 매물 등록·유료 결제 전 필수 (소셜 로그인과 분리)
     phone_verified = models.BooleanField(default=False, verbose_name="휴대폰 본인인증 여부")
     phone_verified_at = models.DateTimeField(null=True, blank=True, verbose_name="휴대폰 인증 시각")
+    withdrawn_at = models.DateTimeField(null=True, blank=True, verbose_name="탈퇴 처리 시각")
+    listing_purge_at = models.DateTimeField(null=True, blank=True, verbose_name="매물 삭제 예정 시각")
 
     class Meta:
         verbose_name = "사용자 프로필"
@@ -57,7 +59,7 @@ class EquipmentType(models.TextChoices):
     EXCAVATOR = 'excavator', '굴삭기'
     FORKLIFT = 'forklift', '지게차'
     DUMP = 'dump', '덤프트럭'
-    LOADER = 'loader', '로더/휠로더'
+    LOADER = 'loader', '스키로더/로더'
     CRANE = 'crane', '크레인'
     ATTACHMENT = 'attachment', '어태치먼트'
     OTHER = 'other', '기타 중장비'
@@ -203,8 +205,8 @@ class DumpEquipment(Equipment):
 class LoaderEquipment(Equipment):
     class Meta:
         proxy = True
-        verbose_name = "로더/휠로더 매물"
-        verbose_name_plural = "2-4. 로더/휠로더 매물 관리"
+        verbose_name = "스키로더/로더 매물"
+        verbose_name_plural = "2-4. 스키로더/로더 매물 관리"
 
 
 class CraneEquipment(Equipment):
@@ -259,6 +261,7 @@ class DeletedListingLog(models.Model):
 class VisitorCount(models.Model):
     date = models.DateField(auto_now_add=True, unique=True, verbose_name="날짜")
     count = models.IntegerField(default=0, verbose_name="방문자 수")
+    session_count = models.IntegerField(default=0, verbose_name="방문 수(30분 재방문 포함)")
 
     class Meta:
         verbose_name = "일별 방문자 수"
@@ -274,6 +277,15 @@ class VisitorLog(models.Model):
         unique_together = ('ip_address', 'visit_date')
         verbose_name = "방문 상세 기록"
         verbose_name_plural = "5. 방문 상세 로그"
+
+
+class VisitorSession(models.Model):
+    ip_address = models.GenericIPAddressField(unique=True, verbose_name="아이피 주소")
+    last_seen_at = models.DateTimeField(verbose_name="마지막 방문 시각")
+
+    class Meta:
+        verbose_name = "방문 세션 상태"
+        verbose_name_plural = "6. 방문 세션 상태"
 
 
 # --- 강제 한글화 ---
@@ -394,12 +406,79 @@ class PartImage(models.Model):
         verbose_name_plural = "부품 사진"
 
 
+class YoutubeContent(models.Model):
+    PURPOSE_CHOICES = [
+        ("all", "전체"),
+        ("repair", "수리·정비"),
+        ("buying", "구매가이드"),
+        ("review", "기종리뷰"),
+        ("safety", "사고예방"),
+    ]
+    EQUIPMENT_TYPE_CHOICES = [
+        ("all", "전체"),
+        ("excavator", "굴삭기"),
+        ("forklift", "지게차"),
+        ("dump", "덤프트럭"),
+        ("loader", "스키로더·로더"),
+        ("crane", "크레인"),
+        ("attachment", "어태치먼트"),
+    ]
+
+    title = models.CharField(max_length=200, verbose_name="제목")
+    youtube_url = models.URLField(verbose_name="유튜브 URL")
+    description = models.CharField(max_length=300, blank=True, default="", verbose_name="설명")
+    purpose = models.CharField(
+        max_length=20,
+        choices=PURPOSE_CHOICES,
+        default="all",
+        verbose_name="목적",
+    )
+    equipment_type = models.CharField(
+        max_length=20,
+        choices=EQUIPMENT_TYPE_CHOICES,
+        default="all",
+        verbose_name="기종",
+    )
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="정렬 순서")
+    is_active = models.BooleanField(default=True, verbose_name="노출 여부")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "유튜브 콘텐츠"
+        verbose_name_plural = "유튜브 콘텐츠"
+        ordering = ["sort_order", "-created_at", "-id"]
+
+    def __str__(self):
+        return self.title
+
+
 class PartsShop(models.Model):
     """전국 굴삭기 부품점 연락처 (부품/AS 검색용)"""
+    SHOP_KIND_CHOICES = [
+        ('as', 'AS센터'),
+        ('parts', '부품점'),
+    ]
+    EQUIPMENT_TYPE_CHOICES = [
+        '굴삭기', '지게차', '덤프트럭', '스키로더', '크레인', '어태치먼트', '기타',
+    ]
+    MANUFACTURER_CHOICES = [
+        '현대', '두산', '볼보', '코벨코', '히타치', '얀마', '구보다', '기타',
+    ]
+
     name = models.CharField(max_length=100, verbose_name="업체명")
+    shop_kind = models.CharField(
+        max_length=20,
+        choices=SHOP_KIND_CHOICES,
+        default='parts',
+        verbose_name="업체 유형",
+    )
     region = models.CharField(max_length=50, verbose_name="지역")
+    equipment_types = models.JSONField(default=list, blank=True, verbose_name="취급 장비")
+    manufacturer = models.JSONField(default=list, blank=True, verbose_name="취급 제조사")
     contact = models.CharField(max_length=50, verbose_name="연락처")
     address = models.CharField(max_length=200, blank=True, default='', verbose_name="주소")
+    lat = models.FloatField(null=True, blank=True, verbose_name="위도")
+    lng = models.FloatField(null=True, blank=True, verbose_name="경도")
     note = models.CharField(max_length=200, blank=True, default='', verbose_name="비고")
     created_at = models.DateTimeField(auto_now_add=True)
 

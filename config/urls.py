@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
 from equipment.views import user_login, user_logout, signup, check_username, find_username
 
@@ -18,7 +19,43 @@ def _social_callback_alias(request, provider: str):
         target = f"{target}?{query}"
     return HttpResponseRedirect(target)
 
+
+def _admin_view_site(request):
+    """
+    관리자 상단 '사이트 보기' 전용:
+    관리자 세션을 먼저 종료한 뒤 메인으로 이동한다.
+    """
+    if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+        logout(request)
+
+    response = HttpResponseRedirect("/")
+    cookie_name = settings.SESSION_COOKIE_NAME
+    host = (request.get_host() or "").split(":")[0].strip().lower()
+
+    paths = {"/", "/admin"}
+    if settings.SESSION_COOKIE_PATH:
+        paths.add(settings.SESSION_COOKIE_PATH)
+
+    domains = {None}
+    if settings.SESSION_COOKIE_DOMAIN:
+        domains.add(settings.SESSION_COOKIE_DOMAIN)
+    if host:
+        domains.add(host)
+        domains.add(f".{host}")
+    # 운영에서 실제 사용 중인 호스트들까지 함께 만료해 쿠키 잔존 이슈를 줄인다.
+    domains.update({"211.110.140.201", "s2022.co.kr", ".s2022.co.kr", "www.s2022.co.kr", ".www.s2022.co.kr"})
+
+    for domain in domains:
+        for path in paths:
+            response.delete_cookie(cookie_name, path=path, domain=domain)
+
+    return response
+
+
+admin.site.site_url = "/admin/view-site/"
+
 urlpatterns = [
+    path('admin/view-site/', _admin_view_site, name='admin_view_site'),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),  # 소셜 로그인: /accounts/login/ 에서 카카오/네이버
     # 소셜 콜백 별칭: 개발자센터 등록 URL을 /auth/... 로 써도 동작하게 함

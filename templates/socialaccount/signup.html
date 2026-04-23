@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-2 text-center" style="color: var(--gn-text); font-size: 1.5rem;">소셜 회원가입</h2>
+                    <p class="text-center text-muted small mb-4">로그인을 위해 이름, 이메일, 휴대폰번호를 입력해 주세요.</p>
+
+                    <form method="post" action="{% url 'socialaccount_signup' %}">
+                        {% csrf_token %}
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-warning py-2 small">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">이름</label>
+                            <input type="text" name="name" class="form-control" placeholder="이름" value="{{ form.name.value|default:'' }}" required style="border-radius: 10px;">
+                            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">이메일</label>
+                            <input type="email" name="email" class="form-control" placeholder="이메일" value="{{ form.email.value|default:'' }}" required style="border-radius: 10px;">
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-secondary">휴대폰번호</label>
+                            <input type="text" name="phone" class="form-control" placeholder="010-0000-0000" value="{{ form.phone.value|default:'' }}" required style="border-radius: 10px;">
+                            {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold py-2 text-dark mb-2" style="background: var(--gn-accent); border-radius: 10px;">가입 완료</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

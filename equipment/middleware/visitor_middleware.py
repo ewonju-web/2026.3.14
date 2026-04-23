@@ -1,10 +1,12 @@
 from django.db import IntegrityError, transaction
 from django.utils.timezone import now
 
-from ..models import VisitorCount, VisitorLog
+from ..models import VisitorCount, VisitorLog, VisitorSession
 
 
 class VisitorCounterMiddleware:
+    SESSION_TIMEOUT_SECONDS = 30 * 60
+
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -16,20 +18,34 @@ class VisitorCounterMiddleware:
         if not ip:
             return self.get_response(request)
 
-        today = now().date()
+        current_time = now()
+        today = current_time.date()
         referer = request.META.get('HTTP_REFERER') or '직접 접속'
 
         try:
             with transaction.atomic():
-                log, created = VisitorLog.objects.get_or_create(
+                _, created = VisitorLog.objects.get_or_create(
                     ip_address=ip,
                     visit_date=today,
                     defaults={'referer': referer}
                 )
+                counter, _ = VisitorCount.objects.get_or_create(date=today)
                 if created:
-                    counter, _ = VisitorCount.objects.get_or_create(date=today)
                     counter.count = (counter.count or 0) + 1
-                    counter.save(update_fields=['count'])
+
+                session, session_created = VisitorSession.objects.select_for_update().get_or_create(
+                    ip_address=ip,
+                    defaults={'last_seen_at': current_time}
+                )
+                is_new_session = session_created or (
+                    (current_time - session.last_seen_at).total_seconds() >= self.SESSION_TIMEOUT_SECONDS
+                )
+                if is_new_session:
+                    counter.session_count = (counter.session_count or 0) + 1
+
+                session.last_seen_at = current_time
+                session.save(update_fields=['last_seen_at'])
+                counter.save(update_fields=['count', 'session_count'])
         except IntegrityError:
             pass
         except Exception:

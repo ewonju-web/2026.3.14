@@ -20,78 +20,18 @@
             <div class="gn-profile-actions">
                 <a href="{% url 'index' %}" class="gn-profile-btn gn-profile-btn-home"><i class="bi bi-house me-1"></i>{{ LANG|tr:"mobile_home" }}</a>
                 <a href="{% url 'find_my_listings' %}" class="gn-profile-btn" style="border-color:#ca8a04;color:#a16207;"><i class="bi bi-link-45deg me-1"></i>내 매물 찾기</a>
+                <a href="/accounts/3rdparty/" class="gn-profile-btn gn-profile-btn-social"><i class="bi bi-person-check me-1"></i>소셜 계정 연결</a>
                 <a href="{% url 'chat_room_list' %}" class="gn-profile-btn gn-profile-btn-chat"><i class="bi bi-chat-dots me-1"></i>{{ LANG|tr:"nav_chat" }}</a>
                 <form action="{% url 'logout' %}" method="post" class="gn-profile-btn-form">
                     {% csrf_token %}
                     <button type="submit" class="gn-profile-btn gn-profile-btn-logout">{{ LANG|tr:"nav_logout" }}</button>
                 </form>
             </div>
+            <p class="small text-muted mt-2 mb-0">
+                네이버/카카오 로그인 중복 안내가 뜨면, 먼저 기존 계정으로 로그인 후 <strong>소셜 계정 연결</strong>에서 연동해 주세요.
+            </p>
         </div>
     </div>
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
-        <div class="card-body p-3 p-md-4">
-            <div class="fw-bold mb-2">유료 회원(단일 상품) 혜택</div>
-            <ul class="small text-muted mb-0" style="padding-left: 1.1rem; line-height: 1.6;">
-                <li>매물 검색 상단 우선 노출</li>
-                <li>메인 화면 프리미엄 영역 노출</li>
-                <li>주 1회 끌어올리기</li>
-                <li>매물 등록 무제한</li>
-                <li>판매자 명함 카드 노출 + 미니홈피 페이지 공개</li>
-            </ul>
-        </div>
-    </div>
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
-        <div class="card-body p-3 p-md-4">
-            <div class="fw-bold mb-2">소개글 설정</div>
-            <form method="post" class="gn-bio-form">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="update_bio">
-                <textarea name="bio" rows="3" class="form-control mb-2" placeholder="판매자 소개를 입력해 주세요.">{{ profile.bio|default:'' }}</textarea>
-                <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary btn-sm">저장</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <h5 class="fw-bold mb-3"><i class="bi bi-heart-fill text-danger"></i> {{ LANG|tr:"mypage_favorites" }}</h5>
-    {% if fav_equipments or fav_parts %}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
-        {% for e in fav_equipments %}
-        <div class="col">
-            <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                <div style="height:120px; background:#e2e8f0;">
-                    {% if e.images.all %}<img src="{{ e.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
-                </div>
-                <div class="card-body p-3">
-                    <h6 class="fw-bold mb-1">{% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}</h6>
-                    <p class="text-danger fw-bold mb-2">{{ e.listing_price|floatformat:0|intcomma }}만원</p>
-                    <a href="{% url 'equipment_detail' e.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
-                    <a href="{% url 'toggle_equipment_favorite' e.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-        {% for p in fav_parts %}
-        <div class="col">
-            <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                <div style="height:120px; background:#e2e8f0;">
-                    {% if p.images.all %}<img src="{{ p.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
-                </div>
-                <div class="card-body p-3">
-                    <h6 class="fw-bold mb-1">{{ p.title }}</h6>
-                    <p class="text-danger fw-bold mb-2">{{ p.price }}</p>
-                    <a href="{% url 'part_detail' p.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
-                    <a href="{% url 'toggle_part_favorite' p.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p class="text-muted mb-4">찜한 매물이 없습니다. 목록에서 하트를 눌러 저장하세요.</p>
-    {% endif %}
-
     <hr class="my-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <h5 class="fw-bold mb-0">{{ LANG|tr:"mypage_my_listings" }}</h5>
@@ -131,6 +71,93 @@
             {% else %}
                 <p class="text-muted">아직 등록한 매물이 없습니다.</p>
             {% endif %}
+
+            {% if profile.is_premium_active %}
+            <div class="card border-0 shadow-sm rounded-3 mt-4">
+                <div class="card-body p-3 p-md-4">
+                    <div class="fw-bold mb-2">소개글 설정</div>
+                    <form method="post" class="gn-bio-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_bio">
+                        <textarea name="bio" rows="3" class="form-control mb-2" placeholder="판매자 소개를 입력해 주세요.">{{ profile.bio|default:'' }}</textarea>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-sm">저장</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-heart-fill text-danger"></i> {{ LANG|tr:"mypage_favorites" }}</h5>
+            {% if fav_equipments or fav_parts %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
+                {% for e in fav_equipments %}
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
+                        <div style="height:120px; background:#e2e8f0;">
+                            {% if e.images.all %}<img src="{{ e.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold mb-1">{% if e.model_name %}{{ e.model_name }}{% else %}모름{% endif %}</h6>
+                            <p class="text-danger fw-bold mb-2">{{ e.listing_price|floatformat:0|intcomma }}만원</p>
+                            <a href="{% url 'equipment_detail' e.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
+                            <a href="{% url 'toggle_equipment_favorite' e.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% for p in fav_parts %}
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
+                        <div style="height:120px; background:#e2e8f0;">
+                            {% if p.images.all %}<img src="{{ p.images.first.image.url }}" class="w-100 h-100" style="object-fit:cover;">{% endif %}
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold mb-1">{{ p.title }}</h6>
+                            <p class="text-danger fw-bold mb-2">{{ p.price }}</p>
+                            <a href="{% url 'part_detail' p.pk %}" class="btn btn-sm btn-outline-primary">보기</a>
+                            <a href="{% url 'toggle_part_favorite' p.pk %}?next={% url 'my_page' %}" class="btn btn-sm btn-outline-secondary">찜 해제</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-4">찜한 매물이 없습니다. 목록에서 하트를 눌러 저장하세요.</p>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm rounded-3 mt-4">
+                <div class="card-body p-3 p-md-4">
+                    <div class="fw-bold mb-3">회원 등급별 혜택 비교</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded-3 h-100 p-3 bg-light">
+                                <div class="fw-bold mb-2">무료회원</div>
+                                <ul class="small text-muted mb-0" style="padding-left: 1.1rem; line-height: 1.6;">
+                                    <li>매물 등록 월 {{ free_listing_limit|default:10 }}건</li>
+                                    <li>일반 목록 노출</li>
+                                    <li>판매자 페이지(이 회원 매물 전체 보기) 비공개</li>
+                                    <li>끌어올리기 미지원</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded-3 h-100 p-3" style="border-color: rgba(232, 163, 23, 0.45) !important; background: #fffdf3;">
+                                <div class="fw-bold mb-2" style="color:#a16207;">유료회원</div>
+                                <ul class="small text-muted mb-0" style="padding-left: 1.1rem; line-height: 1.6;">
+                                    <li>매물 등록 무제한</li>
+                                    <li>매물 검색 상단 우선 노출</li>
+                                    <li>메인 화면 프리미엄 영역 노출</li>
+                                    <li>주 1회 끌어올리기</li>
+                                    <li>각 기종별 전문가 명함 노출</li>
+                                    <li>상세페이지에서 이 회원이 판매하는 다른 매물 보기</li>
+                                    <li>판매자 페이지 공개</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <hr class="mt-5">
             <div class="d-flex justify-content-end">
@@ -214,6 +241,7 @@
   }
   .gn-profile-btn-home:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
   .gn-profile-btn-chat:hover { background: #f8fafc; border-color: #64748b; }
+  .gn-profile-btn-social:hover { background: #ecfeff; border-color: #22d3ee; color: #0e7490; }
   .gn-profile-btn-logout {
     background: #1e293b;
     border-color: #1e293b;

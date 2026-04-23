@@ -42,7 +42,8 @@
     <div id="legacy-step-code" class="card border-0 shadow-sm rounded-3 d-none">
         <div class="card-body p-4">
             <h3 class="h6 fw-bold mb-3">2. 본인확인 (인증번호 확인)</h3>
-            <p class="text-muted small mb-3">휴대폰으로 받은 6자리 인증번호를 입력해 주세요.</p>
+            <p class="text-muted small mb-1">휴대폰으로 받은 6자리 인증번호를 입력해 주세요.</p>
+            <p class="text-muted small mb-3">인증번호는 3분 동안 유효하며, 재발송은 30초 후 가능합니다.</p>
             <div id="legacy-verify-err" class="alert alert-warning py-2 small d-none mb-3"></div>
             <form id="legacy-verify-form">
                 {% csrf_token %}
@@ -108,6 +109,7 @@
     var verifyErr = document.getElementById('legacy-verify-err');
     var loginUrl = '{{ login_url|escapejs }}';
     var resendBtn = document.getElementById('legacy-resend-btn');
+    var legacyPhoneInput = document.getElementById('id_legacy_phone');
     var resendAt = 0;
 
     function show(el) { el.classList.remove('d-none'); }
@@ -123,6 +125,18 @@
     }
     function showSendErr(msg) { sendErr.textContent = msg; sendErr.classList.remove('d-none'); }
     function showVerifyErr(msg) { verifyErr.textContent = msg; verifyErr.classList.remove('d-none'); }
+    function formatPhone(value) {
+        var digits = (value || '').replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 7) return digits.slice(0, 3) + '-' + digits.slice(3);
+        return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+    }
+
+    if (legacyPhoneInput) {
+        legacyPhoneInput.addEventListener('input', function() {
+            this.value = formatPhone(this.value);
+        });
+    }
 
     function startResendCooldown() {
         resendAt = Date.now() + 30000;
@@ -198,6 +212,8 @@
         var name = document.getElementById('id_legacy_name').value.trim();
         var phone = document.getElementById('legacy-verify-phone').value.trim();
         if (!phone) return;
+        document.getElementById('legacy-code').value = '';
+        showVerifyErr('');
         var fd = new FormData();
         fd.append('name', name);
         fd.append('phone', phone);

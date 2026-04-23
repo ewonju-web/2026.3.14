@@ -144,10 +144,10 @@
         </table>
       </div>
 
-      <!-- 3. 이 판매자의 다른 매물 6개 미리보기 -->
+      <!-- 3. 이 판매자의 다른 매물 6개 미리보기 (유료회원 전용) -->
       {% if author_is_premium and author_other_listings %}
       <div class="card gn-card-sharp gn-card-light p-3 mb-3" style="border-radius: 10px;">
-        <h6 class="gn-section-heading mb-2 small">이 판매자의 다른 매물</h6>
+        <h6 class="gn-section-heading mb-2 small">이 판매자의 다른 매물 보기</h6>
         <div class="row g-2">
           {% for eq in author_other_listings %}
           <div class="col-6">

@@ -9,13 +9,19 @@
         <div class="card-body">
             <h5 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ LANG|tr:"account_delete_confirm" }}</h5>
             <p class="mb-2">회원 탈퇴를 진행하면 <strong>{{ user_obj.username }}</strong> 계정으로 더 이상 로그인할 수 없습니다.</p>
-            <p class="mb-2">이미 등록하신 매물, 채팅 기록 등은 서비스 운영 기록을 위해 일부가 남을 수 있습니다.</p>
-            <p class="text-muted small mb-0">※ 탈퇴 후에는 계정을 복구할 수 없습니다. 신중히 진행해 주세요.</p>
+            <p class="mb-2">등록 매물은 시세 참고를 위해 <strong>6개월 후 자동 삭제</strong>됩니다.</p>
+            <p class="text-muted small mb-0">※ 원하시면 아래에서 매물을 즉시 삭제할 수 있습니다. 탈퇴 후에는 계정을 복구할 수 없습니다.</p>
         </div>
     </div>
 
     <form method="post" class="d-flex flex-wrap gap-2">
         {% csrf_token %}
+        <div class="form-check w-100 mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="delete_listings_now" name="delete_listings_now">
+            <label class="form-check-label" for="delete_listings_now">
+                내 매물을 지금 바로 모두 삭제합니다
+            </label>
+        </div>
         <a href="{% url 'my_page' %}" class="btn btn-outline-secondary px-4">{{ LANG|tr:"account_delete_cancel" }}</a>
         <button type="submit" class="btn btn-danger px-4">{{ LANG|tr:"account_delete_submit" }}</button>
     </form>

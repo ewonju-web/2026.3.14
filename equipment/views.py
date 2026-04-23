@@ -12,10 +12,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import timedelta
+import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from .models import Equipment, JobPost, Part, EquipmentImage, PartImage, PartsShop, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, Profile
+from .models import Equipment, JobPost, Part, EquipmentImage, PartImage, PartsShop, YoutubeContent, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, Profile
 from soil.models import SoilPost
 from .forms import EquipmentForm, EquipmentEditForm
 from .premium_utils import (
@@ -371,7 +373,7 @@ def index(request):
             "excavator": "굴삭기",
             "forklift": "지게차",
             "dump": "덤프트럭",
-            "loader": "로더/휠로더",
+            "loader": "스키로더/로더",
             "crane": "크레인",
             "attachment": "어태치먼트",
             "other": "기타 중장비",
@@ -527,7 +529,21 @@ def user_login(request):
                 'naver_login_url': _base.format('naver') + ('?next=' + quote(next_url) if next_url else ''),
             })
         user = authenticate(request, username=username, password=password)
+        # 보완 로그인은 활성 계정에만 제한한다.
+        # (탈퇴 계정은 자동 복구하지 않고 신규가입 흐름으로 유도)
+        if user is None:
+            # 일부 환경에서 authenticate 실패가 나는 경우를 보완하되,
+            # is_active=True 사용자만 허용한다.
+            candidate = User.objects.filter(username=username, is_active=True).first()
+            if candidate and candidate.check_password(password):
+                candidate.backend = 'django.contrib.auth.backends.ModelBackend'
+                user = candidate
         if user is not None:
+            # 운영 정책: 어드민 계정은 일반 서비스 로그인에서 사용하지 않음
+            # (관리자 계정은 /admin/ 에서만 로그인)
+            if user.is_staff or user.is_superuser:
+                messages.error(request, '관리자 계정은 관리자 페이지에서만 로그인할 수 있습니다.')
+                return redirect('/admin/login/')
             login(request, user)
             next_url = request.GET.get('next') or 'index'
             return redirect(next_url)
@@ -642,18 +658,32 @@ def join_check(request):
             fn = (getattr(p.user, 'first_name', None) or '').strip()
             if fn and legacy_name and fn != legacy_name:
                 continue
+        # 기존회원 전환은 "미전환 legacy 계정"에만 허용:
+        # - 아이디가 legacy_로 시작
+        # - 활성 계정
+        # - 탈퇴 이력 없음
+        uname = (getattr(p.user, 'username', None) or '').strip()
+        if not uname.startswith('legacy_'):
+            continue
+        if not getattr(p.user, 'is_active', False):
+            continue
+        if bool(getattr(p, 'withdrawn_at', None)):
+            continue
         profile = p
         break
     if profile is None:
         return JsonResponse({'ok': True, 'found': False})
-    temp_password = secrets.token_urlsafe(8)[:10]
-    profile.user.set_password(temp_password)
-    profile.user.save(update_fields=['password'])
+    user = profile.user
+
+    # 임시 비밀번호는 입력 실수를 줄이기 위해 숫자 4자리로 단순화
+    temp_password = "".join(secrets.choice("0123456789") for _ in range(4))
+    user.set_password(temp_password)
+    user.save(update_fields=['password'])
     # 기존 회원 전환 시 로그인 후 legacy_convert에서 phone_verified 처리
     return JsonResponse({
         'ok': True,
         'found': True,
-        'legacy_username': profile.user.username,
+        'legacy_username': user.username,
         'temp_password': temp_password,
     })
 
@@ -718,7 +748,8 @@ def check_username(request):
     username = (request.GET.get("username") or "").strip()
     if not username:
         return JsonResponse({"ok": False, "msg": "아이디를 입력하세요."})
-    if User.objects.filter(username=username).exists():
+    existing = User.objects.filter(username=username).first()
+    if existing and existing.is_active:
         return JsonResponse({"ok": False, "msg": "이미 사용 중인 아이디입니다."})
     return JsonResponse({"ok": True, "msg": "사용 가능한 아이디입니다."})
 
@@ -746,6 +777,9 @@ def my_page(request):
         profile = Profile.objects.create(user=request.user)
 
     if request.method == 'POST' and request.POST.get('action') == 'update_bio':
+        if not profile.is_premium_active:
+            messages.warning(request, '소개글 설정은 유료회원만 이용할 수 있습니다.')
+            return redirect('my_page')
         profile.bio = (request.POST.get('bio') or '').strip()
         profile.save(update_fields=['bio'])
         messages.success(request, '소개글이 저장되었습니다.')
@@ -761,6 +795,7 @@ def my_page(request):
         'fav_equipments': fav_equipments,
         'fav_parts': fav_parts,
         'is_legacy_user': is_legacy_user,
+        'free_listing_limit': FREE_LISTING_LIMIT,
     })
 
 
@@ -929,7 +964,7 @@ def legacy_convert(request):
             errors.append('새 로그인 아이디를 입력하세요.')
         elif new_username.startswith('legacy_'):
             errors.append('새 아이디는 legacy_ 로 시작할 수 없습니다.')
-        elif User.objects.filter(username=new_username).exclude(pk=user.pk).exists():
+        elif User.objects.filter(username=new_username, is_active=True).exclude(pk=user.pk).exists():
             errors.append('이미 사용 중인 아이디입니다.')
         if not email:
             errors.append('이메일을 입력하세요.')
@@ -962,24 +997,55 @@ def legacy_convert(request):
 @login_required(login_url='/login/')
 def account_delete(request):
     """
-    회원 탈퇴: 본인 계정 완전 삭제.
+    회원 탈퇴: 계정 비활성화 + 매물 보관 정책 적용.
     - GET: 확인 페이지
-    - POST: 로그아웃 후 User 삭제, 메인으로 이동
+    - POST:
+      - 기본: 매물 6개월 보관 후 자동 삭제 예약
+      - 옵션 선택 시: 매물 즉시 삭제
     """
     user = request.user
 
     if request.method != 'POST':
         return render(request, 'registration/account_delete_confirm.html', {'user_obj': user})
 
-    # 본인 작성 매물/부품/구인구직/흙 글 삭제
-    Equipment.objects.filter(author=user).delete()
+    delete_listings_now = request.POST.get('delete_listings_now') == '1'
+    now_ts = timezone.now()
+    purge_at = now_ts + timedelta(days=180)
+
+    # 매물: 기본은 6개월 보관, 선택 시 즉시 삭제
+    if delete_listings_now:
+        Equipment.objects.filter(author=user).delete()
+    else:
+        # author를 유지해야 목록/시세 참고 데이터로 계속 노출됩니다.
+        Equipment.objects.filter(author=user).update(is_sold=True)
+
+    # 기타 작성 콘텐츠는 즉시 삭제
     Part.objects.filter(author=user).delete()
     JobPost.objects.filter(author=user).delete()
     SoilPost.objects.filter(author=user).delete()
 
     username = user.username
-    user.delete()
-    messages.success(request, f'"{username}" 계정이 탈퇴 처리되었습니다.')
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.withdrawn_at = now_ts
+    profile.listing_purge_at = None if delete_listings_now else purge_at
+    # 정책: 탈퇴 후 재가입은 신규회원가입으로 처리
+    # -> legacy_member_id를 비워 기존회원 전환 탐지 대상에서 제외
+    profile.legacy_member_id = None
+    profile.save(update_fields=['withdrawn_at', 'listing_purge_at', 'legacy_member_id'])
+
+    # 로그인 차단용 비활성화 처리 (데이터 보관 목적)
+    user.is_active = False
+    user.set_unusable_password()
+    user.save(update_fields=['is_active', 'password'])
+    logout(request)
+
+    if delete_listings_now:
+        messages.success(request, f'"{username}" 계정 탈퇴 및 매물 즉시 삭제가 완료되었습니다.')
+    else:
+        messages.success(
+            request,
+            f'"{username}" 계정 탈퇴가 완료되었습니다. 등록 매물은 시세 참고용으로 6개월 보관 후 자동 삭제됩니다.',
+        )
     return redirect('index')
 
 
@@ -1357,36 +1423,169 @@ def job_delete(request, pk):
 
 # [3-1] 굴삭기 유튜브·정보
 def excavator_info(request):
-    """고장수리, 공사, 일머리, 부분별 등 굴삭기 관련 유튜브 링크/재생목록. playlist_id는 추후 .env 또는 DB에서 변경 가능."""
-    import os
-    default_playlist = os.getenv('YOUTUBE_DEFAULT_PLAYLIST_ID', 'PLm278VnZ6B9Z4Hsc62wR3r-3L0H1S9n-x')
-    categories = [
-        {'title': '고장·수리', 'description': '굴삭기 고장 진단, 수리, 점검 영상', 'playlist_id': os.getenv('YOUTUBE_PLAYLIST_REPAIR', default_playlist)},
-        {'title': '공사·현장', 'description': '굴삭기 공사, 현장 작업, 작업 요령', 'playlist_id': os.getenv('YOUTUBE_PLAYLIST_WORK', default_playlist)},
-        {'title': '일머리·운전', 'description': '굴삭기 운전 요령, 일머리, 안전', 'playlist_id': os.getenv('YOUTUBE_PLAYLIST_OPERATE', default_playlist)},
-        {'title': '부분별·부품', 'description': '부품별 설명, 점검, 교체', 'playlist_id': os.getenv('YOUTUBE_PLAYLIST_PARTS', default_playlist)},
-        {'title': '굴삭기나라 TV', 'description': '굴삭기 관련 다양한 정보', 'playlist_id': default_playlist},
+    """유튜브 콘텐츠: 기종 + 목적 동시 필터."""
+    from urllib.parse import parse_qs, urlparse
+
+    selected_equipment_type = (request.GET.get("equipment_type", "all") or "all").strip().lower()
+    selected_purpose = (request.GET.get("purpose", "all") or "all").strip().lower()
+
+    equipment_tabs = [
+        ("all", "전체"),
+        ("excavator", "굴삭기"),
+        ("forklift", "지게차"),
+        ("dump", "덤프트럭"),
+        ("loader", "스키로더"),
+        ("crane", "크레인"),
+        ("attachment", "어태치먼트"),
     ]
-    return render(request, 'equipment/excavator_info.html', {'categories': categories})
+    purpose_tabs = [
+        ("all", "전체"),
+        ("repair", "수리·정비"),
+        ("buying", "구매가이드"),
+        ("review", "기종리뷰"),
+        ("safety", "사고예방"),
+    ]
+    valid_equipment = {k for k, _ in equipment_tabs}
+    valid_purpose = {k for k, _ in purpose_tabs}
+    if selected_equipment_type not in valid_equipment:
+        selected_equipment_type = "all"
+    if selected_purpose not in valid_purpose:
+        selected_purpose = "all"
+
+    contents = YoutubeContent.objects.filter(is_active=True)
+    if selected_equipment_type != "all":
+        contents = contents.filter(equipment_type=selected_equipment_type)
+    if selected_purpose != "all":
+        contents = contents.filter(purpose=selected_purpose)
+
+    def _to_embed_url(url):
+        raw = (url or "").strip()
+        if not raw:
+            return ""
+        try:
+            parsed = urlparse(raw)
+            host = (parsed.netloc or "").lower()
+            if "youtu.be" in host:
+                vid = parsed.path.strip("/")
+                return f"https://www.youtube.com/embed/{vid}" if vid else ""
+            if "youtube.com" in host:
+                if parsed.path.startswith("/shorts/"):
+                    vid = parsed.path.split("/shorts/", 1)[1].strip("/")
+                    return f"https://www.youtube.com/embed/{vid}" if vid else ""
+                if parsed.path.startswith("/embed/"):
+                    return raw
+                vid = parse_qs(parsed.query).get("v", [""])[0].strip()
+                return f"https://www.youtube.com/embed/{vid}" if vid else ""
+            return raw
+        except Exception:
+            return raw
+
+    video_items = []
+    for item in contents:
+        video_items.append({
+            "title": item.title,
+            "description": item.description,
+            "embed_url": _to_embed_url(item.youtube_url),
+            "youtube_url": item.youtube_url,
+            "equipment_type": item.equipment_type,
+            "purpose": item.purpose,
+            "equipment_label": item.get_equipment_type_display(),
+            "purpose_label": item.get_purpose_display(),
+        })
+
+    return render(request, "equipment/excavator_info.html", {
+        "equipment_tabs": equipment_tabs,
+        "purpose_tabs": purpose_tabs,
+        "selected_equipment_type": selected_equipment_type,
+        "selected_purpose": selected_purpose,
+        "video_items": video_items,
+    })
 
 
 def parts_as(request):
-    """부품/AS: 전국 굴삭기 부품점 연락처 검색 + 어태치먼트 종류별 광고 영역"""
+    """부품/AS 센터 지도 + 목록 검색 페이지."""
     region = (request.GET.get('region', '') or '').strip()
-    query = (request.GET.get('q', '') or '').strip()
-    shops = PartsShop.objects.all()
+    manufacturer = (request.GET.get('manufacturer', '') or '').strip()
+    equipment_type = (request.GET.get('equipment_type', '') or '').strip().lower()
+    shop_kind = (request.GET.get('shop_kind', '') or '').strip().lower()
+
+    equipment_type_choices = [
+        ("all", "전체"),
+        ("excavator", "굴삭기"),
+        ("forklift", "지게차"),
+        ("dump", "덤프트럭"),
+        ("loader", "스키로더·로더"),
+        ("crane", "크레인"),
+        ("attachment", "어태치먼트"),
+        ("other", "기타"),
+    ]
+    equipment_label_by_key = {k: v for k, v in equipment_type_choices if k != "all"}
+    equipment_key_by_label = {v: k for k, v in equipment_label_by_key.items()}
+
+    shops_qs = PartsShop.objects.all()
     if region:
-        shops = shops.filter(region__icontains=region)
-    if query:
-        shops = shops.filter(
-            Q(name__icontains=query) | Q(address__icontains=query) | Q(note__icontains=query)
-        )
-    attachment_categories = Part.PART_CATEGORIES  # 어태치먼트 종류별 광고 슬롯용
+        shops_qs = shops_qs.filter(region__icontains=region)
+    if manufacturer:
+        shops_qs = shops_qs.filter(manufacturer__contains=[manufacturer])
+    if shop_kind in ("as", "parts"):
+        shops_qs = shops_qs.filter(shop_kind=shop_kind)
+
+    shops_data = []
+    for shop in shops_qs:
+        equipment_tags = [x for x in (shop.equipment_types or []) if x in equipment_key_by_label]
+        equipment_keys = [equipment_key_by_label[x] for x in equipment_tags]
+        if equipment_type and equipment_type != "all" and equipment_type not in equipment_keys:
+            continue
+        shops_data.append({
+            "id": shop.pk,
+            "name": shop.name,
+            "region": shop.region,
+            "contact": shop.contact,
+            "address": shop.address,
+            "note": shop.note,
+            "shop_kind": shop.shop_kind,
+            "equipment_keys": equipment_keys,
+            "equipment_tags": equipment_tags,
+            "manufacturers": shop.manufacturer or [],
+            "lat": shop.lat,
+            "lng": shop.lng,
+        })
+
+    region_options = list(
+        PartsShop.objects.exclude(region="").values_list("region", flat=True).distinct().order_by("region")
+    )
+    manufacturer_options = list(PartsShop.MANUFACTURER_CHOICES)
+    summary = {
+        "total": len(shops_data),
+        "as": sum(1 for item in shops_data if item["shop_kind"] == "as"),
+        "parts": sum(1 for item in shops_data if item["shop_kind"] == "parts"),
+    }
+
+    kakao_map_js_key = (getattr(settings, "KAKAO_MAP_JS_KEY", "") or "").strip()
+    if not kakao_map_js_key:
+        try:
+            from allauth.socialaccount.models import SocialApp
+            kakao_map_js_key = (
+                SocialApp.objects.filter(provider="kakao")
+                .values_list("client_id", flat=True)
+                .first()
+                or ""
+            ).strip()
+        except Exception:
+            kakao_map_js_key = ""
+
     return render(request, 'equipment/parts_as.html', {
-        'shops': shops,
+        'shops': shops_data,
         'region': region,
-        'query': query,
-        'attachment_categories': attachment_categories,
+        'manufacturer': manufacturer,
+        'selected_equipment_type': equipment_type or "all",
+        'selected_shop_kind': shop_kind or "all",
+        'equipment_type_choices': equipment_type_choices,
+        'region_options': region_options,
+        'manufacturer_options': manufacturer_options,
+        'summary': summary,
+        'shops_json': json.dumps(shops_data, ensure_ascii=False),
+        'kakao_map_js_key': kakao_map_js_key,
     })
 
 
@@ -1830,6 +2029,9 @@ def author_listings(request, user_id):
     author_showcase_public = bool(
         author_profile and getattr(author_profile, 'is_premium_active', False)
     )
+    # "이 회원 매물 전체 보기"는 유료 회원만 공개
+    if not author_showcase_public:
+        raise Http404()
 
     base_qs = (
         Equipment.objects.visible()

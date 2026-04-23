@@ -108,3 +108,17 @@
   <span>어제 방문자 <strong>{{ VISITOR_YESTERDAY }}</strong>명</span>
 </div>
 {% endblock %}
+
+{% block userlinks %}
+{% if site_url %}
+<a href="{% url 'admin_view_site' %}">사이트 보기</a> /
+{% endif %}
+{% if user.has_usable_password %}
+<a href="{% url 'admin:password_change' %}">비밀번호 변경</a> /
+{% endif %}
+<form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+    {% csrf_token %}
+    <button type="submit">로그아웃</button>
+</form>
+{% include "admin/color_theme_toggle.html" %}
+{% endblock %}

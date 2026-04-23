@@ -1,81 +1,637 @@
 {% extends "base.html" %}
+
+{% block title %}부품 / AS 센터 찾기 | 굴삭기나라{% endblock %}
+
+{% block extra_css %}
+<style>
+  .gn-partsas-page { background: transparent; padding: 1rem 0 1.6rem; }
+  .gn-partsas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.85rem;
+  }
+  .gn-partsas-title-wrap { min-width: 0; }
+  .gn-partsas-title {
+    margin: 0;
+    color: var(--gn-text);
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .gn-partsas-title::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 1.1rem;
+    margin-right: 0.55rem;
+    border-radius: 2px;
+    background: var(--gn-accent);
+    vertical-align: middle;
+  }
+  .gn-partsas-sub {
+    margin-top: 0.25rem;
+    color: var(--gn-muted);
+    font-size: 0.88rem;
+  }
+  .gn-partsas-head-btn {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    color: #334155;
+    background: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0.48rem 0.9rem;
+    white-space: nowrap;
+  }
+  .gn-partsas-head-btn:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #1e293b;
+  }
+
+  .gn-search-card {
+    background: #fff;
+    border: 1px solid var(--gn-border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--gn-shadow);
+  }
+  .gn-pill-wrap { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  .gn-pill-btn {
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #475569;
+    font-size: 0.92rem;
+    font-weight: 700;
+    padding: 0.4rem 0.85rem;
+  }
+  .gn-pill-btn.active { background: #374151; color: #e8a317; border-color: #374151; }
+  .gn-search-btn { background: #e8a317; color: #0f172a; font-weight: 800; border: none; }
+  .gn-search-btn:hover { background: #d49410; color: #0f172a; }
+
+  .gn-layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 0.85rem;
+    min-height: 560px;
+  }
+  .gn-list-panel, .gn-map-panel {
+    border: 1px solid var(--gn-border);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: var(--gn-shadow);
+  }
+  .gn-list-panel { display: flex; flex-direction: column; overflow: hidden; }
+  .gn-list-toolbar {
+    border-bottom: 1px solid #eceff4;
+    padding: 0.7rem 0.7rem 0.55rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .gn-kind-tabs { display: flex; gap: 0.4rem; }
+  .gn-kind-btn {
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.28rem 0.64rem;
+    color: #374151;
+  }
+  .gn-kind-btn.active { background: #374151; border-color: #374151; color: #fff; }
+  .gn-shop-list { overflow: auto; padding: 0.7rem; max-height: 560px; }
+  .gn-shop-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    padding: 0.78rem;
+    margin-bottom: 0.62rem;
+    transition: border-color .18s, background .18s, box-shadow .18s;
+    cursor: pointer;
+  }
+  .gn-shop-card:hover { border-color: #e8a317; box-shadow: 0 5px 12px rgba(17,24,39,.07); }
+  .gn-shop-card.active { background: #fffdf5; border: 2px solid #e8a317; }
+  .gn-shop-top { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; }
+  .gn-shop-name { font-weight: 800; margin: 0; font-size: 1rem; color: #101828; }
+  .gn-badge {
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .gn-badge.as { background: #dbeafe; color: #1d4ed8; }
+  .gn-badge.parts { background: #dcfce7; color: #166534; }
+  .gn-distance { color: #b45309; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.28rem; }
+  .gn-equip-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; }
+  .gn-equip-tag { background: #f4f4f5; color: #52525b; border-radius: 999px; font-size: 0.72rem; padding: 0.18rem 0.5rem; }
+  .gn-card-actions { display: flex; gap: 0.35rem; margin-top: 0.55rem; }
+  .gn-card-actions .btn { flex: 1; font-size: 0.82rem; font-weight: 700; }
+
+  .gn-map-panel { position: relative; overflow: hidden; }
+  #partsAsMap { width: 100%; height: 100%; min-height: 560px; }
+  .gn-map-tools {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .gn-map-tools .btn {
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #334155;
+  }
+  .gn-map-tools .btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+  }
+  .gn-empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 2.2rem 1rem;
+    border: 1px dashed #d1d5db;
+    border-radius: 12px;
+    background: #fafafa;
+  }
+  .gn-info-window { min-width: 220px; max-width: 280px; padding: 0.4rem; }
+  .gn-info-window .name { font-weight: 800; margin-bottom: 0.2rem; }
+  .gn-info-window .meta { font-size: 0.82rem; color: #4b5563; margin-bottom: 0.2rem; }
+  .gn-info-window .tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.35rem; }
+  .gn-info-window .tag { background: #f3f4f6; font-size: 0.72rem; border-radius: 999px; padding: 0.12rem 0.45rem; }
+  .gn-info-window .actions { display: flex; gap: 0.35rem; }
+  .gn-info-window .actions a {
+    flex: 1; text-align: center; text-decoration: none; border-radius: 8px; padding: 0.32rem 0.38rem; font-size: 0.76rem; font-weight: 700;
+  }
+  .gn-info-window .call { background: #111827; color: #fff; }
+  .gn-info-window .route { background: #e8a317; color: #111827; }
+
+  @media (max-width: 991.98px) {
+    .gn-layout { grid-template-columns: 1fr; }
+    .gn-shop-list { max-height: 330px; }
+    #partsAsMap { min-height: 420px; }
+    .gn-partsas-header { align-items: flex-start; flex-direction: column; }
+    .gn-partsas-title { font-size: 1.35rem; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <h2 class="section-title mb-4">부품/AS</h2>
+<div class="gn-partsas-page">
+  <div class="container">
+    <div class="gn-partsas-header">
+      <div class="gn-partsas-title-wrap">
+        <h2 class="gn-partsas-title">부품 / AS 센터 찾기</h2>
+        <div class="gn-partsas-sub">장비 기종과 지역을 선택하면 가까운 업체를 지도에서 확인할 수 있어요</div>
+      </div>
+      <a href="tel:01024693800" class="gn-partsas-head-btn">업체 등록 문의 →</a>
+    </div>
 
-    <!-- 전국 굴삭기 부품점 연락처 검색 -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-search me-2"></i>전국 굴삭기 부품점 연락처 검색</h5>
-            <form method="get" action="{% url 'parts_as' %}" class="row g-2 mb-0">
-                <div class="col-md-4">
-                    <input type="text" name="region" value="{{ region }}" class="form-control" placeholder="지역 (예: 서울, 경기, 부산)">
-                </div>
-                <div class="col-md-4">
-                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="업체명·주소·비고 검색">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">검색</button>
-                </div>
-                <div class="col-md-2">
-                    <a href="{% url 'parts_as' %}" class="btn btn-outline-secondary w-100">초기화</a>
-                </div>
-            </form>
+    <section class="gn-search-card">
+      <form id="partsAsSearchForm" class="row g-2">
+        <input type="hidden" id="equipmentTypeInput" value="{{ selected_equipment_type }}">
+        <div class="col-12">
+          <label class="small text-muted mb-2 d-block">장비 유형 선택</label>
+          <div class="gn-pill-wrap" id="equipmentTypePills">
+            {% for value, label in equipment_type_choices %}
+              <button type="button" class="gn-pill-btn {% if selected_equipment_type == value %}active{% endif %}" data-equipment-type="{{ value }}">{{ label }}</button>
+            {% endfor %}
+          </div>
         </div>
-    </div>
-
-    <div class="table-responsive mb-4">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>업체명</th>
-                    <th>지역</th>
-                    <th>연락처</th>
-                    <th>주소</th>
-                    <th>비고</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for shop in shops %}
-                <tr>
-                    <td class="fw-semibold">{{ shop.name }}</td>
-                    <td>{{ shop.region }}</td>
-                    <td>{{ shop.contact }}</td>
-                    <td class="text-muted small">{% if shop.address %}{{ shop.address }}{% else %}—{% endif %}</td>
-                    <td class="text-muted small">{% if shop.note %}{{ shop.note }}{% else %}—{% endif %}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">
-                        {% if region or query %}검색 결과가 없습니다.{% else %}등록된 부품점이 없습니다. 관리자에게 문의해 주세요.{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- 어태치먼트 종류별 광고 영역 (유료화) -->
-    <div class="card border-0 shadow-sm rounded-3 border-primary border-opacity-25">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-2"><i class="bi bi-megaphone me-2"></i>굴삭기 어태치먼트 종류별 광고</h5>
-            <p class="text-muted small mb-3">바가지·뿌레카·집게 등 어태치먼트 관련 업체·제품 광고를 넣을 수 있는 영역입니다. 광고 문의는 운영자에게 연락해 주세요.</p>
-            <div class="row g-3">
-                {% for value, label in attachment_categories %}
-                <div class="col-6 col-md-3">
-                    <div class="border rounded-3 p-3 text-center bg-light" style="min-height: 90px;">
-                        <span class="d-block fw-semibold small text-dark mb-1">{{ label }}</span>
-                        <span class="small text-muted">광고 문의</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+        <div class="col-12 col-md-4">
+          <label class="small text-muted mb-1 d-block">제조사</label>
+          <select id="manufacturerInput" class="form-select">
+            <option value="">전체</option>
+            {% for maker in manufacturer_options %}
+              <option value="{{ maker }}" {% if manufacturer == maker %}selected{% endif %}>{{ maker }}</option>
+            {% endfor %}
+          </select>
         </div>
-    </div>
+        <div class="col-12 col-md-4">
+          <label class="small text-muted mb-1 d-block">지역</label>
+          <select id="regionInput" class="form-select">
+            <option value="">전국</option>
+            {% for region_name in region_options %}
+              <option value="{{ region_name }}" {% if region == region_name %}selected{% endif %}>{{ region_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="small text-muted mb-1 d-block">업체 유형</label>
+          <select id="shopKindSelect" class="form-select">
+            <option value="all" {% if selected_shop_kind == "all" %}selected{% endif %}>전체 업체</option>
+            <option value="as" {% if selected_shop_kind == "as" %}selected{% endif %}>AS센터</option>
+            <option value="parts" {% if selected_shop_kind == "parts" %}selected{% endif %}>부품점</option>
+          </select>
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2 mt-1">
+          <button type="button" id="resetBtn" class="btn btn-outline-secondary">초기화</button>
+          <button type="submit" class="btn gn-search-btn">검색하기</button>
+        </div>
+      </form>
+    </section>
 
-    <div class="mt-4 d-flex gap-2">
-        <a href="{% url 'part_list' %}" class="btn btn-outline-secondary">어태치먼트 매물 보기</a>
-        <a href="{% url 'index' %}" class="btn btn-outline-secondary">메인으로</a>
-    </div>
+    <section class="gn-layout">
+      <div class="gn-list-panel">
+        <div class="gn-list-toolbar">
+          <div class="small text-muted"><strong id="resultCount">{{ summary.total }}</strong>개 업체</div>
+          <div class="gn-kind-tabs">
+            <button class="gn-kind-btn active" data-kind-filter="all">전체 (<span id="countAll">{{ summary.total }}</span>)</button>
+            <button class="gn-kind-btn" data-kind-filter="as">AS센터 (<span id="countAs">{{ summary.as }}</span>)</button>
+            <button class="gn-kind-btn" data-kind-filter="parts">부품점 (<span id="countParts">{{ summary.parts }}</span>)</button>
+          </div>
+        </div>
+        <div class="gn-shop-list" id="shopList"></div>
+      </div>
+
+      <div class="gn-map-panel">
+        <div id="partsAsMap"></div>
+        <div class="gn-map-tools">
+          <button class="btn btn-sm" id="myLocationBtn"><i class="bi bi-crosshair me-1"></i>내 위치</button>
+          <button class="btn btn-sm" id="fitBoundsBtn"><i class="bi bi-arrows-angle-expand me-1"></i>전체보기</button>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
+
+<script id="partsAsData" type="application/json">{{ shops_json|safe }}</script>
+{% endblock %}
+
+{% block extra_js %}
+{% if kakao_map_js_key %}
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_map_js_key }}&autoload=false&libraries=services,clusterer"></script>
+<script>
+  (function () {
+    const shops = JSON.parse(document.getElementById("partsAsData").textContent || "[]");
+    const state = {
+      equipmentType: document.getElementById("equipmentTypeInput").value || "all",
+      region: document.getElementById("regionInput").value || "",
+      manufacturer: document.getElementById("manufacturerInput").value.trim(),
+      shopKind: document.getElementById("shopKindSelect").value || "all",
+      listKindFilter: "all",
+      userPosition: null,
+      selectedShopId: null,
+    };
+
+    const regionCenters = {
+      "서울": { lat: 37.5665, lng: 126.9780 }, "경기": { lat: 37.4138, lng: 127.5183 }, "인천": { lat: 37.4563, lng: 126.7052 },
+      "부산": { lat: 35.1796, lng: 129.0756 }, "대구": { lat: 35.8714, lng: 128.6014 }, "광주": { lat: 35.1595, lng: 126.8526 },
+      "대전": { lat: 36.3504, lng: 127.3845 }, "울산": { lat: 35.5384, lng: 129.3114 }, "세종": { lat: 36.4800, lng: 127.2890 },
+      "강원": { lat: 37.8228, lng: 128.1555 }, "충북": { lat: 36.6357, lng: 127.4914 }, "충남": { lat: 36.6588, lng: 126.6728 },
+      "전북": { lat: 35.8200, lng: 127.1088 }, "전남": { lat: 34.8161, lng: 126.4630 }, "경북": { lat: 36.5760, lng: 128.5056 },
+      "경남": { lat: 35.4606, lng: 128.2132 }, "제주": { lat: 33.4996, lng: 126.5312 },
+    };
+
+    const listEl = document.getElementById("shopList");
+    const resultCountEl = document.getElementById("resultCount");
+    const countAllEl = document.getElementById("countAll");
+    const countAsEl = document.getElementById("countAs");
+    const countPartsEl = document.getElementById("countParts");
+
+    let map, geocoder, clusterer;
+    const markersById = new Map();
+    const infoWindowsById = new Map();
+    const geocodeCache = new Map();
+
+    function markerImage(kind) {
+      const text = kind === "as" ? "AS" : "부";
+      const color = kind === "as" ? "#2563eb" : "#16a34a";
+      const svg = encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='46' height='56'><path d='M23 2C12 2 3 11 3 22c0 14 18 30 20 32 2-2 20-18 20-32C43 11 34 2 23 2z' fill='${color}'/><circle cx='23' cy='22' r='13' fill='white'/><text x='23' y='26' font-size='11' font-family='Arial' font-weight='700' text-anchor='middle' fill='${color}'>${text}</text></svg>`
+      );
+      return new kakao.maps.MarkerImage(`data:image/svg+xml;charset=UTF-8,${svg}`, new kakao.maps.Size(34, 42), { offset: new kakao.maps.Point(17, 42) });
+    }
+
+    function sanitize(str) {
+      return (str || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function buildInfoWindowContent(shop) {
+      const tags = (shop.equipment_tags || []).slice(0, 4).map((t) => `<span class="tag">${sanitize(t)}</span>`).join("");
+      const contact = sanitize(shop.contact || "연락처 없음");
+      const address = sanitize(shop.address || shop.region || "");
+      const name = sanitize(shop.name);
+      const routeUrl = shop.lat && shop.lng ? `https://map.kakao.com/link/to/${encodeURIComponent(shop.name)},${shop.lat},${shop.lng}` : "#";
+      return `
+        <div class="gn-info-window">
+          <div class="name">${name}</div>
+          <div class="meta">${address}</div>
+          <div class="meta">${contact}</div>
+          <div class="tags">${tags}</div>
+          <div class="actions">
+            <a class="call" href="tel:${sanitize(shop.contact || "")}">전화하기</a>
+            <a class="route" href="${routeUrl}" target="_blank" rel="noopener">길찾기</a>
+          </div>
+        </div>`;
+    }
+
+    function distanceKm(aLat, aLng, bLat, bLng) {
+      const toRad = (v) => (v * Math.PI) / 180;
+      const R = 6371;
+      const dLat = toRad(bLat - aLat);
+      const dLng = toRad(bLng - aLng);
+      const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+    }
+
+    function inferRegionCenter(region) {
+      const key = Object.keys(regionCenters).find((k) => (region || "").includes(k));
+      return key ? regionCenters[key] : null;
+    }
+
+    function getFilteredShops() {
+      let result = shops.filter((shop) => {
+        if (state.equipmentType !== "all" && !(shop.equipment_keys || []).includes(state.equipmentType)) return false;
+        if (state.shopKind !== "all" && shop.shop_kind !== state.shopKind) return false;
+        if (state.region && !(shop.region || "").includes(state.region)) return false;
+        if (state.manufacturer) {
+          if (!Array.isArray(shop.manufacturers) || !shop.manufacturers.includes(state.manufacturer)) return false;
+        }
+        return true;
+      });
+      if (state.userPosition) {
+        result = result.map((shop) => {
+          if (shop.lat && shop.lng) {
+            shop.distanceKm = distanceKm(state.userPosition.lat, state.userPosition.lng, shop.lat, shop.lng);
+          } else {
+            shop.distanceKm = null;
+          }
+          return shop;
+        }).sort((a, b) => {
+          if (a.distanceKm == null && b.distanceKm == null) return 0;
+          if (a.distanceKm == null) return 1;
+          if (b.distanceKm == null) return -1;
+          return a.distanceKm - b.distanceKm;
+        });
+      }
+      return result;
+    }
+
+    function renderList(filtered) {
+      const listFiltered = filtered.filter((shop) => state.listKindFilter === "all" || shop.shop_kind === state.listKindFilter);
+      if (!listFiltered.length) {
+        listEl.innerHTML = `<div class="gn-empty">조건에 맞는 업체가 없습니다.</div>`;
+        return;
+      }
+      listEl.innerHTML = listFiltered.map((shop) => {
+        const active = state.selectedShopId === shop.id ? "active" : "";
+        const badge = shop.shop_kind === "as" ? "AS센터" : "부품점";
+        const distanceText = shop.distanceKm != null ? `${shop.distanceKm.toFixed(1)}km` : "";
+        const tags = (shop.equipment_tags || []).slice(0, 4).map((t) => `<span class="gn-equip-tag">${sanitize(t)}</span>`).join("");
+        const routeUrl = shop.lat && shop.lng ? `https://map.kakao.com/link/to/${encodeURIComponent(shop.name)},${shop.lat},${shop.lng}` : "#";
+        return `
+          <article class="gn-shop-card ${active}" data-shop-id="${shop.id}">
+            <div class="gn-shop-top">
+              <p class="gn-shop-name">${sanitize(shop.name)}</p>
+              <span class="gn-badge ${shop.shop_kind}">${badge}</span>
+            </div>
+            <div class="gn-distance">${distanceText}</div>
+            <div class="small text-muted mb-1"><i class="bi bi-geo-alt me-1"></i>${sanitize(shop.address || shop.region || "주소 미등록")}</div>
+            <div class="small fw-semibold mb-1"><i class="bi bi-telephone me-1"></i>${sanitize(shop.contact || "연락처 없음")}</div>
+            <div class="gn-equip-tags">${tags}</div>
+            <div class="gn-card-actions">
+              <a class="btn btn-outline-dark btn-sm" href="tel:${sanitize(shop.contact || "")}">전화하기</a>
+              <a class="btn btn-outline-secondary btn-sm" href="${routeUrl}" target="_blank" rel="noopener">길찾기</a>
+            </div>
+          </article>`;
+      }).join("");
+
+      listEl.querySelectorAll(".gn-shop-card").forEach((card) => {
+        card.addEventListener("click", function () {
+          const id = Number(this.dataset.shopId);
+          selectShop(id, true);
+        });
+      });
+    }
+
+    function updateCounts(filtered) {
+      const all = filtered.length;
+      const asCount = filtered.filter((x) => x.shop_kind === "as").length;
+      const partsCount = filtered.filter((x) => x.shop_kind === "parts").length;
+      countAllEl.textContent = String(all);
+      countAsEl.textContent = String(asCount);
+      countPartsEl.textContent = String(partsCount);
+      resultCountEl.textContent = String(all);
+    }
+
+    function refreshMarkers(filtered) {
+      const visible = filtered.filter((shop) => state.listKindFilter === "all" || shop.shop_kind === state.listKindFilter);
+      clusterer.clear();
+      const markers = [];
+      visible.forEach((shop) => {
+        const marker = markersById.get(shop.id);
+        if (marker) markers.push(marker);
+      });
+      if (markers.length) clusterer.addMarkers(markers);
+    }
+
+    function focusBounds(filtered) {
+      const bounds = new kakao.maps.LatLngBounds();
+      let count = 0;
+      filtered.forEach((shop) => {
+        if (shop.lat && shop.lng) {
+          bounds.extend(new kakao.maps.LatLng(shop.lat, shop.lng));
+          count += 1;
+        }
+      });
+      if (count > 0) {
+        map.setBounds(bounds);
+      } else if (state.region) {
+        const center = inferRegionCenter(state.region);
+        if (center) map.setCenter(new kakao.maps.LatLng(center.lat, center.lng));
+      }
+    }
+
+    function closeAllInfoWindows() {
+      infoWindowsById.forEach((iw) => iw.close());
+    }
+
+    function selectShop(id, moveMap) {
+      state.selectedShopId = id;
+      const filtered = getFilteredShops();
+      renderList(filtered);
+      refreshMarkers(filtered);
+      closeAllInfoWindows();
+      const marker = markersById.get(id);
+      const infoWindow = infoWindowsById.get(id);
+      if (marker && infoWindow) {
+        infoWindow.open(map, marker);
+        if (moveMap) map.panTo(marker.getPosition());
+      }
+      const card = listEl.querySelector(`.gn-shop-card[data-shop-id="${id}"]`);
+      if (card) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    function applyFilters(options) {
+      if (options) Object.assign(state, options);
+      const filtered = getFilteredShops();
+      updateCounts(filtered);
+      renderList(filtered);
+      refreshMarkers(filtered);
+      focusBounds(filtered);
+    }
+
+    function initPillEvents() {
+      document.querySelectorAll("#equipmentTypePills .gn-pill-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document.querySelectorAll("#equipmentTypePills .gn-pill-btn").forEach((el) => el.classList.remove("active"));
+          this.classList.add("active");
+          state.equipmentType = this.dataset.equipmentType;
+        });
+      });
+    }
+
+    function setupSearchForm() {
+      const form = document.getElementById("partsAsSearchForm");
+      const regionInput = document.getElementById("regionInput");
+      const manufacturerInput = document.getElementById("manufacturerInput");
+      const shopKindSelect = document.getElementById("shopKindSelect");
+      const resetBtn = document.getElementById("resetBtn");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        applyFilters({
+          region: regionInput.value,
+          manufacturer: manufacturerInput.value.trim(),
+          shopKind: shopKindSelect.value,
+        });
+      });
+
+      resetBtn.addEventListener("click", function () {
+        state.equipmentType = "all";
+        state.region = "";
+        state.manufacturer = "";
+        state.shopKind = "all";
+        state.listKindFilter = "all";
+        state.userPosition = null;
+        state.selectedShopId = null;
+        regionInput.value = "";
+        manufacturerInput.value = "";
+        shopKindSelect.value = "all";
+        document.querySelectorAll("#equipmentTypePills .gn-pill-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.equipmentType === "all");
+        });
+        document.querySelectorAll(".gn-kind-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.kindFilter === "all");
+        });
+        applyFilters();
+      });
+    }
+
+    function setupKindTabs() {
+      document.querySelectorAll(".gn-kind-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document.querySelectorAll(".gn-kind-btn").forEach((el) => el.classList.remove("active"));
+          this.classList.add("active");
+          state.listKindFilter = this.dataset.kindFilter;
+          const filtered = getFilteredShops();
+          renderList(filtered);
+          refreshMarkers(filtered);
+        });
+      });
+    }
+
+    function geocodeShop(shop) {
+      const cacheKey = `${shop.address || ""}|${shop.region || ""}`;
+      if (geocodeCache.has(cacheKey)) return Promise.resolve(geocodeCache.get(cacheKey));
+      return new Promise((resolve) => {
+        const target = shop.address || shop.region || "";
+        if (!target) { resolve(null); return; }
+        geocoder.addressSearch(target, function (result, status) {
+          if (status === kakao.maps.services.Status.OK && result && result[0]) {
+            const coords = { lat: Number(result[0].y), lng: Number(result[0].x) };
+            geocodeCache.set(cacheKey, coords);
+            resolve(coords);
+            return;
+          }
+          const fallback = inferRegionCenter(shop.region || "");
+          if (fallback) {
+            geocodeCache.set(cacheKey, fallback);
+            resolve(fallback);
+            return;
+          }
+          resolve(null);
+        });
+      });
+    }
+
+    async function buildMapObjects() {
+      for (const shop of shops) {
+        const coords = await geocodeShop(shop);
+        if (!coords) continue;
+        shop.lat = coords.lat;
+        shop.lng = coords.lng;
+        const marker = new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(coords.lat, coords.lng),
+          image: markerImage(shop.shop_kind),
+          title: shop.name,
+        });
+        const infoWindow = new kakao.maps.InfoWindow({ content: buildInfoWindowContent(shop) });
+        marker.setMap(map);
+        kakao.maps.event.addListener(marker, "click", function () {
+          selectShop(shop.id, false);
+        });
+        markersById.set(shop.id, marker);
+        infoWindowsById.set(shop.id, infoWindow);
+      }
+      applyFilters();
+    }
+
+    function setupMapButtons() {
+      document.getElementById("fitBoundsBtn").addEventListener("click", function () {
+        focusBounds(getFilteredShops());
+      });
+      document.getElementById("myLocationBtn").addEventListener("click", function () {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          state.userPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          map.panTo(new kakao.maps.LatLng(state.userPosition.lat, state.userPosition.lng));
+          applyFilters();
+        });
+      });
+    }
+
+    kakao.maps.load(function () {
+      map = new kakao.maps.Map(document.getElementById("partsAsMap"), {
+        center: new kakao.maps.LatLng(36.5, 127.8),
+        level: 13,
+      });
+      geocoder = new kakao.maps.services.Geocoder();
+      clusterer = new kakao.maps.MarkerClusterer({
+        map: map,
+        averageCenter: true,
+        minLevel: 8,
+        styles: [{
+          width: "46px", height: "46px", background: "rgba(26,26,26,.82)", borderRadius: "23px", color: "#F5A623", textAlign: "center", fontWeight: "700", lineHeight: "46px",
+        }],
+      });
+
+      initPillEvents();
+      setupSearchForm();
+      setupKindTabs();
+      setupMapButtons();
+      buildMapObjects();
+    });
+  })();
+</script>
+{% else %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const panel = document.querySelector(".gn-layout");
+    if (!panel) return;
+    panel.innerHTML = '<div class="alert alert-warning mb-0">카카오맵 키가 설정되지 않아 지도를 표시할 수 없습니다. 관리자에게 KAKAO_MAP_JS_KEY 설정을 요청해 주세요.</div>';
+  });
+</script>
+{% endif %}
 {% endblock %}

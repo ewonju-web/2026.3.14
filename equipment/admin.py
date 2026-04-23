@@ -1,12 +1,17 @@
 from django.contrib import admin
+from django import forms
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 from django.utils.formats import number_format
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.conf import settings
+import json
+from urllib.parse import urlencode
+from urllib.request import urlopen, Request
 from .models import (
-    Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop,
+    Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, YoutubeContent,
     EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, EquipmentType,
     ExcavatorEquipment, ForkliftEquipment, DumpEquipment, LoaderEquipment,
     CraneEquipment, AttachmentEquipment, OtherEquipment,
@@ -202,10 +207,105 @@ class PartAdmin(admin.ModelAdmin):
 
 @admin.register(PartsShop)
 class PartsShopAdmin(admin.ModelAdmin):
-    list_display = ['name', 'region', 'contact', 'address', 'created_at']
-    list_filter = ('region',)
-    search_fields = ['name', 'region', 'address', 'note']
+    class PartsShopAdminForm(forms.ModelForm):
+        equipment_types = forms.MultipleChoiceField(
+            choices=[(x, x) for x in PartsShop.EQUIPMENT_TYPE_CHOICES],
+            required=False,
+            widget=forms.CheckboxSelectMultiple,
+            label="취급 장비",
+        )
+        manufacturer = forms.MultipleChoiceField(
+            choices=[(x, x) for x in PartsShop.MANUFACTURER_CHOICES],
+            required=False,
+            widget=forms.CheckboxSelectMultiple,
+            label="취급 제조사",
+        )
+
+        class Meta:
+            model = PartsShop
+            fields = "__all__"
+
+    form = PartsShopAdminForm
+    list_display = ['name', 'shop_kind', 'region', 'contact', 'address', 'lat', 'lng', 'created_at']
+    list_filter = ('shop_kind', 'region')
+    search_fields = ['name', 'region', 'address', 'note', 'contact']
     list_per_page = 50
+    radio_fields = {'shop_kind': admin.HORIZONTAL}
+    fieldsets = (
+        (None, {'fields': ('name', 'shop_kind', 'region', 'contact')}),
+        ('취급 정보', {'fields': ('equipment_types', 'manufacturer')}),
+        ('주소·좌표', {'fields': ('address', ('lat', 'lng'), 'note')}),
+    )
+
+    def _get_kakao_rest_key(self):
+        key = (getattr(settings, 'KAKAO_REST_API_KEY', '') or '').strip()
+        if key:
+            return key
+        try:
+            from allauth.socialaccount.models import SocialApp
+            key = (
+                SocialApp.objects.filter(provider="kakao")
+                .values_list("client_id", flat=True)
+                .first()
+                or ""
+            ).strip()
+            return key
+        except Exception:
+            return ""
+
+    def _geocode_address(self, address):
+        addr = (address or "").strip()
+        if not addr:
+            return None
+        key = self._get_kakao_rest_key()
+        if not key:
+            return None
+        try:
+            query = urlencode({"query": addr})
+            req = f"https://dapi.kakao.com/v2/local/search/address.json?{query}"
+            request_obj = Request(req, headers={"Authorization": f"KakaoAK {key}"})
+            with urlopen(request_obj, timeout=5) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            docs = payload.get("documents") or []
+            if not docs:
+                return None
+            top = docs[0]
+            return (float(top.get("y")), float(top.get("x")))
+        except Exception:
+            return None
+
+    def save_model(self, request, obj, form, change):
+        # 주소가 있고 좌표가 비어있거나, 주소가 변경되었으면 저장 시 자동 지오코딩
+        address_changed = False
+        if change:
+            try:
+                old = PartsShop.objects.get(pk=obj.pk)
+                address_changed = (old.address or "").strip() != (obj.address or "").strip()
+            except PartsShop.DoesNotExist:
+                address_changed = True
+        else:
+            address_changed = True
+
+        needs_geocode = bool((obj.address or "").strip()) and (
+            obj.lat is None or obj.lng is None or address_changed
+        )
+        if needs_geocode:
+            coords = self._geocode_address(obj.address)
+            if coords:
+                obj.lat, obj.lng = coords
+
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(YoutubeContent)
+class YoutubeContentAdmin(admin.ModelAdmin):
+    list_display = [
+        "title", "equipment_type", "purpose", "sort_order", "is_active", "created_at",
+    ]
+    list_filter = ("equipment_type", "purpose", "is_active")
+    search_fields = ("title", "description", "youtube_url")
+    list_editable = ("sort_order", "is_active")
+    ordering = ("sort_order", "-created_at")
 
 
 # 3. 구인구직 및 프로필

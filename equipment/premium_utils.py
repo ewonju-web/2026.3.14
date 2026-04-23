@@ -13,7 +13,7 @@ PREMIUM_SIDEBAR_EXPERT_TITLE_BY_CATEGORY = {
     "excavator": "굴삭기 전문가들",
     "forklift": "지게차 전문가들",
     "dump": "덤프트럭 전문가들",
-    "loader": "로더·휠로더 전문가들",
+    "loader": "스키로더/로더 전문가들",
     "crane": "크레인 전문가들",
 }
 
@@ -96,4 +96,4 @@ def get_free_listing_count(user):
     ).count()
 
 
-FREE_LISTING_LIMIT = 10  # 무료 회원 한 달 매물 10건까지
+FREE_LISTING_LIMIT = 20  # 무료 회원 한 달 매물 20건까지

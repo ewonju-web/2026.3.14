@@ -1,49 +1,88 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-    .info-video-wrap { max-width: 480px; margin-left: auto; margin-right: auto; }
-    @media (min-width: 768px) { .info-video-wrap { max-width: 560px; } }
+  .info-shell { background: #fff; border: 1px solid var(--gn-border); border-radius: 14px; padding: 1rem; box-shadow: var(--gn-shadow); }
+  .info-head { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
+  .info-title { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--gn-text); }
+  .info-title::before { content: ""; display: inline-block; width: 4px; height: 1rem; margin-right: 0.5rem; border-radius: 2px; background: var(--gn-accent); vertical-align: middle; }
+  .info-desc { font-size: 0.88rem; color: var(--gn-muted); margin: 0.22rem 0 0; }
+  .info-tab-label { font-size: 0.82rem; color: #64748b; margin-bottom: 0.38rem; font-weight: 700; }
+  .info-tabs { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-bottom: 0.7rem; }
+  .info-tab {
+    text-decoration: none;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #475569;
+    font-size: 0.86rem;
+    font-weight: 700;
+    padding: 0.35rem 0.78rem;
+  }
+  .info-tab.active { background: #374151; border-color: #374151; color: #e8a317; }
+  .info-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 0.8rem; }
+  @media (min-width: 992px) { .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .info-card { border: 1px solid var(--gn-border); border-radius: 12px; background: #fff; overflow: hidden; }
+  .info-card-body { padding: 0.75rem; }
+  .info-video-wrap { border-radius: 10px; overflow: hidden; background: #111827; }
+  .info-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+  .info-badge { border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.14rem 0.48rem; background: #f1f5f9; color: #334155; }
+  .info-empty { border: 1px dashed #d1d5db; border-radius: 12px; background: #fafafa; color: #6b7280; text-align: center; padding: 2rem 1rem; }
 </style>
 <div class="container py-4">
-    <div class="text-center mb-4">
-        <h2 class="section-title mb-2">굴삭기 유튜브</h2>
-        <p class="text-muted small">고장·수리, 공사, 일머리, 부분별 등 굴삭기 관련 영상을 모았습니다.</p>
-    </div>
-
-    <!-- 어태치먼트 종류 -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
-        <div class="card-body p-3">
-            <h6 class="fw-bold mb-2"><i class="bi bi-tools me-1"></i>굴삭기 어태치먼트 종류</h6>
-            <div class="d-flex flex-wrap gap-2">
-                <a href="{% url 'part_list' %}?category=BUCKET" class="badge bg-secondary text-decoration-none py-2 px-3">바가지/버킷</a>
-                <a href="{% url 'part_list' %}?category=BREAKER" class="badge bg-secondary text-decoration-none py-2 px-3">뿌레카/함마</a>
-                <a href="{% url 'part_list' %}?category=GRAPPLE" class="badge bg-secondary text-decoration-none py-2 px-3">집게/그랩</a>
-                <a href="{% url 'part_list' %}?category=ETC" class="badge bg-secondary text-decoration-none py-2 px-3">기타 어태치먼트</a>
-                <a href="{% url 'part_list' %}" class="badge bg-dark text-decoration-none py-2 px-3">전체 보기</a>
-            </div>
+    <div class="info-shell">
+      <div class="info-head">
+        <div>
+          <h2 class="info-title">굴삭기 유튜브 / 정보</h2>
+          <p class="info-desc">기종 + 목적을 동시에 선택해 필요한 영상만 빠르게 확인하세요.</p>
         </div>
-    </div>
+      </div>
 
-    {% for cat in categories %}
-    <div class="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden">
-        <div class="card-body p-3">
-            <h6 class="fw-bold mb-0"><i class="bi bi-youtube text-danger me-1"></i>{{ cat.title }}</h6>
-            <p class="text-muted small mb-2">{{ cat.description }}</p>
-            <div class="info-video-wrap ratio ratio-16x9 rounded-2 overflow-hidden bg-dark">
-                <iframe
-                    src="https://www.youtube.com/embed/videoseries?list={{ cat.playlist_id }}"
-                    title="{{ cat.title }}"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                ></iframe>
+      <div class="info-tab-label">기종</div>
+      <div class="info-tabs">
+        {% for key, label in equipment_tabs %}
+          <a href="{% url 'excavator_info' %}?equipment_type={{ key }}&purpose={{ selected_purpose }}" class="info-tab {% if selected_equipment_type == key %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
+
+      <div class="info-tab-label">목적</div>
+      <div class="info-tabs mb-3">
+        {% for key, label in purpose_tabs %}
+          <a href="{% url 'excavator_info' %}?equipment_type={{ selected_equipment_type }}&purpose={{ key }}" class="info-tab {% if selected_purpose == key %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
+
+      {% if video_items %}
+      <div class="info-grid">
+        {% for item in video_items %}
+        <article class="info-card">
+          <div class="info-card-body">
+            <h6 class="fw-bold mb-1">{{ item.title }}</h6>
+            {% if item.description %}<p class="text-muted small mb-2">{{ item.description }}</p>{% endif %}
+            <div class="info-video-wrap ratio ratio-16x9">
+              {% if item.embed_url %}
+              <iframe
+                src="{{ item.embed_url }}"
+                title="{{ item.title }}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+              ></iframe>
+              {% endif %}
             </div>
-        </div>
-    </div>
-    {% endfor %}
-
-    <div class="text-center mt-4 mb-5">
-        <a href="{% url 'index' %}" class="btn btn-outline-secondary px-4" style="border-radius: 10px;">메인으로</a>
+            <div class="info-meta">
+              <span class="info-badge">{{ item.equipment_label }}</span>
+              <span class="info-badge">{{ item.purpose_label }}</span>
+              <a href="{{ item.youtube_url }}" target="_blank" rel="noopener" class="info-badge text-decoration-none">원본 보기</a>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="info-empty">
+        선택한 조건에 맞는 영상이 없습니다.
+      </div>
+      {% endif %}
     </div>
 </div>
 {% endblock %}

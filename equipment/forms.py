@@ -1,5 +1,5 @@
 from django import forms
-from .models import Equipment
+from .models import Equipment, Profile
 
 class EquipmentForm(forms.ModelForm):
     class Meta:
@@ -111,10 +111,12 @@ class EquipmentEditForm(forms.ModelForm):
 # === 회원가입: 중복확인, 비밀번호 재입력, 휴대폰 (추가) ===
 from django import forms
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 
 class UserSignupForm(forms.ModelForm):
-    """회원가입 폼 - 아이디, 이메일, 비밀번호 재입력, 휴대폰"""
+    """회원가입 폼 - 이름, 아이디, 이메일, 비밀번호 재입력, 휴대폰"""
+    name = forms.CharField(label="이름", max_length=50, required=True, widget=forms.TextInput(attrs={"placeholder": "이름"}))
     username = forms.CharField(label="아이디", max_length=150, widget=forms.TextInput(attrs={"placeholder": "아이디 입력"}))
     email = forms.EmailField(label="이메일", required=True, widget=forms.EmailInput(attrs={"placeholder": "이메일"}))
     password1 = forms.CharField(label="비밀번호", widget=forms.PasswordInput(attrs={"placeholder": "비밀번호"}))
@@ -125,12 +127,20 @@ class UserSignupForm(forms.ModelForm):
         model = User
         fields = ("username", "email")
 
+    def clean_name(self):
+        name = (self.cleaned_data.get("name") or "").strip()
+        if not name:
+            raise forms.ValidationError("이름을 입력하세요.")
+        return name
+
     def clean_username(self):
         username = self.cleaned_data.get("username", "").strip()
         if not username:
             raise forms.ValidationError("아이디를 입력하세요.")
-        if User.objects.filter(username=username).exists():
+        existing = User.objects.filter(username=username).first()
+        if existing and existing.is_active:
             raise forms.ValidationError("이미 사용 중인 아이디입니다.")
+        self._reusable_user = existing
         return username
 
     def clean_password2(self):
@@ -140,12 +150,42 @@ class UserSignupForm(forms.ModelForm):
             raise forms.ValidationError("비밀번호가 일치하지 않습니다.")
         return p2
 
+    def validate_unique(self):
+        """
+        비활성(탈퇴) 계정 username 재사용 시 ModelForm의 기본 unique 검증 우회.
+        """
+        if getattr(self, "_reusable_user", None) is None:
+            return super().validate_unique()
+        exclude = self._get_validation_exclusions()
+        exclude.add("username")
+        try:
+            self.instance.validate_unique(exclude=exclude)
+        except ValidationError as e:
+            self._update_errors(e)
+
     def save(self, commit=True):
+        reusable_user = getattr(self, "_reusable_user", None)
+        if reusable_user is not None and not reusable_user.is_active:
+            user = reusable_user
+            user.first_name = self.cleaned_data.get("name", "").strip()
+            user.email = self.cleaned_data.get("email", "").strip()
+            user.is_active = True
+            user.set_password(self.cleaned_data["password1"])
+            if commit:
+                user.save(update_fields=["first_name", "email", "is_active", "password"])
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.phone = self.cleaned_data.get("phone", "") or ""
+                profile.withdrawn_at = None
+                profile.listing_purge_at = None
+                profile.save(update_fields=["phone", "withdrawn_at", "listing_purge_at"])
+            return user
+
         user = super().save(commit=False)
+        user.first_name = self.cleaned_data.get("name", "").strip()
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
-            if hasattr(user, "member_profile"):
-                user.member_profile.phone = self.cleaned_data.get("phone", "") or "미입력"
-                user.member_profile.save()
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.phone = self.cleaned_data.get("phone", "") or ""
+            profile.save(update_fields=["phone"])
         return user

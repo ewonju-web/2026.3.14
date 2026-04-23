@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load socialaccount %}
+
+{% block title %}소셜 계정 연결 | 굴삭기나라{% endblock %}
+
+{% block extra_css %}
+<style>
+  .gn-social-wrap {
+    max-width: 760px;
+    margin: 2rem auto;
+  }
+  .gn-social-card {
+    border: 1px solid var(--gn-border);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--gn-shadow-hover);
+    padding: 1.25rem;
+  }
+  .gn-social-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-bottom: 0.35rem;
+  }
+  .gn-social-sub {
+    color: var(--gn-muted);
+    font-size: 0.95rem;
+  }
+  .gn-social-connected-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 0.65rem;
+    background: #f8fafc;
+  }
+  .gn-provider-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+  .gn-provider-btn--kakao {
+    background: #fee500;
+    color: #191919;
+    border-color: #f5d800;
+  }
+  .gn-provider-btn--naver {
+    background: #03c75a;
+    color: #ffffff;
+    border-color: #02b451;
+  }
+  .gn-provider-btn:hover {
+    filter: brightness(0.97);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="gn-social-wrap">
+    <div class="gn-social-card">
+      <h1 class="gn-social-title">소셜 계정 연결</h1>
+      <p class="gn-social-sub mb-4">기존 굴삭기나라 계정에 네이버/카카오 로그인을 연결할 수 있습니다.</p>
+
+      {% if form.accounts %}
+        <div class="alert alert-light border mb-3">
+          현재 연결된 소셜 계정입니다. 연결 해제를 원하면 항목을 선택하고 아래 버튼을 눌러주세요.
+        </div>
+        <form method="post" action="{% url 'socialaccount_connections' %}">
+          {% csrf_token %}
+          {% for choice in form.fields.account.choices %}
+            {% with account=choice.0.instance.get_provider_account %}
+              <label class="gn-social-connected-item w-100 d-flex align-items-center justify-content-between" for="id_account_{{ account.account.pk }}">
+                <span>
+                  <strong>{{ account.get_brand.name }}</strong>
+                  <span class="text-muted ms-2">{{ account }}</span>
+                </span>
+                <input
+                  type="radio"
+                  id="id_account_{{ account.account.pk }}"
+                  name="account"
+                  value="{{ account.account.pk }}"
+                  {% if forloop.first %}checked{% endif %}
+                >
+              </label>
+            {% endwith %}
+          {% endfor %}
+          <button type="submit" class="btn btn-outline-danger mt-2">선택 계정 연결 해제</button>
+        </form>
+      {% else %}
+        <div class="alert alert-warning mb-3">
+          아직 연결된 소셜 계정이 없습니다.
+        </div>
+      {% endif %}
+
+      <hr class="my-4">
+      <h2 class="h5 fw-bold mb-3">소셜 계정 추가 연결</h2>
+      <p class="text-muted small mb-3">기존 계정으로 로그인한 상태에서 아래 버튼으로 연결하세요.</p>
+
+      {% get_providers as socialaccount_providers %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for provider in socialaccount_providers %}
+          {% if provider.id == "kakao" %}
+            <a class="gn-provider-btn gn-provider-btn--kakao" href="{% provider_login_url provider.id process='connect' %}">카카오 연결</a>
+          {% elif provider.id == "naver" %}
+            <a class="gn-provider-btn gn-provider-btn--naver" href="{% provider_login_url provider.id process='connect' %}">네이버 연결</a>
+          {% else %}
+            <a class="btn btn-outline-secondary" href="{% provider_login_url provider.id process='connect' %}">{{ provider.name }} 연결</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
