@@ -240,7 +240,7 @@ class EquipmentImage(models.Model):
 
 
 class DeletedListingLog(models.Model):
-    """무료회원 재등록 제한: 삭제한 매물의 모델명·사진 해시를 저장해 동일 매물 재업로드 감지."""
+    """삭제 후 단기 재등록 제한용 로그(동일 기종+연식+가격)."""
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -249,12 +249,37 @@ class DeletedListingLog(models.Model):
     )
     model_name = models.CharField(max_length=100, blank=True, default="", verbose_name="모델명")
     image_hash = models.CharField(max_length=64, blank=True, default="", db_index=True, verbose_name="대표 사진 해시")
+    equipment_type = models.CharField(max_length=20, blank=True, default="", db_index=True, verbose_name="기종")
+    year_manufactured = models.IntegerField(null=True, blank=True, db_index=True, verbose_name="연식")
+    listing_price = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, db_index=True, verbose_name="가격")
     deleted_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="삭제 시각")
 
     class Meta:
         verbose_name = "삭제 매물 로그(재등록 제한)"
         verbose_name_plural = "삭제 매물 로그(재등록 제한)"
         ordering = ['-deleted_at']
+
+
+class EquipmentBumpLog(models.Model):
+    """끌어올리기 이력(주간 횟수 제한 계산용)."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='equipment_bump_logs',
+        verbose_name="사용자",
+    )
+    equipment = models.ForeignKey(
+        Equipment,
+        on_delete=models.CASCADE,
+        related_name='bump_logs',
+        verbose_name="매물",
+    )
+    bumped_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="끌어올리기 시각")
+
+    class Meta:
+        verbose_name = "매물 끌어올리기 로그"
+        verbose_name_plural = "매물 끌어올리기 로그"
+        ordering = ['-bumped_at']
 
 
 # --- 방문 통계 ---

@@ -26,6 +26,29 @@
         <div class="gn-stat-card"><div class="gn-stat-num">{{ stats.grade_label }}</div><div class="gn-stat-label">회원 등급</div></div>
     </div>
 
+    {% if profile.is_premium_active %}
+    <section class="gn-section-card mb-4">
+        <div class="gn-section-head">
+            <h5 class="gn-section-title">지역별 구매 문의 알림</h5>
+            <a href="{% url 'chat_room_list' %}" class="btn btn-sm btn-outline-secondary">채팅 보기</a>
+        </div>
+        {% if premium_region_inquiry_alerts %}
+        <div class="row g-2">
+            {% for alert in premium_region_inquiry_alerts %}
+            <div class="col-12 col-md-6">
+                <div class="gn-fav-card">
+                    <p class="fw-bold mb-1">{{ alert.region_label }}</p>
+                    <p class="small text-muted mb-0">읽지 않은 문의 {{ alert.unread_count }}건 · 문의 채팅방 {{ alert.room_count }}개</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">현재 읽지 않은 구매 문의가 없습니다.</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
     <div class="gn-quick-grid mb-4">
         <a href="{% url 'index' %}" class="gn-quick-item"><i class="bi bi-house"></i><span>홈</span></a>
         <a href="{% url 'find_my_listings' %}" class="gn-quick-item"><i class="bi bi-link-45deg"></i><span>내 매물 찾기</span></a>
@@ -102,7 +125,7 @@
                 <div class="gn-grade-card">
                     <div class="fw-bold mb-2">무료회원</div>
                     <ul class="small text-muted mb-3">
-                        <li>매물 등록 월 {{ free_listing_limit|default:10 }}건</li>
+                        <li>매물 등록 월 {{ free_listing_limit|default:20 }}건</li>
                         <li>일반 목록 노출</li>
                         <li>끌어올리기 미지원</li>
                     </ul>
@@ -113,10 +136,13 @@
                 <div class="gn-grade-card-pro">
                     <div class="fw-bold mb-2" style="color:#a16207;">유료회원</div>
                     <ul class="small mb-2">
-                        <li>✓ 매물 등록 무제한</li>
-                        <li>✓ 상단 우선 노출</li>
-                        <li>✓ 주 1회 끌어올리기</li>
-                        <li>✓ 판매자 페이지 공개</li>
+                        <li>✓ 매물 검색 상단 우선 노출</li>
+                        <li>✓ 메인 화면 프리미엄 영역 노출</li>
+                        <li>✓ 최근 7일 기준 최대 3회 끌어올리기</li>
+                        <li>✓ 매물 등록 월 50건 (무료: 월 {{ free_listing_limit|default:20 }}건)</li>
+                        <li>✓ 각 기종별 전문가 명함 노출</li>
+                        <li>✓ 상세페이지에서 이 회원이 판매하는 다른 매물 보기</li>
+                        <li>✓ 지역별 구매 문의 알림</li>
                     </ul>
                     <div class="fw-bold mb-2">100,000원/월</div>
                     <a href="{% url 'billing_upgrade' %}" class="btn gn-gold-btn w-100">지금 업그레이드</a>

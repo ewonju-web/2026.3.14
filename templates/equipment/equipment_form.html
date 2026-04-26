@@ -2,8 +2,15 @@
 {% block content %}
 <div class="container py-4" style="max-width: 720px;">
     <h2 class="section-title mb-4">{% if mode == "edit" %}매물 수정{% else %}매물 등록{% endif %}</h2>
-    {% if mode == "create" and not is_premium %}
-    <p class="small text-muted mb-3">무료 회원은 <strong>한 달에</strong> 매물 <strong>{{ free_listing_limit }}건</strong>까지 등록 가능합니다. (이번 달 <strong>{{ free_listing_count }}건</strong> 등록함 — 삭제해도 당월 건수에 포함, 다음 달에 초기화)</p>
+    {% if mode == "create" %}
+    <p class="small text-muted mb-3">
+        {% if is_premium %}
+        유료 회원은 <strong>한 달에</strong> 매물 <strong>{{ premium_listing_limit|default:50 }}건</strong>까지 등록 가능합니다.
+        {% else %}
+        무료 회원은 <strong>한 달에</strong> 매물 <strong>{{ free_listing_limit|default:20 }}건</strong>까지 등록 가능합니다.
+        {% endif %}
+        (이번 달 <strong>{{ monthly_listing_count|default:0 }}건</strong> 등록함 — 삭제해도 당월 건수에 포함, 다음 달에 초기화)
+    </p>
     {% endif %}
 
     <div class="card border-0 shadow-sm rounded-3 overflow-visible">

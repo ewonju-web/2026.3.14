@@ -81,10 +81,10 @@ def is_user_premium(user):
     return False
 
 
-def get_free_listing_count(user):
+def get_monthly_listing_count(user):
     """
-    무료 한도 계산용: 이번 달(당월)에 해당 사용자가 등록한 장비 매물 수.
-    삭제한 것도 포함 — 한 달에 10건까지만 등록 가능, 다음 달에 초기화.
+    이번 달(당월)에 해당 사용자가 등록한 장비 매물 수.
+    삭제한 것도 포함되며, 월 단위로만 초기화된다.
     """
     if not user or not user.is_authenticated:
         return 0
@@ -97,3 +97,17 @@ def get_free_listing_count(user):
 
 
 FREE_LISTING_LIMIT = 20  # 무료 회원 한 달 매물 20건까지
+PREMIUM_LISTING_LIMIT = 50  # 유료 회원 한 달 매물 50건까지
+BUMP_WEEKLY_LIMIT = 3  # 유료 회원 주간 끌어올리기 3회
+
+
+def get_listing_monthly_limit(user):
+    """회원 유형별 월 등록 한도."""
+    if is_user_premium(user):
+        return PREMIUM_LISTING_LIMIT
+    return FREE_LISTING_LIMIT
+
+
+def get_free_listing_count(user):
+    """하위 호환용 별칭."""
+    return get_monthly_listing_count(user)

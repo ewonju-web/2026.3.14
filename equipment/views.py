@@ -23,7 +23,11 @@ from .forms import EquipmentForm, EquipmentEditForm
 from .premium_utils import (
     is_user_premium,
     get_free_listing_count,
+    get_monthly_listing_count,
+    get_listing_monthly_limit,
     FREE_LISTING_LIMIT,
+    PREMIUM_LISTING_LIMIT,
+    BUMP_WEEKLY_LIMIT,
     get_premium_user_ids,
     get_premium_equipment_rotation,
     get_premium_equipment_sidebar,
@@ -796,6 +800,37 @@ def my_page(request):
     fav_equipments = Equipment.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
     fav_parts = Part.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
     total_views = my_equipments.aggregate(total=Coalesce(Sum('view_count'), 0))['total'] or 0
+    premium_region_inquiry_alerts = []
+    if profile.is_premium_active:
+        try:
+            from chat.models import ChatRoom
+
+            inquiry_rows = (
+                ChatRoom.objects.filter(seller=request.user, equipment__isnull=False)
+                .exclude(messages__sender=request.user)
+                .filter(messages__is_read=False)
+                .values('equipment__region_sido', 'equipment__region_sigungu')
+                .annotate(
+                    unread_count=Count('messages'),
+                    room_count=Count('id', distinct=True),
+                )
+                .order_by('-unread_count', '-room_count')
+            )
+            for row in inquiry_rows:
+                sido = (row.get('equipment__region_sido') or '').strip()
+                sigungu = (row.get('equipment__region_sigungu') or '').strip()
+                if sido and sigungu:
+                    region_label = f"{sido} {sigungu}"
+                else:
+                    region_label = sido or "지역 미입력"
+                premium_region_inquiry_alerts.append({
+                    'region_label': region_label,
+                    'unread_count': row.get('unread_count') or 0,
+                    'room_count': row.get('room_count') or 0,
+                })
+        except Exception:
+            premium_region_inquiry_alerts = []
+
     stats = {
         'my_count': my_equipments.count(),
         'fav_count': fav_equipments.count() + fav_parts.count(),
@@ -811,6 +846,7 @@ def my_page(request):
         'stats': stats,
         'is_legacy_user': is_legacy_user,
         'free_listing_limit': FREE_LISTING_LIMIT,
+        'premium_region_inquiry_alerts': premium_region_inquiry_alerts,
     })
 
 
@@ -1038,6 +1074,19 @@ def account_delete(request):
     Part.objects.filter(author=user).delete()
     JobPost.objects.filter(author=user).delete()
     SoilPost.objects.filter(author=user).delete()
+
+    # 소셜 계정 연결 해제:
+    # 탈퇴 후 재가입은 "신규가입" 정책이므로 기존 소셜 연결을 끊어 inactive 루프로 빠지지 않게 한다.
+    try:
+        from allauth.socialaccount.models import SocialAccount
+        SocialAccount.objects.filter(user=user).delete()
+    except Exception:
+        pass
+    try:
+        from allauth.account.models import EmailAddress
+        EmailAddress.objects.filter(user=user).delete()
+    except Exception:
+        pass
 
     username = user.username
     profile, _ = Profile.objects.get_or_create(user=user)
@@ -1803,17 +1852,22 @@ def equipment_detail(request, pk):
     if not nearby_parts_shops:
         nearby_parts_shops = list(shops_qs[:6])
 
-    # 끌어올리기: 본인 매물 + 유료회원 + 주 1회 제한
+    # 끌어올리기: 본인 매물 + 유료회원 + 최근 7일 기준 최대 3회 제한
     can_bump = False
     next_bump_at = None
     if request.user.is_authenticated and equipment.author_id == request.user.id and author_is_premium:
         from datetime import timedelta
+        from .models import EquipmentBumpLog
         now = timezone.now()
         week_ago = now - timedelta(days=7)
-        if not equipment.last_bumped_at or equipment.last_bumped_at <= week_ago:
+        week_logs = EquipmentBumpLog.objects.filter(
+            user=request.user,
+            bumped_at__gt=week_ago,
+        ).order_by('bumped_at')
+        if week_logs.count() < BUMP_WEEKLY_LIMIT:
             can_bump = True
         else:
-            next_bump_at = equipment.last_bumped_at + timedelta(days=7)
+            next_bump_at = week_logs.first().bumped_at + timedelta(days=7)
 
     return render(request, 'equipment/equipment_detail.html', {
         'equipment': equipment,
@@ -1855,55 +1909,64 @@ def equipment_create(request):
     if request.method == 'POST':
         form = EquipmentForm(request.POST)
         if form.is_valid():
-            # 무료 회원: 10건 초과 시 등록 불가 (유료 전환 유도)
-            if not is_user_premium(request.user):
-                current_count = get_free_listing_count(request.user)
-                if current_count >= FREE_LISTING_LIMIT:
+            # 회원 등급별 월 등록 제한
+            current_count = get_monthly_listing_count(request.user)
+            monthly_limit = get_listing_monthly_limit(request.user)
+            if current_count >= monthly_limit:
+                if is_user_premium(request.user):
+                    limit_msg = f'유료 회원은 한 달에 매물을 {PREMIUM_LISTING_LIMIT}건까지만 등록할 수 있습니다.'
+                else:
+                    limit_msg = f'무료 회원은 한 달에 매물을 {FREE_LISTING_LIMIT}건까지만 등록할 수 있습니다.'
+                messages.error(
+                    request,
+                    limit_msg + ' 이번 달 한도를 모두 사용했습니다. 삭제 후 다시 올려도 당월 건수에 포함되며, 다음 달부터 새로 등록할 수 있습니다.'
+                )
+                return render(request, 'equipment/equipment_form.html', {
+                    'form': form,
+                    'mode': 'create',
+                    'sido_choices': SIDO_CHOICES,
+                    'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
+                    'free_listing_count': current_count,
+                    'free_listing_limit': FREE_LISTING_LIMIT,
+                    'premium_listing_limit': PREMIUM_LISTING_LIMIT,
+                    'monthly_listing_count': current_count,
+                    'monthly_listing_limit': monthly_limit,
+                    'is_premium': is_user_premium(request.user),
+                })
+            # 허위 매물 방지: 사진 최소 1장 필수
+            image_files = request.FILES.getlist('images')
+            if not image_files or len(image_files) < 1:
+                form.add_error(None, ValidationError('허위 매물 방지를 위해 사진을 최소 1장 이상 등록해주세요.'))
+            else:
+                # 도배 방지: 삭제 후 7일 이내 동일 매물(기종+연식+가격) 재등록 차단
+                from datetime import timedelta
+                since = timezone.now() - timedelta(days=7)
+                equipment_type = (form.cleaned_data.get('equipment_type') or '').strip()
+                year_manufactured = form.cleaned_data.get('year_manufactured')
+                listing_price = form.cleaned_data.get('listing_price')
+                if DeletedListingLog.objects.filter(
+                    user=request.user,
+                    deleted_at__gte=since,
+                    equipment_type=equipment_type,
+                    year_manufactured=year_manufactured,
+                    listing_price=listing_price,
+                ).exists():
                     messages.error(
                         request,
-                        f'무료 회원은 한 달에 매물을 {FREE_LISTING_LIMIT}건까지만 등록할 수 있습니다. '
-                        '이번 달 한도를 모두 사용했습니다. 삭제 후 다시 올려도 당월 건수에 포함되며, 다음 달부터 새로 등록할 수 있습니다.'
+                        '도배 방지를 위해 삭제 후 7일 이내에는 동일 매물(같은 기종·연식·가격)을 다시 등록할 수 없습니다.'
                     )
                     return render(request, 'equipment/equipment_form.html', {
                         'form': form,
                         'mode': 'create',
                         'sido_choices': SIDO_CHOICES,
                         'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
-                        'free_listing_count': current_count,
+                        'free_listing_count': get_monthly_listing_count(request.user),
                         'free_listing_limit': FREE_LISTING_LIMIT,
-                        'is_premium': False,
+                        'premium_listing_limit': PREMIUM_LISTING_LIMIT,
+                        'monthly_listing_count': get_monthly_listing_count(request.user),
+                        'monthly_listing_limit': get_listing_monthly_limit(request.user),
+                        'is_premium': is_user_premium(request.user),
                     })
-            # 허위 매물 방지: 사진 최소 1장 필수
-            image_files = request.FILES.getlist('images')
-            if not image_files or len(image_files) < 1:
-                form.add_error(None, ValidationError('허위 매물 방지를 위해 사진을 최소 1장 이상 등록해주세요.'))
-            else:
-                # 무료회원 재등록 제한: 동일 모델/동일 사진 30일 이내 재업로드 차단
-                if not is_user_premium(request.user):
-                    model_name = (form.cleaned_data.get('model_name') or '').strip()
-                    first_hash = _image_hash_from_upload(image_files[0])
-                    from datetime import timedelta
-                    since = timezone.now() - timedelta(days=30)
-                    if DeletedListingLog.objects.filter(
-                        user=request.user,
-                        deleted_at__gte=since,
-                    ).filter(
-                        Q(model_name=model_name) | (Q(image_hash=first_hash) if first_hash else Q(pk=-1))
-                    ).exists():
-                        messages.error(
-                            request,
-                            '동일한 매물(같은 모델·같은 사진)은 삭제 후 30일이 지나야 다시 등록할 수 있습니다. '
-                            '유료 회원은 끌어올리기로 상단 노출을 이용해 주세요.'
-                        )
-                        return render(request, 'equipment/equipment_form.html', {
-                            'form': form,
-                            'mode': 'create',
-                            'sido_choices': SIDO_CHOICES,
-                            'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
-                            'free_listing_count': get_free_listing_count(request.user),
-                            'free_listing_limit': FREE_LISTING_LIMIT,
-                            'is_premium': False,
-                        })
                 # 해시 계산으로 읽은 첫 이미지 포인터 초기화 (저장 시 사용)
                 image_files[0].seek(0)
                 obj = form.save(commit=False)
@@ -1917,6 +1980,8 @@ def equipment_create(request):
         form = EquipmentForm(initial={'equipment_type': 'excavator'})
 
     free_count = get_free_listing_count(request.user) if request.user.is_authenticated else 0
+    monthly_count = get_monthly_listing_count(request.user) if request.user.is_authenticated else 0
+    monthly_limit = get_listing_monthly_limit(request.user) if request.user.is_authenticated else FREE_LISTING_LIMIT
     return render(request, 'equipment/equipment_form.html', {
         'form': form,
         'mode': 'create',
@@ -1924,6 +1989,9 @@ def equipment_create(request):
         'sigungu_map_json': json.dumps(SIGUNGU_MAP, ensure_ascii=False),
         'free_listing_count': free_count,
         'free_listing_limit': FREE_LISTING_LIMIT,
+        'premium_listing_limit': PREMIUM_LISTING_LIMIT,
+        'monthly_listing_count': monthly_count,
+        'monthly_listing_limit': monthly_limit,
         'is_premium': is_user_premium(request.user),
     })
 
@@ -1982,24 +2050,26 @@ def equipment_delete(request, pk):
         redirect_to = next_url
     else:
         redirect_to = reverse('my_page')
-    # 무료회원 삭제 시 재등록 제한용 로그 (동일 사진/모델 재업로드 감지)
-    if not is_user_premium(request.user):
-        try:
-            img_hash = _image_hash_from_equipment(equipment)
-            DeletedListingLog.objects.create(
-                user=request.user,
-                model_name=(equipment.model_name or '').strip(),
-                image_hash=img_hash or '',
-            )
-        except Exception:
-            pass
+    # 삭제 로그 기록(도배 방지: 7일 이내 동일 기종+연식+가격 재등록 제한)
+    try:
+        img_hash = _image_hash_from_equipment(equipment)
+        DeletedListingLog.objects.create(
+            user=request.user,
+            model_name=(equipment.model_name or '').strip(),
+            image_hash=img_hash or '',
+            equipment_type=(equipment.equipment_type or '').strip(),
+            year_manufactured=equipment.year_manufactured,
+            listing_price=equipment.listing_price,
+        )
+    except Exception:
+        pass
     equipment.delete()
     messages.success(request, '매물이 삭제되었습니다.')
     return redirect(redirect_to)
 
 
 def equipment_bump(request, pk):
-    """끌어올리기 — 유료회원만 주 1회. 매물을 목록 상단(최신순)으로 올림."""
+    """끌어올리기 — 유료회원만, 최근 7일 기준 최대 3회."""
     equipment = get_object_or_404(Equipment, pk=pk)
     if not request.user.is_authenticated:
         messages.info(request, '로그인 후 이용해 주세요.')
@@ -2013,15 +2083,21 @@ def equipment_bump(request, pk):
     now = timezone.now()
     from datetime import timedelta
     week_ago = now - timedelta(days=7)
-    if equipment.last_bumped_at and equipment.last_bumped_at > week_ago:
-        next_at = equipment.last_bumped_at + timedelta(days=7)
+    from .models import EquipmentBumpLog
+    week_logs = EquipmentBumpLog.objects.filter(
+        user=request.user,
+        bumped_at__gt=week_ago,
+    ).order_by('bumped_at')
+    if week_logs.count() >= BUMP_WEEKLY_LIMIT:
+        next_at = week_logs.first().bumped_at + timedelta(days=7)
         messages.warning(
             request,
-            f'끌어올리기는 주 1회만 가능합니다. 다음 이용 가능: {next_at.strftime("%Y-%m-%d %H:%M")}'
+            f'끌어올리기는 최근 7일 기준 최대 {BUMP_WEEKLY_LIMIT}회만 가능합니다. 다음 이용 가능: {next_at.strftime("%Y-%m-%d %H:%M")}'
         )
         return redirect('equipment_detail', pk=pk)
     equipment.last_bumped_at = now
     equipment.save(update_fields=['last_bumped_at'])
+    EquipmentBumpLog.objects.create(user=request.user, equipment=equipment)
     messages.success(request, '끌어올리기가 완료되었습니다. 최신순 목록 상단에 노출됩니다.')
     return redirect('equipment_detail', pk=pk)
 

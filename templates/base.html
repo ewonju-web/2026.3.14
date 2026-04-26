@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
-{% load i18n_extras %}
+{% load static i18n_extras %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,8 +58,26 @@
             font-weight: 700;
             color: #ffd86b !important;
             letter-spacing: -0.02em;
+            transition: transform .22s ease, filter .22s ease, opacity .22s ease;
         }
-        .navbar-gn .navbar-brand:hover { color: #ffe8a3 !important; }
+        .gn-brand-logo {
+            height: 40px;
+            width: auto;
+            display: block;
+            background: rgba(255,255,255,.96);
+            border-radius: 10px;
+            padding: 2px 7px;
+            transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
+        }
+        .navbar-gn .navbar-brand:hover {
+            color: #ffe8a3 !important;
+            transform: translateY(-1px);
+        }
+        .navbar-gn .navbar-brand:hover .gn-brand-logo {
+            transform: scale(1.03);
+            filter: saturate(1.15) brightness(1.03);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .18);
+        }
         .navbar-gn .nav-link {
             color: rgba(255,255,255,.88) !important;
             font-weight: 500;
@@ -228,6 +246,16 @@
         .gn-mobile-brand {
             font-size: 1.28rem;
             letter-spacing: -0.02em;
+            transition: transform .2s ease, opacity .2s ease;
+        }
+        .gn-mobile-brand .gn-brand-logo {
+            height: 34px;
+            padding: 2px 5px;
+            border-radius: 9px;
+        }
+        .gn-mobile-brand:active {
+            transform: translateY(1px) scale(.99);
+            opacity: .95;
         }
         .gn-mobile-header-icon {
             font-size: 1.4rem;
@@ -502,7 +530,9 @@
 <body class="{% block body_class %}{% endblock %}">
     <!-- 모바일 전용 상단바 (당근 스타일) -->
     <div class="gn-mobile-header">
-        <a href="{% url 'index' %}?category=" class="gn-mobile-brand text-white text-decoration-none fw-bold">굴삭기나라</a>
+        <a href="{% url 'index' %}?category=" class="gn-mobile-brand text-white text-decoration-none fw-bold">
+            <img src="{% static 'img/logo-navbar-ko.png' %}" alt="굴삭기나라" class="gn-brand-logo">
+        </a>
         <div class="d-flex align-items-center gap-2">
             <button class="btn btn-link text-white p-2 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#gnSearchOffcanvas" aria-label="검색"><i class="bi bi-search gn-mobile-header-icon"></i></button>
             <button class="btn btn-link text-white p-2 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#gnServiceMenu" aria-label="메뉴"><i class="bi bi-list gn-mobile-header-icon gn-mobile-header-icon--menu"></i></button>
@@ -571,7 +601,9 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top navbar-gn d-none d-md-flex">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'index' %}?category=">굴삭기나라</a>
+            <a class="navbar-brand" href="{% url 'index' %}?category=">
+                <img src="{% static 'img/logo-navbar-ko.png' %}" alt="굴삭기나라" class="gn-brand-logo">
+            </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="메뉴">
                 <span class="navbar-toggler-icon"></span>
             </button>

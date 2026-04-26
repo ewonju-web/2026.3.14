@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 from .models import (
     Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, YoutubeContent,
-    EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, EquipmentType,
+    EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, EquipmentType, EquipmentBumpLog,
     ExcavatorEquipment, ForkliftEquipment, DumpEquipment, LoaderEquipment,
     CraneEquipment, AttachmentEquipment, OtherEquipment,
 )
@@ -358,6 +358,8 @@ class ProfileAdmin(admin.ModelAdmin):
         'member_number_display',  # 회원번호(전화번호 우선)
         'phone',                   # 연락처(원본 전화)
         'name_display',           # 이름
+        'monthly_listing_status_display',
+        'weekly_bump_status_display',
         'created_display',        # 가입일
     ]
     list_filter = (MemberTypeFilter, 'phone_verified', 'user_type', PremiumStatusFilter, 'is_approved')
@@ -367,7 +369,14 @@ class ProfileAdmin(admin.ModelAdmin):
     # list_editable은 list_display에 없는 필드를 가리키면 SystemCheckError가 발생합니다.
     # 여기서는 편집 기능을 끄고(기본값) 조회 중심으로 동작하도록 합니다.
     list_editable = ()
-    readonly_fields = ('equipment_count_display', 'payment_count_display', 'reported_display', 'created_display')
+    readonly_fields = (
+        'equipment_count_display',
+        'payment_count_display',
+        'reported_display',
+        'created_display',
+        'monthly_listing_status_display',
+        'weekly_bump_status_display',
+    )
     date_hierarchy = 'user__date_joined'
 
     def get_queryset(self, request):
@@ -523,6 +532,39 @@ class ProfileAdmin(admin.ModelAdmin):
             return '-'
     created_display.short_description = '가입일'
 
+    def monthly_listing_status_display(self, obj):
+        try:
+            from equipment.premium_utils import (
+                is_user_premium,
+                get_monthly_listing_count,
+                FREE_LISTING_LIMIT,
+                PREMIUM_LISTING_LIMIT,
+            )
+            if not obj.user_id:
+                return '-'
+            count = get_monthly_listing_count(obj.user)
+            limit = PREMIUM_LISTING_LIMIT if is_user_premium(obj.user) else FREE_LISTING_LIMIT
+            return f'{count}/{limit}건'
+        except Exception:
+            return '-'
+    monthly_listing_status_display.short_description = '당월 등록'
+
+    def weekly_bump_status_display(self, obj):
+        try:
+            from datetime import timedelta
+            from equipment.premium_utils import BUMP_WEEKLY_LIMIT
+            if not obj.user_id:
+                return '-'
+            since = timezone.now() - timedelta(days=7)
+            count = EquipmentBumpLog.objects.filter(
+                user_id=obj.user_id,
+                bumped_at__gt=since,
+            ).count()
+            return f'{count}/{BUMP_WEEKLY_LIMIT}회'
+        except Exception:
+            return '-'
+    weekly_bump_status_display.short_description = '최근7일 끌어올리기'
+
 
 @admin.register(EquipmentFavorite)
 class EquipmentFavoriteAdmin(admin.ModelAdmin):
@@ -560,11 +602,20 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(DeletedListingLog)
 class DeletedListingLogAdmin(admin.ModelAdmin):
-    list_display = ('user', 'model_name', 'image_hash', 'deleted_at')
+    list_display = ('user', 'equipment_type', 'year_manufactured', 'listing_price', 'model_name', 'deleted_at')
     list_filter = ('deleted_at',)
-    search_fields = ('user__username', 'model_name')
+    search_fields = ('user__username', 'model_name', 'equipment_type')
     date_hierarchy = 'deleted_at'
     readonly_fields = ('deleted_at',)
+
+
+@admin.register(EquipmentBumpLog)
+class EquipmentBumpLogAdmin(admin.ModelAdmin):
+    list_display = ('user', 'equipment', 'bumped_at')
+    list_filter = ('bumped_at',)
+    search_fields = ('user__username', 'equipment__model_name')
+    date_hierarchy = 'bumped_at'
+    readonly_fields = ('bumped_at',)
 
 
 class CustomAuthUserAdmin(DjangoUserAdmin):
