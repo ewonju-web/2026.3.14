@@ -7,21 +7,16 @@
             <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
                 <div class="card-body p-5">
                     <h2 class="fw-bold mb-4 text-center" style="color: #111827; font-size: 1.5rem;">로그인</h2>
-                    {% if messages %}
-                    <div class="alert alert-danger py-2 small mb-3" role="alert">
-                        {% for message in messages %}{{ message }}{% endfor %}
-                    </div>
-                    {% endif %}
                     <form method="post" action="{% url 'login' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
                         {% csrf_token %}
                         {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-secondary">비밀번호</label>
-                            <input type="password" name="password" class="form-control" placeholder="임시 비밀번호 또는 비밀번호" required style="border-radius: 10px; padding: 0.75rem;">
-                        </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-secondary">아이디</label>
-                            <input type="text" name="username" class="form-control" placeholder="아이디" required style="border-radius: 10px; padding: 0.75rem;">
+                            <label class="form-label small fw-bold text-secondary" for="id_login_username">아이디</label>
+                            <input type="text" name="username" id="id_login_username" class="form-control" placeholder="아이디" required autocomplete="username" style="border-radius: 10px; padding: 0.75rem;">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-secondary" for="id_login_password">비밀번호</label>
+                            <input type="password" name="password" id="id_login_password" class="form-control" placeholder="임시 비밀번호 또는 비밀번호" required autocomplete="current-password" style="border-radius: 10px; padding: 0.75rem;">
                         </div>
                         <button type="submit" class="btn w-100 fw-bold py-2 mb-3 text-dark" style="background: var(--gn-accent); border-radius: 10px;">로그인</button>
                         <p class="text-center small text-muted mb-2">또는</p>

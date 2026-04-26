@@ -694,7 +694,25 @@
         <a href="{% url 'my_page' %}"><i class="bi bi-person nav-icon"></i>{{ LANG|tr:"mobile_my" }}</a>
     </nav>
 
-    <main>{% block content %}{% endblock %}</main>
+    <main>
+        {% if messages %}
+        <div class="container container-fluid py-2">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10 col-xl-8">
+                    {% for message in messages %}
+                    {% if "로그인 되었습니다." not in message|stringformat:"s" and "Successfully signed in as" not in message|stringformat:"s" %}
+                    <div class="alert alert-{% if 'error' in message.tags %}danger{% elif 'success' in message.tags %}success{% elif 'warning' in message.tags %}warning{% else %}info{% endif %} alert-dismissible fade show py-2 small mb-2" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="닫기"></button>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
     <footer>
         <div class="container">
             <div class="footer-nav mb-3">
@@ -1155,6 +1173,58 @@
         document.addEventListener("DOMContentLoaded", applyTranslations);
         window.addEventListener("load", applyTranslations);
         setTimeout(applyTranslations, 300);
+      })();
+    </script>
+    <script>
+      (function () {
+        function formatPhoneNumber(value) {
+          var digits = (value || "").replace(/\D/g, "").slice(0, 11);
+          if (digits.length < 4) return digits;
+          if (digits.length < 8) return digits.slice(0, 3) + "-" + digits.slice(3);
+          return digits.slice(0, 3) + "-" + digits.slice(3, 7) + "-" + digits.slice(7);
+        }
+
+        function isPhoneInput(el) {
+          if (!el || el.tagName !== "INPUT") return false;
+          var name = (el.name || "").toLowerCase();
+          var id = (el.id || "").toLowerCase();
+          var type = (el.type || "").toLowerCase();
+          return name === "phone" || id.indexOf("phone") !== -1 || type === "tel";
+        }
+
+        function bindPhoneInput(el) {
+          if (!isPhoneInput(el) || el.dataset.phoneMaskBound === "1") return;
+          el.dataset.phoneMaskBound = "1";
+          if (!el.maxLength || Number(el.maxLength) > 13) {
+            el.maxLength = 13;
+          }
+          if (!el.inputMode) {
+            el.inputMode = "numeric";
+          }
+
+          var onFormat = function (e) {
+            e.target.value = formatPhoneNumber(e.target.value);
+          };
+          el.addEventListener("input", onFormat);
+          el.addEventListener("blur", onFormat);
+          el.value = formatPhoneNumber(el.value);
+        }
+
+        function bindAllPhoneInputs() {
+          document.querySelectorAll("input").forEach(bindPhoneInput);
+        }
+
+        document.addEventListener("input", function (e) {
+          if (isPhoneInput(e.target)) {
+            bindPhoneInput(e.target);
+          }
+        });
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", bindAllPhoneInputs);
+        } else {
+          bindAllPhoneInputs();
+        }
       })();
     </script>
     {% block extra_js %}{% endblock %}

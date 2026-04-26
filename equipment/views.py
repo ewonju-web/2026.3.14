@@ -561,6 +561,8 @@ def user_login(request):
 
 
 def user_logout(request):
+    # 세션에 남은 플래시(소셜 로그인 성공 등)를 비우지 않으면 /login/ 등에서 뒤늦게 보일 수 있음
+    list(messages.get_messages(request))
     logout(request)
     return redirect('index')
 
@@ -737,10 +739,15 @@ def signup(request):
                     profile.save(update_fields=['phone', 'phone_verified', 'phone_verified_at'])
                 except Profile.DoesNotExist:
                     Profile.objects.create(user=user, phone=verified_phone, phone_verified=True, phone_verified_at=timezone.now())
-            return redirect("login")
+            return redirect("signup_done")
     else:
         form = UserSignupForm()
     return render(request, "registration/signup.html", {"form": form})
+
+
+def signup_done(request):
+    """일반 회원가입 완료 안내 화면(로그인 페이지로 이동)."""
+    return render(request, "registration/signup_done.html")
 
 
 def check_username(request):

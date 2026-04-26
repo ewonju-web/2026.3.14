@@ -34,7 +34,7 @@
                         </div>
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">휴대폰번호</label>
-                            <input type="text" name="phone" class="form-control" placeholder="010-0000-0000" value="{{ form.phone.value|default:'' }}" required style="border-radius: 10px;">
+                            <input type="text" name="phone" class="form-control" placeholder="010-0000-0000" value="{{ form.phone.value|default:'' }}" required maxlength="13" inputmode="numeric" style="border-radius: 10px;">
                             {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
                         </div>
                         <button type="submit" class="btn w-100 fw-bold py-2 text-dark mb-2" style="background: var(--gn-accent); border-radius: 10px;">가입 완료</button>
@@ -44,4 +44,23 @@
         </div>
     </div>
 </div>
+<script>
+function formatPhoneNumber(value) {
+  var digits = (value || "").replace(/\D/g, "").slice(0, 11);
+  if (digits.length < 4) return digits;
+  if (digits.length < 8) return digits.slice(0, 3) + "-" + digits.slice(3);
+  return digits.slice(0, 3) + "-" + digits.slice(3, 7) + "-" + digits.slice(7);
+}
+
+var phoneInput = document.querySelector('input[name="phone"]');
+if (phoneInput) {
+  phoneInput.addEventListener("input", function(e) {
+    e.target.value = formatPhoneNumber(e.target.value);
+  });
+  phoneInput.addEventListener("blur", function(e) {
+    e.target.value = formatPhoneNumber(e.target.value);
+  });
+  phoneInput.value = formatPhoneNumber(phoneInput.value);
+}
+</script>
 {% endblock %}

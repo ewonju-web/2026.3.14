@@ -224,7 +224,18 @@ CACHES = {
 USE_X_FORWARDED_HOST = True
 # 프록시가 X-Forwarded-Proto: https 일 때만 SSL로 간주. 두 번째 값이 "http"이면 http 요청이 secure로 오인되어 OAuth redirect_uri가 https://로 잘못 생성됨.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-CSRF_TRUSTED_ORIGINS = ['http://www.s2022.co.kr', 'https://www.s2022.co.kr', 'https://s2022.co.kr', 'http://s2022.co.kr', 'http://211.110.140.201', 'http://211.110.140.201:8001']
+# IP 직접·클론(8001)·nginx SSL 종료 시 Origin/Referer가 http 또는 https로 달라질 수 있으므로 둘 다 등록
+CSRF_TRUSTED_ORIGINS = [
+    'http://www.s2022.co.kr', 'https://www.s2022.co.kr', 'https://s2022.co.kr', 'http://s2022.co.kr',
+    'http://211.110.140.201', 'https://211.110.140.201',
+    'http://211.110.140.201:8001', 'https://211.110.140.201:8001',
+]
+_csrf_extra = _env_str("CSRF_TRUSTED_ORIGINS_EXTRA", "")
+if _csrf_extra:
+    for _part in _csrf_extra.split(","):
+        _p = _part.strip()
+        if _p and _p not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_p)
 LANGUAGE_CODE = 'ko-kr'
 USE_I18N = True
 

@@ -193,9 +193,9 @@ def chat_room_detail(request, room_id):
             room.save(update_fields=['last_message_at', 'updated_at'])
         return redirect('chat_room_detail', room_id=room_id)
 
-    messages = room.messages.select_related('sender').order_by('created_at')
+    chat_messages = room.messages.select_related('sender').order_by('created_at')
     return render(request, 'chat/room_detail.html', {
         'room': room,
         'other': other,
-        'messages': messages,
+        'chat_messages': chat_messages,
     })

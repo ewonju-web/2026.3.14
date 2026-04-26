@@ -23,7 +23,7 @@
             </div>
         </div>
         <div class="card-body flex-grow-1 overflow-auto py-3 gn-chat-messages" style="max-height: 55vh;">
-            {% for msg in messages %}
+            {% for msg in chat_messages %}
             <div class="d-flex mb-2 {% if msg.sender_id == user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
                 <div class="rounded-3 px-3 py-2 {% if msg.sender_id == user.id %}text-end{% endif %}" style="max-width: 75%; {% if msg.sender_id == user.id %}background: var(--gn-accent); color: #0f172a;{% else %}background: var(--gn-border); color: var(--gn-text);{% endif %} border-radius: 12px;">
                     <div class="small text-muted mb-0">{% if msg.sender_id == user.id %}{% if LANG == 'en' %}Me{% else %}나{% endif %}{% else %}{{ msg.sender.username }}{% endif %}</div>

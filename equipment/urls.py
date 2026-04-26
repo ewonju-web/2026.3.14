@@ -54,6 +54,7 @@ urlpatterns = [
     path('account/legacy-convert-send/', views.legacy_convert_send_code, name='legacy_convert_send_code'),
     path('account/signup-choices/', views.signup_choices, name='signup_choices'),
     path('signup/', views.signup, name='signup'),
+    path('signup/done/', views.signup_done, name='signup_done'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('mypage/', views.my_page, name='my_page'),
