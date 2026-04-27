@@ -1147,8 +1147,8 @@
   /* 유료 명함: 뷰포트 양끝이 아니라 .gn-index-container(최대 1200px) 바깥에 붙임 — 매물 그리드와 겹치지 않게 */
   .gn-premium-side {
     position: fixed;
-    /* top: JS가 #gn-recommend-block 기준으로 --gn-premium-top 설정 (추천 매물 시작 높이) */
-    top: var(--gn-premium-top, 120px);
+    /* 상단 네비 아래에서 시작(등록안내 헤더 가림 방지) */
+    top: 74px;
     width: 200px;
     z-index: 1015;
     --gn-premium-gap: 12px;
@@ -1165,7 +1165,7 @@
   .gn-premium-side-body {
     flex: 1 1 auto;
     min-height: 0;
-    max-height: calc(100vh - var(--gn-premium-top, 120px) - 24px);
+    max-height: calc(100vh - 90px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -1942,38 +1942,6 @@
     // PC / 모바일 둘 다 적용
     wireWeightFilter('gn-pc-sub-type', 'gn-pc-weight-class');
     wireWeightFilter('gn-mo-sub-type', 'gn-mo-weight-class');
-  })();
-
-  // PC xl: 유료 명함 시작 높이를 "추천 매물" 상단에 맞춤
-  (function() {
-    var sides = document.querySelectorAll('.gn-premium-side');
-    if (!sides.length) return;
-
-    function resolveAnchor() {
-      var rec = document.getElementById('gn-recommend-block');
-      if (rec && rec.offsetParent !== null) return rec;
-      var grid = document.querySelector('.gn-index-pc-initial');
-      if (grid && grid.offsetParent !== null) return grid;
-      var toolbar = document.querySelector('.gn-pc-result-toolbar');
-      if (toolbar && toolbar.offsetParent !== null) return toolbar;
-      return null;
-    }
-
-    function syncPremiumTop() {
-      var el = resolveAnchor();
-      var topPx = 120;
-      if (el) {
-        var r = el.getBoundingClientRect();
-        topPx = Math.max(56, Math.round(r.top));
-      }
-      document.documentElement.style.setProperty('--gn-premium-top', topPx + 'px');
-    }
-
-    syncPremiumTop();
-    window.addEventListener('resize', syncPremiumTop);
-    window.addEventListener('load', syncPremiumTop);
-    requestAnimationFrame(syncPremiumTop);
-    setTimeout(syncPremiumTop, 100);
   })();
 
 </script>

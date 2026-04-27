@@ -34,7 +34,11 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">아이디</label>
-                            <input type="text" name="username" class="form-control" placeholder="아이디" value="{{ form.username.value|default:'' }}" required style="border-radius: 10px;">
+                            <div class="d-flex gap-2">
+                                <input type="text" name="username" id="id_username" class="form-control" placeholder="아이디" value="{{ form.username.value|default:'' }}" required style="border-radius: 10px;">
+                                <button type="button" id="btn-check-username" class="btn btn-outline-secondary" style="border-radius: 10px; white-space: nowrap;">중복확인</button>
+                            </div>
+                            <span id="username-msg" class="form-text small"></span>
                             {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="mb-4">
@@ -50,6 +54,29 @@
     </div>
 </div>
 <script>
+var checkUsernameBtn = document.getElementById("btn-check-username");
+if (checkUsernameBtn) {
+  checkUsernameBtn.onclick = function() {
+    var un = document.getElementById("id_username").value.trim();
+    var msg = document.getElementById("username-msg");
+    if (!un) {
+      msg.textContent = "아이디를 입력하세요.";
+      msg.className = "form-text small text-danger";
+      return;
+    }
+    fetch("/signup/check-username/?username=" + encodeURIComponent(un))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        msg.textContent = d.msg;
+        msg.className = "form-text small " + (d.ok ? "text-success" : "text-danger");
+      })
+      .catch(function(){
+        msg.textContent = "중복확인 중 오류가 발생했습니다.";
+        msg.className = "form-text small text-danger";
+      });
+  };
+}
+
 function formatPhoneNumber(value) {
   var digits = (value || "").replace(/\D/g, "").slice(0, 11);
   if (digits.length < 4) return digits;
