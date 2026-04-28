@@ -3,7 +3,7 @@
 <div class="container py-4" style="max-width: 720px;">
     <h2 class="section-title mb-4">{% if mode == "edit" %}매물 수정{% else %}매물 등록{% endif %}</h2>
     {% if mode == "create" %}
-    <p class="small text-muted mb-3">
+    <p class="small mb-3 gn-form-notice-strong">
         {% if is_premium %}
         유료 회원은 <strong>한 달에</strong> 매물 <strong>{{ premium_listing_limit|default:50 }}건</strong>까지 등록 가능합니다.
         {% else %}
@@ -216,7 +216,7 @@
                     <div class="col-12">
                         <label class="form-label">차량번호(장비번호) <span class="text-muted small">(선택)</span></label>
                         {{ form.vehicle_number }}
-                        <p class="form-text small text-muted mb-0 mt-1">추후 차량번호 조회로 연식/모델 자동 입력 예정</p>
+                        <p class="form-text small mb-0 mt-1 gn-form-notice-strong">추후 차량번호 조회로 연식/모델 자동 입력 예정</p>
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-bold">지역</label>
@@ -245,7 +245,7 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-bold">사진 (1장 이상 필수)</label>
-                        <p class="form-text small text-muted mb-1">허위 매물 방지를 위해 실제 장비 사진을 1장 이상 등록해주세요.</p>
+                        <p class="form-text small mb-1 gn-form-notice-strong">허위 매물 방지를 위해 실제 장비 사진을 1장 이상 등록해주세요.</p>
                         <div class="photo-upload d-flex flex-wrap gap-2 align-items-center">
                             <label for="photo_gallery" class="btn btn-outline-secondary mb-0" style="border-radius: 10px;">
                                 <i class="bi bi-images me-1"></i> 갤러리에서 선택
@@ -258,7 +258,7 @@
                             <input id="id_images" type="file" name="images" multiple hidden>
                         </div>
                         <div id="preview-container" class="d-flex flex-wrap gap-2 mt-3"></div>
-                        <p class="form-text small mb-0 mt-2">모바일: 갤러리에서 선택은 앨범, 사진 촬영은 카메라가 열려요. X를 누르면 제거됩니다.</p>
+                        <p class="form-text small mb-0 mt-2 gn-form-notice-strong">모바일: 갤러리에서 선택은 앨범, 사진 촬영은 카메라가 열려요. X를 누르면 제거됩니다.</p>
                         {% if form.non_field_errors %}<p class="text-danger small mt-1 mb-0">{{ form.non_field_errors.0 }}</p>{% endif %}
                     </div>
                 </div>
@@ -298,6 +298,11 @@
   }
   #equipment-form .form-text {
     color: #4b5563 !important;
+  }
+  .gn-form-notice-strong {
+    color: #334155 !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em;
   }
   #equipment-form .text-muted.small {
     color: #4b5563 !important;

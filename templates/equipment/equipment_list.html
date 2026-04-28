@@ -367,7 +367,7 @@
                     <div class="d-flex align-items-center mb-2">
                         <span class="small fw-semibold">상세검색</span>
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-2" id="gn-mo-step-maker">
                         <label class="form-label form-label-sm mb-1">제조사</label>
                         <select name="maker" class="form-select form-select-sm gn-filter-select">
                             <option value="">전체</option>
@@ -399,7 +399,7 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-2" id="gn-mo-step-subtype">
                         <label class="form-label form-label-sm mb-1">{% if filter_category == 'excavator' %}종류{% else %}형식{% endif %}</label>
                         <select name="sub_type" id="gn-mo-sub-type" class="form-select form-select-sm gn-filter-select">
                             <option value="">전체</option>
@@ -415,7 +415,7 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-2" id="gn-mo-step-weight">
                         <label class="form-label form-label-sm mb-1">장비중량</label>
                         <select name="weight_class" id="gn-mo-weight-class" class="form-select form-select-sm gn-filter-select">
                             <option value="">전체</option>
@@ -452,7 +452,7 @@
                         </select>
                     </div>
                     <!-- 상세검색(모바일)에서는 모델명 입력은 사용하지 않음 -->
-                    <div class="row g-2">
+                    <div class="row g-2" id="gn-mo-step-years">
                         <div class="col-6">
                             <label class="form-label form-label-sm mb-1">년식(시작)</label>
                             <select name="year_min" class="form-select form-select-sm gn-filter-select">
@@ -520,7 +520,7 @@
                         </div>
                     </div>
                     {% if filter_category == 'forklift' %}
-                    <div class="mt-2">
+                    <div class="mt-2" id="gn-mo-step-mast">
                         <label class="form-label form-label-sm mb-1">타입</label>
                         <select name="mast_type" class="form-select form-select-sm gn-filter-select">
                             <option value="">전체</option>
@@ -534,7 +534,7 @@
         </form>
 
         <!-- 모바일 상세검색 하단 고정 바: 검색초기화 / 조회하기 (원본 서버와 동일) -->
-        <div class="gn-mobile-filter-bar d-md-none">
+        <div class="gn-mobile-filter-bar d-md-none" id="gn-mobile-filter-bar">
             <button type="button" id="gn-filter-reset-btn" class="btn btn-outline-light flex-fill me-1">
                 검색초기화
             </button>
@@ -1148,7 +1148,7 @@
   .gn-premium-side {
     position: fixed;
     /* 상단 네비 아래에서 시작(등록안내 헤더 가림 방지) */
-    top: 74px;
+    top: 80px;
     width: 200px;
     z-index: 1015;
     --gn-premium-gap: 12px;
@@ -1165,7 +1165,7 @@
   .gn-premium-side-body {
     flex: 1 1 auto;
     min-height: 0;
-    max-height: calc(100vh - 90px);
+    max-height: calc(100vh - 96px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -1375,11 +1375,10 @@
     font-weight: 500;
   }
   .gn-mobile-filter-bar {
-    position: sticky;
-    bottom: 0.35rem;
-    z-index: 15;
-    padding: 0.35rem 0.75rem 0.5rem;
-    background: linear-gradient(to top, rgba(255,255,255,0.98), rgba(248,250,252,0.95), transparent);
+    position: static;
+    z-index: 1;
+    padding: 0.35rem 0 0.2rem;
+    background: transparent;
     display: flex;
     gap: 0.5rem;
   }
@@ -1848,6 +1847,41 @@
         var url = '{% url "index" %}' + (cat ? '?category=' + encodeURIComponent(cat) : '');
         window.location.href = url;
       });
+    }
+
+    // 모바일(굴삭기/지게차): 단계형 상세검색 노출
+    if (form) {
+      var makerSel = form.querySelector('select[name="maker"]');
+      var subTypeSel = form.querySelector('select[name="sub_type"]');
+      var weightSel = form.querySelector('select[name="weight_class"]');
+      var stepSub = document.getElementById('gn-mo-step-subtype');
+      var stepWeight = document.getElementById('gn-mo-step-weight');
+      var stepYears = document.getElementById('gn-mo-step-years');
+      var stepMast = document.getElementById('gn-mo-step-mast');
+      var mobileBar = document.getElementById('gn-mobile-filter-bar');
+
+      function toggleStep(el, show) {
+        if (!el) return;
+        el.style.display = show ? '' : 'none';
+      }
+
+      function syncMobileStepFlow() {
+        var hasMaker = makerSel && (makerSel.value || '').trim() !== '';
+        var hasSubType = subTypeSel && (subTypeSel.value || '').trim() !== '';
+        var hasWeight = weightSel && (weightSel.value || '').trim() !== '';
+
+        toggleStep(stepSub, hasMaker);
+        toggleStep(stepWeight, hasSubType);
+        toggleStep(stepYears, hasWeight);
+        toggleStep(stepMast, hasWeight);
+        // 하단 액션 버튼은 처음부터 항상 노출 (단계가 늘어나면 자연스럽게 아래로 밀림)
+        toggleStep(mobileBar, true);
+      }
+
+      if (makerSel) makerSel.addEventListener('change', syncMobileStepFlow);
+      if (subTypeSel) subTypeSel.addEventListener('change', syncMobileStepFlow);
+      if (weightSel) weightSel.addEventListener('change', syncMobileStepFlow);
+      syncMobileStepFlow();
     }
   })();
 

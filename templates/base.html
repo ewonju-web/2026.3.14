@@ -90,6 +90,10 @@
             color: var(--gn-accent) !important;
             background: var(--gn-nav-hover);
         }
+        .navbar-gn .nav-link.active {
+            color: var(--gn-accent) !important;
+            background: var(--gn-nav-hover);
+        }
         /* 현장 자재 나눔 메뉴: 기본 메뉴 톤과 통일 */
         .navbar-gn .nav-link.soil-nav {
             font-weight: 500;
@@ -97,6 +101,10 @@
             color: rgba(255,255,255,.88) !important;
         }
         .navbar-gn .nav-link.soil-nav:hover {
+            color: var(--gn-accent) !important;
+            background: var(--gn-nav-hover);
+        }
+        .navbar-gn .nav-link.soil-nav.active {
             color: var(--gn-accent) !important;
             background: var(--gn-nav-hover);
         }
@@ -117,8 +125,8 @@
         }
         .navbar-gn .btn-outline-light:hover {
             background: rgba(255,255,255,.1);
-            border-color: #fff;
-            color: #fff;
+            border-color: var(--gn-accent);
+            color: var(--gn-accent);
         }
         .navbar-gn .btn-accent {
             background: var(--gn-accent);
@@ -609,11 +617,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'job_list' %}">{{ LANG|tr:"nav_jobs" }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'part_list' %}">{{ LANG|tr:"nav_attachment" }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'excavator_info' %}">{{ LANG|tr:"nav_youtube" }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'parts_as' %}">{{ LANG|tr:"nav_parts_as" }}</a></li>
-                    <li class="nav-item"><a class="nav-link soil-nav" href="{% url 'soil_list' %}">{{ LANG|tr:"nav_soil" }}</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}?category=">{{ LANG|tr:"nav_market_view" }}</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'equipment_create' %}active{% endif %}" href="{% if user.is_authenticated %}{% url 'equipment_create' %}{% else %}{% url 'login' %}?next={% url 'equipment_create' %}{% endif %}">{{ LANG|tr:"nav_register" }}</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'job_list' or request.resolver_match.url_name == 'job_create' or request.resolver_match.url_name == 'job_detail' or request.resolver_match.url_name == 'job_edit' %}active{% endif %}" href="{% url 'job_list' %}">{{ LANG|tr:"nav_jobs" }}</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'finance' %}active{% endif %}" href="{% url 'finance' %}">{{ LANG|tr:"nav_attachment" }}</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'excavator_info' %}active{% endif %}" href="{% url 'excavator_info' %}">{{ LANG|tr:"nav_youtube" }}</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'parts_as' or request.resolver_match.url_name == 'parts_as_register' %}active{% endif %}" href="{% url 'parts_as' %}">{{ LANG|tr:"nav_parts_as" }}</a></li>
+                    <li class="nav-item"><a class="nav-link soil-nav {% if request.resolver_match.url_name == 'soil_list' or request.resolver_match.url_name == 'soil_create' or request.resolver_match.url_name == 'soil_detail' or request.resolver_match.url_name == 'soil_edit' %}active{% endif %}" href="{% url 'soil_list' %}">{{ LANG|tr:"nav_soil" }}</a></li>
                 </ul>
                 <div class="d-flex align-items-center gap-2">
                     <div class="dropdown">
@@ -628,7 +638,6 @@
                     {% if user.is_authenticated %}
                         <a href="{% url 'chat_room_list' %}" class="nav-link d-none d-md-inline-block"><i class="bi bi-chat-dots me-1"></i>{{ LANG|tr:"nav_chat" }}{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
                         <a href="{% url 'my_page' %}" class="nav-link d-none d-md-inline-block"><strong>{{ user.username }}</strong>님</a>
-                        <a href="{% url 'equipment_create' %}" class="btn btn-accent btn-sm">{{ LANG|tr:"nav_register" }}</a>
                         <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">{{ LANG|tr:"nav_logout" }}</a>
                     {% else %}
                         <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">{{ LANG|tr:"nav_login" }}</a>
@@ -659,7 +668,7 @@
                         <div class="gn-service-item-icon"><i class="bi bi-truck-front-fill"></i></div>
                         <div>
                             <div class="gn-service-item-title">굴삭기</div>
-                            <div class="small text-muted">어태치먼트</div>
+                            <div class="small text-muted">{{ LANG|tr:"service_attachment_sub" }}</div>
                         </div>
                     </a>
                     <a href="{% url 'index' %}?category=forklift" class="gn-service-item">
@@ -701,14 +710,16 @@
                 <div class="gn-service-section-title">{{ LANG|tr:"service_menu" }}</div>
                 <div class="list-group list-group-flush">
                     <a href="{% url 'index' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-house me-2"></i>{{ LANG|tr:"service_market_home" }}</a>
+                    <a href="{% url 'index' %}?category=" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-grid me-2"></i>{{ LANG|tr:"nav_market_view" }}</a>
                     <a href="{% url 'job_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-briefcase me-2"></i>{{ LANG|tr:"nav_jobs" }}</a>
+                    <a href="{% url 'finance' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-cash-coin me-2"></i>{{ LANG|tr:"nav_attachment" }}</a>
                     <a href="{% url 'excavator_info' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-youtube me-2"></i>{{ LANG|tr:"nav_youtube" }}</a>
-                    <a href="{% url 'parts_as' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-gear me-2"></i>부품/AS 부품점</a>
+                    <a href="{% url 'parts_as' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-gear me-2"></i>{{ LANG|tr:"service_parts_as_shop" }}</a>
                     <a href="{% url 'soil_list' %}" class="list-group-item list-group-item-action soil-nav-mobile" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-droplet-half me-2"></i>현장 자재 나눔</a>
                     {% if user.is_authenticated %}
                     <a href="{% url 'chat_room_list' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-chat-dots me-2"></i>{{ LANG|tr:"nav_chat" }}{% if unread_total > 0 %} <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem;">{{ unread_total }}</span>{% endif %}</a>
                     <a href="{% url 'my_page' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-person me-2"></i>{{ LANG|tr:"nav_mypage" }}</a>
-                    <a href="/accounts/3rdparty/" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-person-check me-2"></i>소셜 계정 연결</a>
+                    <a href="/accounts/3rdparty/" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-person-check me-2"></i>{{ LANG|tr:"service_social_connect" }}</a>
                     <a href="{% url 'logout' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-right me-2"></i>{{ LANG|tr:"nav_logout" }}</a>
                     {% else %}
                     <a href="{% url 'login' %}" class="list-group-item list-group-item-action" style="background: transparent; color: var(--gn-text); border-color: transparent;"><i class="bi bi-box-arrow-in-right me-2"></i>{{ LANG|tr:"nav_login" }}</a>
@@ -901,7 +912,71 @@
             "아직 등록한 매물이 없습니다.": "You haven't posted any listings yet.",
             "회원 탈퇴": "Delete Account",
             "정말 탈퇴하시겠습니까?": "Are you sure you want to delete your account?",
-            "정말 탈퇴합니다": "Yes, delete my account"
+            "정말 탈퇴합니다": "Yes, delete my account",
+            "할부/금융": "Finance/Installment",
+            "금융/할부": "Finance/Installment",
+            "필요자금 계산기": "Funding Calculator",
+            "필요자금 (원)": "Required Amount (KRW)",
+            "할부기간": "Installment Term",
+            "연이율 (%)": "Annual Interest Rate (%)",
+            "계산하기": "Calculate",
+            "대출금액": "Loan Amount",
+            "월 납입금": "Monthly Payment",
+            "총 납입금": "Total Payment",
+            "총 이자금액": "Total Interest",
+            "회차": "Installment No.",
+            "납입금": "Payment",
+            "원금": "Principal",
+            "이자": "Interest",
+            "잔액": "Balance",
+            "할부 상담 신청": "Installment Consultation",
+            "신청자 이름": "Applicant Name",
+            "희망 장비": "Desired Equipment",
+            "선택하세요": "Select",
+            "직접 입력": "Enter manually",
+            "희망 장비 직접 입력": "Enter Desired Equipment",
+            "구입 예산 (원)": "Purchase Budget (KRW)",
+            "희망 할부기간": "Desired Installment Term",
+            "메모 (선택사항)": "Memo (Optional)",
+            "상담 신청하기": "Submit Consultation",
+            "상담 대상 매물:": "Target Listing:",
+            "본 계산기는 참고용이며 실제 금리는 캐피탈사 심사에 따라 다를 수 있습니다.": "This calculator is for reference only; actual rates may vary based on financing review.",
+            "할부 상담 신청하기": "Apply for Installment Consultation",
+            "한도와 금리는 심사 결과에 따라 달라질 수 있습니다.": "Limit and rates may vary by review results.",
+            "부품 / AS 센터 찾기": "Find Parts / AS Center",
+            "업체 자진 등록": "Self Register Business",
+            "장비 유형 선택": "Select Equipment Type",
+            "업체 유형": "Business Type",
+            "전체 업체": "All Businesses",
+            "업체명 검색": "Search Business Name",
+            "업체명을 입력하세요": "Enter business name",
+            "지도보기": "Map View",
+            "목록보기": "List View",
+            "조건에 맞는 업체가 없습니다.": "No businesses match your filters.",
+            "주소 미등록": "Address not registered",
+            "연락처 없음": "No contact info",
+            "취급 제조사:": "Supported Brands:",
+            "영업시간:": "Business Hours:",
+            "정보 없음": "No data",
+            "굴삭기 유튜브 / 정보": "Excavator YouTube / Info",
+            "기종 + 목적을 동시에 선택해 필요한 영상만 빠르게 확인하세요.": "Select equipment and purpose together to quickly find relevant videos.",
+            "굴삭기 정비": "Excavator Maintenance",
+            "굴삭기 수리": "Excavator Repair",
+            "지게차 정비": "Forklift Maintenance",
+            "덤프트럭 정비": "Dump Truck Maintenance",
+            "굴삭기 점검": "Excavator Inspection",
+            "유튜브 보기": "View on YouTube",
+            "선택한 조건에 맞는 영상이 없습니다.": "No videos match the selected filters."
+            ,"등록안내": "Registration Guide"
+            ,"전체보기": "View All"
+            ,"지도": "Map"
+            ,"초기화": "Reset"
+            ,"AS센터": "AS Center"
+            ,"부품점": "Parts Shop"
+            ,"지역": "Region"
+            ,"제조사 선택 (복수 선택)": "Select Makers (Multiple)"
+            ,"정비 유형 (복수 선택)": "Service Type (Multiple)"
+            ,"개 업체": " businesses"
           },
           ru: {
             "로그인": "Войти",
@@ -999,7 +1074,71 @@
             "원본 크기로 보기": "Открыть оригинал",
             "이전": "Назад",
             "다음": "Далее",
-            "확대 보기": "Увеличенный просмотр"
+            "확대 보기": "Увеличенный просмотр",
+            "할부/금융": "Рассрочка/Финансы",
+            "금융/할부": "Финансы/Рассрочка",
+            "필요자금 계산기": "Калькулятор финансирования",
+            "필요자금 (원)": "Требуемая сумма (вон)",
+            "할부기간": "Срок рассрочки",
+            "연이율 (%)": "Годовая ставка (%)",
+            "계산하기": "Рассчитать",
+            "대출금액": "Сумма кредита",
+            "월 납입금": "Ежемесячный платеж",
+            "총 납입금": "Общая выплата",
+            "총 이자금액": "Общий процент",
+            "회차": "Платеж",
+            "납입금": "Платеж",
+            "원금": "Основной долг",
+            "이자": "Проценты",
+            "잔액": "Остаток",
+            "할부 상담 신청": "Заявка на рассрочку",
+            "신청자 이름": "Имя заявителя",
+            "희망 장비": "Желаемая техника",
+            "선택하세요": "Выберите",
+            "직접 입력": "Ввести вручную",
+            "희망 장비 직접 입력": "Введите желаемую технику",
+            "구입 예산 (원)": "Бюджет покупки (вон)",
+            "희망 할부기간": "Желаемый срок рассрочки",
+            "메모 (선택사항)": "Примечание (необязательно)",
+            "상담 신청하기": "Отправить заявку",
+            "상담 대상 매물:": "Объект заявки:",
+            "본 계산기는 참고용이며 실제 금리는 캐피탈사 심사에 따라 다를 수 있습니다.": "Калькулятор носит справочный характер; фактическая ставка зависит от проверки финкомпании.",
+            "할부 상담 신청하기": "Подать заявку на рассрочку",
+            "한도와 금리는 심사 결과에 따라 달라질 수 있습니다.": "Лимит и ставка могут отличаться по результатам проверки.",
+            "부품 / AS 센터 찾기": "Поиск запчастей / сервиса",
+            "업체 자진 등록": "Самостоятельная регистрация компании",
+            "장비 유형 선택": "Выбор типа техники",
+            "업체 유형": "Тип компании",
+            "전체 업체": "Все компании",
+            "업체명 검색": "Поиск по названию компании",
+            "업체명을 입력하세요": "Введите название компании",
+            "지도보기": "Карта",
+            "목록보기": "Список",
+            "조건에 맞는 업체가 없습니다.": "Нет компаний по выбранным условиям.",
+            "주소 미등록": "Адрес не указан",
+            "연락처 없음": "Нет контактов",
+            "취급 제조사:": "Поддерживаемые бренды:",
+            "영업시간:": "Время работы:",
+            "정보 없음": "Нет данных",
+            "굴삭기 유튜브 / 정보": "YouTube / Инфо по экскаваторам",
+            "기종 + 목적을 동시에 선택해 필요한 영상만 빠르게 확인하세요.": "Выберите тип техники и цель, чтобы быстро найти нужные видео.",
+            "굴삭기 정비": "Обслуживание экскаватора",
+            "굴삭기 수리": "Ремонт экскаватора",
+            "지게차 정비": "Обслуживание погрузчика",
+            "덤프트럭 정비": "Обслуживание самосвала",
+            "굴삭기 점검": "Проверка экскаватора",
+            "유튜브 보기": "Смотреть на YouTube",
+            "선택한 조건에 맞는 영상이 없습니다.": "Нет видео по выбранным условиям."
+            ,"등록안내": "Инфо о регистрации"
+            ,"전체보기": "Смотреть все"
+            ,"지도": "Карта"
+            ,"초기화": "Сброс"
+            ,"AS센터": "Сервисный центр"
+            ,"부품점": "Магазин запчастей"
+            ,"지역": "Регион"
+            ,"제조사 선택 (복수 선택)": "Выбор брендов (несколько)"
+            ,"정비 유형 (복수 선택)": "Тип обслуживания (несколько)"
+            ,"개 업체": " компаний"
           },
           vi: {
             "로그인": "Đăng nhập",
@@ -1097,7 +1236,71 @@
             "원본 크기로 보기": "Xem kích thước gốc",
             "이전": "Trước",
             "다음": "Tiếp",
-            "확대 보기": "Xem phóng to"
+            "확대 보기": "Xem phóng to",
+            "할부/금융": "Trả góp/Tài chính",
+            "금융/할부": "Tài chính/Trả góp",
+            "필요자금 계산기": "Máy tính nhu cầu vốn",
+            "필요자금 (원)": "Số tiền cần (KRW)",
+            "할부기간": "Kỳ hạn trả góp",
+            "연이율 (%)": "Lãi suất năm (%)",
+            "계산하기": "Tính toán",
+            "대출금액": "Số tiền vay",
+            "월 납입금": "Khoản trả hàng tháng",
+            "총 납입금": "Tổng tiền phải trả",
+            "총 이자금액": "Tổng tiền lãi",
+            "회차": "Kỳ",
+            "납입금": "Thanh toán",
+            "원금": "Gốc",
+            "이자": "Lãi",
+            "잔액": "Số dư",
+            "할부 상담 신청": "Đăng ký tư vấn trả góp",
+            "신청자 이름": "Tên người đăng ký",
+            "희망 장비": "Thiết bị mong muốn",
+            "선택하세요": "Vui lòng chọn",
+            "직접 입력": "Nhập trực tiếp",
+            "희망 장비 직접 입력": "Nhập thiết bị mong muốn",
+            "구입 예산 (원)": "Ngân sách mua (KRW)",
+            "희망 할부기간": "Kỳ hạn trả góp mong muốn",
+            "메모 (선택사항)": "Ghi chú (tùy chọn)",
+            "상담 신청하기": "Gửi đăng ký tư vấn",
+            "상담 대상 매물:": "Tin đăng tư vấn:",
+            "본 계산기는 참고용이며 실제 금리는 캐피탈사 심사에 따라 다를 수 있습니다.": "Công cụ tính chỉ mang tính tham khảo; lãi suất thực tế có thể khác theo kết quả thẩm định.",
+            "할부 상담 신청하기": "Đăng ký tư vấn trả góp",
+            "한도와 금리는 심사 결과에 따라 달라질 수 있습니다.": "Hạn mức và lãi suất có thể thay đổi theo kết quả thẩm định.",
+            "부품 / AS 센터 찾기": "Tìm trung tâm phụ tùng / AS",
+            "업체 자진 등록": "Doanh nghiệp tự đăng ký",
+            "장비 유형 선택": "Chọn loại thiết bị",
+            "업체 유형": "Loại doanh nghiệp",
+            "전체 업체": "Tất cả doanh nghiệp",
+            "업체명 검색": "Tìm theo tên doanh nghiệp",
+            "업체명을 입력하세요": "Nhập tên doanh nghiệp",
+            "지도보기": "Xem bản đồ",
+            "목록보기": "Xem danh sách",
+            "조건에 맞는 업체가 없습니다.": "Không có doanh nghiệp phù hợp điều kiện.",
+            "주소 미등록": "Chưa đăng ký địa chỉ",
+            "연락처 없음": "Không có liên hệ",
+            "취급 제조사:": "Hãng hỗ trợ:",
+            "영업시간:": "Giờ làm việc:",
+            "정보 없음": "Không có thông tin",
+            "굴삭기 유튜브 / 정보": "YouTube / Thông tin máy xúc",
+            "기종 + 목적을 동시에 선택해 필요한 영상만 빠르게 확인하세요.": "Chọn đồng thời loại thiết bị và mục đích để tìm video cần thiết nhanh hơn.",
+            "굴삭기 정비": "Bảo dưỡng máy xúc",
+            "굴삭기 수리": "Sửa chữa máy xúc",
+            "지게차 정비": "Bảo dưỡng xe nâng",
+            "덤프트럭 정비": "Bảo dưỡng xe ben",
+            "굴삭기 점검": "Kiểm tra máy xúc",
+            "유튜브 보기": "Xem trên YouTube",
+            "선택한 조건에 맞는 영상이 없습니다.": "Không có video phù hợp điều kiện đã chọn."
+            ,"등록안내": "Hướng dẫn đăng ký"
+            ,"전체보기": "Xem tất cả"
+            ,"지도": "Bản đồ"
+            ,"초기화": "Đặt lại"
+            ,"AS센터": "Trung tâm AS"
+            ,"부품점": "Cửa hàng phụ tùng"
+            ,"지역": "Khu vực"
+            ,"제조사 선택 (복수 선택)": "Chọn hãng (nhiều lựa chọn)"
+            ,"정비 유형 (복수 선택)": "Loại bảo dưỡng (nhiều lựa chọn)"
+            ,"개 업체": " doanh nghiệp"
           }
         };
 

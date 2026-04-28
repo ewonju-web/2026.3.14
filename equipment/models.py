@@ -395,19 +395,23 @@ class JobPost(models.Model):
         return False
 
 class Part(models.Model):
-    PART_CATEGORIES = [
+    CATEGORY_CHOICES = [
         ('BUCKET', '바가지/버킷'),
         ('BREAKER', '뿌레카/함마'),
-        ('GRAPPLE', '집게/그랩'),
-        ('ETC', '기타 어테치먼트'),
+        ('GRAPPLE', '집게'),
+        ('ROTLINK', '회전링크'),
+        ('AUGER', '오거/드릴'),
+        ('ETC', '기타'),
     ]
-    category = models.CharField(max_length=20, choices=PART_CATEGORIES, default='ETC')
+    # 하위 호환: 기존 코드에서 PART_CATEGORIES를 참조해도 동작하도록 유지
+    PART_CATEGORIES = CATEGORY_CHOICES
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='ETC')
     title = models.CharField(max_length=200)
     price = models.CharField(max_length=50)
-    location = models.CharField(max_length=100)
+    location = models.CharField(max_length=100, blank=True, null=True)
     compatibility = models.CharField(max_length=100, help_text="예: 02급/06급 호환")
     description = models.TextField()
-    contact = models.CharField(max_length=50)
+    contact = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -487,7 +491,13 @@ class PartsShop(models.Model):
         '굴삭기', '지게차', '덤프트럭', '스키로더', '크레인', '어태치먼트', '기타',
     ]
     MANUFACTURER_CHOICES = [
-        '현대', '두산', '볼보', '코벨코', '히타치', '얀마', '구보다', '기타',
+        '현대', '두산', '볼보', '코벨코', '히타치', '캐터필러', '얀마', '클라스', '기타',
+    ]
+    TON_RANGE_CHOICES = [
+        '미니(1~3톤)', '소형(3~6톤)', '중형(6~15톤)', '대형(15~30톤)', '초대형(30톤+)',
+    ]
+    REPAIR_TYPE_CHOICES = [
+        '엔진정비', '유압정비', '하부정비', '전기장치', '부품교체', '판금도색',
     ]
 
     name = models.CharField(max_length=100, verbose_name="업체명")
@@ -499,12 +509,24 @@ class PartsShop(models.Model):
     )
     region = models.CharField(max_length=50, verbose_name="지역")
     equipment_types = models.JSONField(default=list, blank=True, verbose_name="취급 장비")
+    manufacturers = models.JSONField(default=list, blank=True, verbose_name="취급 제조사(신규)")
+    # 하위 호환(기존 데이터): manufacturer 필드 유지
     manufacturer = models.JSONField(default=list, blank=True, verbose_name="취급 제조사")
+    ton_ranges = models.JSONField(default=list, blank=True, verbose_name="톤급")
+    repair_types = models.JSONField(default=list, blank=True, verbose_name="정비 유형")
     contact = models.CharField(max_length=50, verbose_name="연락처")
     address = models.CharField(max_length=200, blank=True, default='', verbose_name="주소")
     lat = models.FloatField(null=True, blank=True, verbose_name="위도")
     lng = models.FloatField(null=True, blank=True, verbose_name="경도")
     note = models.CharField(max_length=200, blank=True, default='', verbose_name="비고")
+    rating = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        default=0,
+        verbose_name="평점",
+        help_text="0.0~5.0",
+    )
+    review_count = models.PositiveIntegerField(default=0, verbose_name="리뷰 수")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -514,6 +536,47 @@ class PartsShop(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.region})"
+
+
+class FinanceConsultation(models.Model):
+    STATUS_WAITING = "WAITING"
+    STATUS_CONTACTED = "CONTACTED"
+    STATUS_CONTRACTED = "CONTRACTED"
+    STATUS_CANCELLED = "CANCELLED"
+    STATUS_CHOICES = [
+        (STATUS_WAITING, "대기중"),
+        (STATUS_CONTACTED, "연락완료"),
+        (STATUS_CONTRACTED, "계약완료"),
+        (STATUS_CANCELLED, "취소"),
+    ]
+
+    APPLICANT_NAME_MAX = 50
+    CONTACT_MAX = 20
+    EQUIPMENT_NAME_MAX = 100
+
+    applicant_name = models.CharField(max_length=APPLICANT_NAME_MAX, verbose_name="신청자 이름")
+    contact = models.CharField(max_length=CONTACT_MAX, verbose_name="연락처")
+    desired_equipment = models.CharField(max_length=EQUIPMENT_NAME_MAX, verbose_name="희망 장비")
+    budget_manwon = models.PositiveIntegerField(verbose_name="구입 예산(만원)")
+    desired_months = models.PositiveSmallIntegerField(verbose_name="희망 할부기간(개월)")
+    memo = models.CharField(max_length=300, blank=True, default="", verbose_name="메모")
+    status = models.CharField(
+        max_length=12,
+        choices=STATUS_CHOICES,
+        default=STATUS_WAITING,
+        db_index=True,
+        verbose_name="처리상태",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="신청일시")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
+
+    class Meta:
+        verbose_name = "할부 상담 신청"
+        verbose_name_plural = "할부 상담 신청 내역"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.applicant_name} / {self.contact} / {self.desired_equipment}"
 
 
 # --- 찜(관심) ---

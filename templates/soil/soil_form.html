@@ -41,7 +41,20 @@
             </div>
             <div class="mb-4">
                 <label for="id_image" class="form-label fw-bold">사진 업로드 (선택)</label>
-                {{ form.image }}
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <label for="soil_photo_gallery" class="btn btn-outline-secondary mb-0" style="border-radius: 10px;">
+                        <i class="bi bi-images me-1"></i> 파일 선택
+                    </label>
+                    <input id="soil_photo_gallery" type="file" accept="image/*" hidden>
+                    <label for="soil_photo_camera" class="btn btn-outline-primary mb-0" style="border-radius: 10px;">
+                        <i class="bi bi-camera-fill me-1"></i> 카메라 촬영
+                    </label>
+                    <input id="soil_photo_camera" type="file" accept="image/*" capture="environment" hidden>
+                </div>
+                <div class="small text-muted mt-2" id="soil-selected-file-name">선택된 파일 없음</div>
+                <div class="d-none">
+                    {{ form.image }}
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn text-white fw-bold px-4" style="background: var(--gn-accent); border-radius: 10px;">{% if is_edit %}저장{% else %}등록{% endif %}</button>
@@ -50,4 +63,30 @@
         </form>
     </div>
 </div>
+<script>
+(function () {
+    var hiddenImageInput = document.getElementById('id_image');
+    var galleryInput = document.getElementById('soil_photo_gallery');
+    var cameraInput = document.getElementById('soil_photo_camera');
+    var fileNameEl = document.getElementById('soil-selected-file-name');
+    if (!hiddenImageInput || !galleryInput || !cameraInput || !fileNameEl) return;
+
+    function bindFileToHiddenInput(file) {
+        if (!file) return;
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        hiddenImageInput.files = dt.files;
+        fileNameEl.textContent = file.name || '선택된 파일 1개';
+    }
+
+    function onPick(e) {
+        var file = e.target.files && e.target.files[0];
+        bindFileToHiddenInput(file);
+        e.target.value = '';
+    }
+
+    galleryInput.addEventListener('change', onPick);
+    cameraInput.addEventListener('change', onPick);
+})();
+</script>
 {% endblock %}

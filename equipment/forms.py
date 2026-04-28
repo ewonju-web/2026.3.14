@@ -1,5 +1,5 @@
 from django import forms
-from .models import Equipment, Profile
+from .models import Equipment, Profile, Part
 
 class EquipmentForm(forms.ModelForm):
     class Meta:
@@ -107,6 +107,27 @@ class EquipmentEditForm(forms.ModelForm):
     """작성자(로그인 유저)만 수정 가능 → 비밀번호 필드 없음"""
     class Meta(EquipmentForm.Meta):
         fields = EquipmentForm.Meta.fields
+
+
+class PartForm(forms.ModelForm):
+    class Meta:
+        model = Part
+        fields = ["category", "title", "price", "compatibility", "description"]
+        widgets = {
+            "category": forms.RadioSelect,
+            "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "상품명을 입력해 주세요"}),
+            "price": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 1000"}),
+            "compatibility": forms.TextInput(attrs={"class": "form-control", "placeholder": "예) 06급 호환"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 5, "placeholder": "상세 설명을 입력해 주세요"}),
+        }
+
+        labels = {
+            "category": "카테고리",
+            "title": "상품명",
+            "price": "가격(만원)",
+            "compatibility": "호환기종",
+            "description": "설명",
+        }
 
 # === 회원가입: 중복확인, 비밀번호 재입력, 휴대폰 (추가) ===
 from django import forms

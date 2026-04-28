@@ -5,25 +5,30 @@
   .info-head { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .info-title { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--gn-text); }
   .info-title::before { content: ""; display: inline-block; width: 4px; height: 1rem; margin-right: 0.5rem; border-radius: 2px; background: var(--gn-accent); vertical-align: middle; }
-  .info-desc { font-size: 0.88rem; color: var(--gn-muted); margin: 0.22rem 0 0; }
-  .info-tab-label { font-size: 0.82rem; color: #64748b; margin-bottom: 0.38rem; font-weight: 700; }
+  .info-desc { font-size: 0.9rem; color: #334155; margin: 0.22rem 0 0; font-weight: 600; }
+  .info-tab-label { font-size: 0.84rem; color: #334155; margin-bottom: 0.38rem; font-weight: 800; }
   .info-tabs { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-bottom: 0.7rem; }
   .info-tab {
     text-decoration: none;
     border-radius: 999px;
     border: 1px solid #d1d5db;
     background: #fff;
-    color: #475569;
-    font-size: 0.86rem;
-    font-weight: 700;
+    color: #334155;
+    font-size: 0.87rem;
+    font-weight: 800;
     padding: 0.35rem 0.78rem;
   }
   .info-tab.active { background: #374151; border-color: #374151; color: #e8a317; }
   .info-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 0.8rem; }
-  @media (min-width: 992px) { .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 768px) { .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .info-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .info-card { border: 1px solid var(--gn-border); border-radius: 12px; background: #fff; overflow: hidden; }
   .info-card-body { padding: 0.75rem; }
-  .info-video-wrap { border-radius: 10px; overflow: hidden; background: #111827; }
+  .info-thumb-wrap { border-radius: 10px; overflow: hidden; background: #111827; display:block; }
+  .info-thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+  .info-title-link { color: var(--gn-text); text-decoration: none; }
+  .info-title-link:hover { color: #1d4ed8; text-decoration: underline; }
+  .info-channel { font-size: .82rem; color: #64748b; margin: .2rem 0 .3rem; font-weight: 600; }
   .info-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
   .info-badge { border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.14rem 0.48rem; background: #f1f5f9; color: #334155; }
   .info-empty { border: 1px dashed #d1d5db; border-radius: 12px; background: #fafafa; color: #6b7280; text-align: center; padding: 2rem 1rem; }
@@ -56,23 +61,21 @@
         {% for item in video_items %}
         <article class="info-card">
           <div class="info-card-body">
-            <h6 class="fw-bold mb-1">{{ item.title }}</h6>
-            {% if item.description %}<p class="text-muted small mb-2">{{ item.description }}</p>{% endif %}
-            <div class="info-video-wrap ratio ratio-16x9">
-              {% if item.embed_url %}
-              <iframe
-                src="{{ item.embed_url }}"
-                title="{{ item.title }}"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-              ></iframe>
+            <a href="{{ item.youtube_url }}" target="_blank" rel="noopener" class="info-thumb-wrap mb-2">
+              {% if item.thumbnail_url %}
+              <img src="{{ item.thumbnail_url }}" class="info-thumb" alt="{{ item.title }}">
+              {% else %}
+              <img src="https://i.ytimg.com/vi/0/hqdefault.jpg" class="info-thumb" alt="{{ item.title }}">
               {% endif %}
-            </div>
+            </a>
+            <a href="{{ item.youtube_url }}" target="_blank" rel="noopener" class="info-title-link">
+              <h6 class="fw-bold mb-1">{{ item.title }}</h6>
+            </a>
+            <div class="info-channel">{{ item.channel_title|default:"YouTube" }}</div>
             <div class="info-meta">
               <span class="info-badge">{{ item.equipment_label }}</span>
               <span class="info-badge">{{ item.purpose_label }}</span>
-              <a href="{{ item.youtube_url }}" target="_blank" rel="noopener" class="info-badge text-decoration-none">원본 보기</a>
+              <a href="{{ item.youtube_url }}" target="_blank" rel="noopener" class="info-badge text-decoration-none">유튜브 보기</a>
             </div>
           </div>
         </article>

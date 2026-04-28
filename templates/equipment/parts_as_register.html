@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}부품 A/S 업체 자진 등록 | 굴삭기나라{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+          <h3 class="fw-bold mb-2">부품 A/S 업체 자진 등록</h3>
+          <p class="text-muted mb-4">업체 정보를 입력하면 부품 A/S 센터 목록에 반영됩니다.</p>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold">업체명 *</label>
+                <input type="text" name="name" class="form-control" required>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold">업체 유형 *</label>
+                <select name="shop_kind" class="form-select" required>
+                  {% for value, label in shop_kind_options %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold">시/도 *</label>
+                <input type="text" name="region" class="form-control" placeholder="예: 경기, 경북, 전남" required>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold">연락처 *</label>
+                <input type="text" name="contact" class="form-control" placeholder="예: 010-1234-5678" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">시군구 + 상세주소</label>
+                <input type="text" name="address" class="form-control" placeholder="예: 경기도 화성시 봉담읍 ...">
+                <div class="form-text">지도/목록 표시를 위해 시군구까지 포함해 주세요.</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold d-block mb-2">취급 장비</label>
+                <div class="d-flex flex-wrap gap-3">
+                  {% for value, label in equipment_type_options %}
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="equipment_types" value="{{ value }}" id="eq-{{ value }}">
+                      <label class="form-check-label" for="eq-{{ value }}">{{ label }}</label>
+                    </div>
+                  {% endfor %}
+                </div>
+                <div class="form-text">선택하지 않으면 굴삭기로 저장됩니다.</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">비고</label>
+                <input type="text" name="note" class="form-control" placeholder="영업시간, 특이사항 등">
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-warning fw-bold px-4">등록하기</button>
+              <a href="{% url 'parts_as' %}" class="btn btn-outline-secondary">목록으로</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

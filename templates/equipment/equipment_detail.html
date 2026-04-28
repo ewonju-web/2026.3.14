@@ -235,7 +235,6 @@
         <div class="card-body">
           <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
             <div class="gn-finance-title">이 장비 금융 가능 금액 (예상)</div>
-            <span class="badge gn-badge-preparing">유료 금융상품 연동 준비중</span>
           </div>
           <div class="row g-3 mb-2">
             {% if finance_limit %}
@@ -251,8 +250,8 @@
             </div>
             {% endif %}
           </div>
-          <p class="gn-finance-note">연 7.0% / 60개월 원리금 균등상환을 가정한 단순 예시입니다. 실제 승인 한도와 금리는 제휴 금융사 심사 결과에 따라 달라질 수 있습니다.</p>
-          <button type="button" class="btn gn-btn-trust w-100 fw-bold py-2" disabled>한도 조회하기 (준비중)</button>
+          <p class="gn-finance-note">한도와 금리는 심사 결과에 따라 달라질 수 있습니다.</p>
+          <a href="{% url 'finance' %}?listing_id={{ equipment.pk }}" class="btn gn-btn-trust w-100 fw-bold py-2">할부 상담 신청하기</a>
         </div>
       </div>
     </div>
@@ -859,14 +858,6 @@
     line-height: 1.6;
     margin-bottom: 1rem !important;
   }
-  .gn-badge-preparing {
-    font-size: 0.75rem;
-    font-weight: 700;
-    background-color: #FEF3C7 !important;
-    color: #92400E !important;
-    border: 1px solid #D97706;
-  }
-
   /* ----- 4. 버튼: WCAG 4.5:1 대비, 폰트 사이즈 확대 ----- */
   .gn-btn-primary, .gn-btn-trust, .gn-btn-secondary, .gn-btn-wishlist {
     font-size: 1rem !important;

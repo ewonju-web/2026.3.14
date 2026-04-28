@@ -1,43 +1,284 @@
 {% extends "base.html" %}
+{% load static %}
+{% block extra_css %}
+<style>
+    .gn-part-page {
+        padding: 1.2rem 0 1.8rem;
+    }
+    .gn-part-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+    }
+    .gn-part-title {
+        margin: 0;
+        color: var(--gn-text);
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+    .gn-part-title::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 1.1rem;
+        margin-right: 0.55rem;
+        border-radius: 2px;
+        background: var(--gn-accent);
+        vertical-align: middle;
+    }
+    .gn-register-btn {
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        background: #fff;
+        color: #111827;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 0.48rem 0.92rem;
+        white-space: nowrap;
+    }
+    .gn-register-btn:hover {
+        background: #f8fafc;
+        border-color: #9ca3af;
+        color: #0f172a;
+    }
+    .gn-category-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+    }
+    .gn-category-chip {
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        font-size: 0.98rem;
+        font-weight: 700;
+        padding: 0.42rem 0.86rem;
+        line-height: 1;
+    }
+    .gn-category-chip.active {
+        background: var(--gn-accent);
+        border-color: var(--gn-accent);
+        color: #fff;
+    }
+    .gn-part-card {
+        border: 1px solid #edf0f3;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .gn-part-card:hover {
+        transform: translateY(-2px);
+        border-color: #d6dbe1;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.09);
+    }
+    .gn-part-thumb {
+        height: 150px;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .gn-part-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .gn-part-thumb i {
+        color: #d1d5db;
+        font-size: 2.4rem;
+    }
+    .gn-part-body {
+        padding: 0.78rem 0.86rem 0.82rem;
+    }
+    .gn-part-category {
+        display: inline-block;
+        color: #f59e0b;
+        font-weight: 800;
+        font-size: 0.86rem;
+        margin-bottom: 0.28rem;
+    }
+    .gn-part-name {
+        margin: 0;
+        color: #111827;
+        font-size: 1.5rem;
+        line-height: 1.2;
+        font-weight: 900;
+    }
+    .gn-part-price {
+        margin-top: 0.22rem;
+        color: #111827;
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+    }
+    .gn-part-meta {
+        color: #6b7280;
+        font-size: 0.84rem;
+        margin-top: 0.2rem;
+    }
+    .gn-add-card {
+        min-height: 176px;
+        border: 1px dashed #d1d5db;
+        border-radius: 14px;
+        background: #fff;
+        color: #6b7280;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.35rem;
+        transition: border-color .18s ease, color .18s ease, background .18s ease;
+    }
+    .gn-add-card:hover {
+        border-color: var(--gn-accent);
+        color: #1f2937;
+        background: #fffbf4;
+    }
+    .gn-add-card i {
+        font-size: 1.95rem;
+    }
+    .gn-hidden {
+        display: none !important;
+    }
+    .gn-empty-state {
+        border: 1px dashed #d1d5db;
+        border-radius: 14px;
+        background: #fff;
+        padding: 2.2rem 1rem;
+        text-align: center;
+        margin-top: 0.35rem;
+    }
+    .gn-empty-title {
+        margin: 0;
+        color: #374151;
+        font-size: 1.03rem;
+        font-weight: 700;
+    }
+    .gn-empty-sub {
+        margin: 0.35rem 0 1rem;
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+    .gn-empty-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        text-decoration: none;
+        border: 1px solid var(--gn-accent);
+        background: var(--gn-accent);
+        color: #fff;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.5rem 1rem;
+    }
+    @media (max-width: 767.98px) {
+        .gn-part-head {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <h2 class="section-title mb-0">어태치먼트 · 부품</h2>
-        <a href="{% url 'part_create' %}" class="btn text-white fw-bold px-4" style="background: var(--gn-accent); border-radius: 10px;">부품 등록</a>
-    </div>
+<div class="gn-part-page">
+    <div class="container">
+        <div class="gn-part-head">
+            <h2 class="gn-part-title">어태치먼트 · 부품</h2>
+            <a href="{% url 'part_create' %}" class="gn-register-btn">+ 등록하기</a>
+        </div>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-        {% for part in part_list %}
-        <div class="col">
-            <div class="card h-100 item-card border-0 position-relative">
-                {% if user.is_authenticated %}
-                <a href="{% url 'toggle_part_favorite' part.pk %}?next={{ request.get_full_path|urlencode }}" class="position-absolute top-0 end-0 m-2 text-decoration-none" style="z-index:5;" onclick="event.stopPropagation();" title="찜">
-                    <i class="bi bi-heart{% if part.pk in favorited_part_ids %}-fill text-danger{% else %} text-white{% endif %}" style="font-size:1.4rem; text-shadow:0 0 4px rgba(0,0,0,.5);"></i>
-                </a>
-                {% endif %}
-                <div style="height: 160px; background: #e2e8f0; overflow: hidden;">
-                    {% if part.images.all %}
-                    <img src="{{ part.images.first.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ part.title }}">
-                    {% else %}
-                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">사진 없음</div>
+        <div class="gn-category-row" id="partCategoryFilter">
+            <button type="button" class="gn-category-chip active" data-filter="all">전체</button>
+            <button type="button" class="gn-category-chip" data-filter="BUCKET">바가지/버킷</button>
+            <button type="button" class="gn-category-chip" data-filter="BREAKER">뿌레카/함마</button>
+            <button type="button" class="gn-category-chip" data-filter="GRAPPLE">집게</button>
+            <button type="button" class="gn-category-chip" data-filter="ROTLINK">회전링크</button>
+            <button type="button" class="gn-category-chip" data-filter="AUGER">오거/드릴</button>
+            <button type="button" class="gn-category-chip" data-filter="ETC">기타</button>
+        </div>
+
+        {% if part_list %}
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-3" id="partCardGrid">
+            {% for part in part_list %}
+            <div class="col part-card-col" data-category="{{ part.category }}">
+                <article class="gn-part-card h-100 position-relative">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'toggle_part_favorite' part.pk %}?next={{ request.get_full_path|urlencode }}" class="position-absolute top-0 end-0 m-2 text-decoration-none" style="z-index:5;" onclick="event.stopPropagation();" title="찜">
+                        <i class="bi bi-heart{% if part.pk in favorited_part_ids %}-fill text-danger{% else %} text-white{% endif %}" style="font-size:1.3rem; text-shadow:0 0 4px rgba(0,0,0,.45);"></i>
+                    </a>
                     {% endif %}
-                </div>
-                <div class="card-body p-3">
-                    <span class="badge bg-light text-dark mb-2">{{ part.get_category_display }}</span>
-                    <h6 class="fw-bold mb-2 text-dark" style="font-size: 1rem;">{{ part.title }}</h6>
-                    <div class="fw-bold text-dark mb-1">{{ part.price }}</div>
-                    <div class="small text-muted">{{ part.compatibility|default:"" }}</div>
-                </div>
-                <a href="{% url 'part_detail' part.pk %}" class="stretched-link"></a>
+                    <div class="gn-part-thumb">
+                        {% if part.images.all %}
+                        <img src="{{ part.images.first.image.url }}" alt="{{ part.title }}">
+                        {% else %}
+                        <img
+                            src="{% if part.category == 'BUCKET' %}{% static 'img/no-image-bucket.png' %}{% elif part.category == 'BREAKER' %}{% static 'img/no-image-breaker.png' %}{% elif part.category == 'GRAPPLE' %}{% static 'img/no-image-grapple.png' %}{% elif part.category == 'ROTLINK' %}{% static 'img/no-image-rotlink.png' %}{% elif part.category == 'AUGER' %}{% static 'img/no-image-auger.png' %}{% else %}{% static 'img/no-image-etc.png' %}{% endif %}"
+                            alt="{{ part.get_category_display }} 기본 이미지"
+                            onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22480%22 height=%22300%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23f3f4f6%22/><text x=%2250%25%22 y=%2252%25%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2220%22 font-family=%22Arial%22>NO IMAGE</text></svg>';"
+                        >
+                        {% endif %}
+                    </div>
+                    <div class="gn-part-body">
+                        <span class="gn-part-category">{{ part.get_category_display }}</span>
+                        <p class="gn-part-name">{{ part.title }}</p>
+                        <p class="gn-part-price">{{ part.price }}</p>
+                        <p class="gn-part-meta">{{ part.compatibility|default:"" }}</p>
+                    </div>
+                    <a href="{% url 'part_detail' part.pk %}" class="stretched-link" aria-label="{{ part.title }}"></a>
+                </article>
+            </div>
+            {% endfor %}
+
+            <div class="col">
+                <a href="{% url 'part_create' %}" class="gn-add-card h-100">
+                    <i class="bi bi-plus-lg"></i>
+                    <span class="fw-bold">등록하기</span>
+                </a>
             </div>
         </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="text-center py-5 rounded-3 bg-white border">
-                <p class="text-muted mb-0">등록된 부품이 없습니다.</p>
-            </div>
+        {% else %}
+        <div class="gn-empty-state">
+            <p class="gn-empty-title">아직 등록된 부품이 없습니다</p>
+            <p class="gn-empty-sub">첫 부품을 등록하고 노출을 시작해 보세요.</p>
+            <a href="{% url 'part_create' %}" class="gn-empty-cta">
+                <i class="bi bi-plus-lg"></i>
+                <span>등록하기</span>
+            </a>
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const filterWrap = document.getElementById("partCategoryFilter");
+        const cards = Array.from(document.querySelectorAll(".part-card-col"));
+        if (!filterWrap || !cards.length) return;
+
+        const chips = filterWrap.querySelectorAll(".gn-category-chip");
+        function applyCategoryFilter(category) {
+            cards.forEach((card) => {
+                const match = category === "all" || card.dataset.category === category;
+                card.classList.toggle("gn-hidden", !match);
+            });
+        }
+
+        chips.forEach((chip) => {
+            chip.addEventListener("click", function () {
+                chips.forEach((btn) => btn.classList.remove("active"));
+                this.classList.add("active");
+                applyCategoryFilter(this.dataset.filter || "all");
+            });
+        });
+    });
+</script>
 {% endblock %}

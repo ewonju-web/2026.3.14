@@ -1,6 +1,6 @@
 from equipment.forms import UserSignupForm
 from django.contrib.auth.models import User
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from .models import Equipment, JobPost, Part, EquipmentImage, PartImage, PartsShop, YoutubeContent, EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, Profile
 from soil.models import SoilPost
-from .forms import EquipmentForm, EquipmentEditForm
+from .forms import EquipmentForm, EquipmentEditForm, PartForm
 from .premium_utils import (
     is_user_premium,
     get_free_listing_count,
@@ -1487,11 +1487,14 @@ def job_delete(request, pk):
 
 # [3-1] 굴삭기 유튜브·정보
 def excavator_info(request):
-    """유튜브 콘텐츠: 기종 + 목적 동시 필터."""
-    from urllib.parse import parse_qs, urlparse
+    """유튜브 콘텐츠: 기종 + 목적 동시 필터 (YouTube Data API + 일 1회 캐시)."""
+    import json
+    from urllib.parse import urlencode
+    from urllib.request import urlopen, Request
+    from django.core.cache import cache
 
     selected_equipment_type = (request.GET.get("equipment_type", "all") or "all").strip().lower()
-    selected_purpose = (request.GET.get("purpose", "all") or "all").strip().lower()
+    selected_purpose = (request.GET.get("purpose", "excavator_maintenance") or "excavator_maintenance").strip().lower()
 
     equipment_tabs = [
         ("all", "전체"),
@@ -1502,60 +1505,112 @@ def excavator_info(request):
         ("crane", "크레인"),
         ("attachment", "어태치먼트"),
     ]
+    equipment_label_map = {
+        "all": "전체",
+        "excavator": "굴삭기",
+        "forklift": "지게차",
+        "dump": "덤프트럭",
+        "loader": "스키로더",
+        "crane": "크레인",
+        "attachment": "어태치먼트",
+    }
     purpose_tabs = [
-        ("all", "전체"),
-        ("repair", "수리·정비"),
-        ("buying", "구매가이드"),
-        ("review", "기종리뷰"),
-        ("safety", "사고예방"),
+        ("excavator_maintenance", "굴삭기 정비"),
+        ("excavator_repair", "굴삭기 수리"),
+        ("forklift_maintenance", "지게차 정비"),
+        ("dump_maintenance", "덤프트럭 정비"),
+        ("excavator_inspection", "굴삭기 점검"),
     ]
+    purpose_keyword_map = {
+        "excavator_maintenance": "굴삭기 정비",
+        "excavator_repair": "굴삭기 수리",
+        "forklift_maintenance": "지게차 정비",
+        "dump_maintenance": "덤프트럭 정비",
+        "excavator_inspection": "굴삭기 점검",
+    }
+
     valid_equipment = {k for k, _ in equipment_tabs}
     valid_purpose = {k for k, _ in purpose_tabs}
     if selected_equipment_type not in valid_equipment:
         selected_equipment_type = "all"
     if selected_purpose not in valid_purpose:
-        selected_purpose = "all"
+        selected_purpose = "excavator_maintenance"
 
-    contents = YoutubeContent.objects.filter(is_active=True)
-    if selected_equipment_type != "all":
-        contents = contents.filter(equipment_type=selected_equipment_type)
-    if selected_purpose != "all":
-        contents = contents.filter(purpose=selected_purpose)
+    base_keyword = purpose_keyword_map[selected_purpose]
+    equipment_label = equipment_label_map.get(selected_equipment_type, "")
+    if selected_equipment_type == "all" or equipment_label in base_keyword:
+        query_keyword = base_keyword
+    else:
+        query_keyword = f"{equipment_label} {base_keyword}"
 
-    def _to_embed_url(url):
-        raw = (url or "").strip()
-        if not raw:
-            return ""
+    def _fetch_youtube_items():
+        api_key = (getattr(settings, "YOUTUBE_API_KEY", "") or "").strip()
+        if not api_key:
+            return []
+        cache_key = f"youtube_api:{selected_equipment_type}:{selected_purpose}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+        params = {
+            "part": "snippet",
+            "q": query_keyword,
+            "type": "video",
+            "maxResults": 24,
+            "order": "relevance",
+            "regionCode": "KR",
+            "safeSearch": "moderate",
+            "key": api_key,
+        }
+        req_url = f"https://www.googleapis.com/youtube/v3/search?{urlencode(params)}"
         try:
-            parsed = urlparse(raw)
-            host = (parsed.netloc or "").lower()
-            if "youtu.be" in host:
-                vid = parsed.path.strip("/")
-                return f"https://www.youtube.com/embed/{vid}" if vid else ""
-            if "youtube.com" in host:
-                if parsed.path.startswith("/shorts/"):
-                    vid = parsed.path.split("/shorts/", 1)[1].strip("/")
-                    return f"https://www.youtube.com/embed/{vid}" if vid else ""
-                if parsed.path.startswith("/embed/"):
-                    return raw
-                vid = parse_qs(parsed.query).get("v", [""])[0].strip()
-                return f"https://www.youtube.com/embed/{vid}" if vid else ""
-            return raw
+            req = Request(req_url)
+            with urlopen(req, timeout=7) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
         except Exception:
-            return raw
+            return []
 
-    video_items = []
-    for item in contents:
-        video_items.append({
-            "title": item.title,
-            "description": item.description,
-            "embed_url": _to_embed_url(item.youtube_url),
-            "youtube_url": item.youtube_url,
-            "equipment_type": item.equipment_type,
-            "purpose": item.purpose,
-            "equipment_label": item.get_equipment_type_display(),
-            "purpose_label": item.get_purpose_display(),
-        })
+        items = []
+        for row in payload.get("items") or []:
+            video_id = (
+                ((row.get("id") or {}).get("videoId") or "").strip()
+            )
+            snippet = row.get("snippet") or {}
+            if not video_id:
+                continue
+            thumbs = snippet.get("thumbnails") or {}
+            thumb = (
+                ((thumbs.get("high") or {}).get("url"))
+                or ((thumbs.get("medium") or {}).get("url"))
+                or ((thumbs.get("default") or {}).get("url"))
+                or ""
+            )
+            items.append({
+                "title": (snippet.get("title") or "").strip(),
+                "channel_title": (snippet.get("channelTitle") or "").strip(),
+                "thumbnail_url": thumb,
+                "youtube_url": f"https://www.youtube.com/watch?v={video_id}",
+                "equipment_label": equipment_label_map.get(selected_equipment_type, "전체"),
+                "purpose_label": purpose_keyword_map.get(selected_purpose, ""),
+            })
+        cache.set(cache_key, items, timeout=86400)
+        return items
+
+    video_items = _fetch_youtube_items()
+    if not video_items:
+        contents = YoutubeContent.objects.filter(is_active=True)
+        if selected_equipment_type != "all":
+            contents = contents.filter(equipment_type=selected_equipment_type)
+        fallback = []
+        for item in contents[:24]:
+            fallback.append({
+                "title": item.title,
+                "channel_title": "굴삭기나라",
+                "thumbnail_url": "",
+                "youtube_url": item.youtube_url,
+                "equipment_label": item.get_equipment_type_display(),
+                "purpose_label": item.get_purpose_display(),
+            })
+        video_items = fallback
 
     return render(request, "equipment/excavator_info.html", {
         "equipment_tabs": equipment_tabs,
@@ -1566,12 +1621,113 @@ def excavator_info(request):
     })
 
 
+def finance(request):
+    """금융/할부 계산기 + 상담 신청."""
+    from .claim_utils import normalize_phone_digits
+    from .models import FinanceConsultation
+    from .phone_verify_service import send_sms
+
+    months_options = [12, 24, 36, 48, 60, 72]
+    equipment_options = [
+        "굴삭기",
+        "지게차",
+        "덤프트럭",
+        "스키로더/로더",
+        "크레인",
+        "어태치먼트",
+        "기타 중장비",
+    ]
+    listing_id_raw = (request.GET.get("listing_id") or request.POST.get("listing_id") or "").strip()
+    source_listing = None
+    if listing_id_raw.isdigit():
+        source_listing = Equipment.objects.filter(pk=int(listing_id_raw)).first()
+
+    if request.method == "POST":
+        applicant_name = (request.POST.get("applicant_name") or "").strip()
+        contact = (request.POST.get("contact") or "").strip()
+        desired_equipment_select = (request.POST.get("desired_equipment_select") or "").strip()
+        desired_equipment_custom = (request.POST.get("desired_equipment_custom") or "").strip()
+        budget_raw = (request.POST.get("budget_manwon") or "").strip().replace(",", "")
+        desired_months_raw = (request.POST.get("desired_months") or "").strip()
+        memo = (request.POST.get("memo") or "").strip()
+
+        desired_equipment = desired_equipment_custom if desired_equipment_select == "custom" else desired_equipment_select
+        if desired_equipment_select in ("", "none") and desired_equipment_custom:
+            desired_equipment = desired_equipment_custom
+
+        errors = []
+        if not applicant_name:
+            errors.append("신청자 이름을 입력해 주세요.")
+        if not contact:
+            errors.append("연락처를 입력해 주세요.")
+        if not desired_equipment:
+            errors.append("희망 장비를 선택하거나 직접 입력해 주세요.")
+        try:
+            budget_manwon = int(budget_raw)
+            if budget_manwon <= 0:
+                raise ValueError
+        except Exception:
+            budget_manwon = 0
+            errors.append("구입 예산(만원)을 올바르게 입력해 주세요.")
+        try:
+            desired_months = int(desired_months_raw)
+            if desired_months not in months_options:
+                raise ValueError
+        except Exception:
+            desired_months = 0
+            errors.append("희망 할부기간을 선택해 주세요.")
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+        else:
+            FinanceConsultation.objects.create(
+                applicant_name=applicant_name,
+                contact=contact,
+                desired_equipment=desired_equipment,
+                budget_manwon=budget_manwon,
+                desired_months=desired_months,
+                memo=memo,
+            )
+            admin_phone = normalize_phone_digits(getattr(settings, "FINANCE_ADMIN_PHONE", ""))
+            contact_digits = normalize_phone_digits(contact)
+            if source_listing:
+                admin_msg = (
+                    "[굴삭기나라] 매물 할부상담 신청\n"
+                    f"매물명: {source_listing.model_name or source_listing.get_equipment_type_display()}\n"
+                    f"이름: {applicant_name}\n"
+                    f"연락처: {contact}\n"
+                    f"희망 할부기간: {desired_months}개월"
+                )
+            else:
+                admin_msg = (
+                    "[굴삭기나라] 할부상담 신청\n"
+                    f"이름: {applicant_name}\n"
+                    f"연락처: {contact}\n"
+                    f"희망장비: {desired_equipment}\n"
+                    f"예산: {budget_manwon:,}원\n"
+                    f"할부기간: {desired_months}개월"
+                )
+            if admin_phone:
+                send_sms(admin_phone, admin_msg)
+            messages.success(request, "할부 상담 신청이 접수되었습니다.")
+            if source_listing:
+                return redirect(f"{reverse('finance')}?listing_id={source_listing.pk}")
+            return redirect("finance")
+
+    return render(request, "equipment/finance.html", {
+        "months_options": months_options,
+        "equipment_options": equipment_options,
+        "default_rate": "5.9",
+        "source_listing": source_listing,
+    })
+
+
 def parts_as(request):
     """부품/AS 센터 지도 + 목록 검색 페이지."""
     region = (request.GET.get('region', '') or '').strip()
-    manufacturer = (request.GET.get('manufacturer', '') or '').strip()
-    equipment_type = (request.GET.get('equipment_type', '') or '').strip().lower()
-    shop_kind = (request.GET.get('shop_kind', '') or '').strip().lower()
+    equipment_type = (request.GET.get('equipment_type', 'all') or 'all').strip().lower()
+    shop_kind = (request.GET.get('shop_kind', 'all') or 'all').strip().lower()
 
     equipment_type_choices = [
         ("all", "전체"),
@@ -1583,47 +1739,11 @@ def parts_as(request):
         ("attachment", "어태치먼트"),
         ("other", "기타"),
     ]
-    equipment_label_by_key = {k: v for k, v in equipment_type_choices if k != "all"}
-    equipment_key_by_label = {v: k for k, v in equipment_label_by_key.items()}
-
-    shops_qs = PartsShop.objects.all()
-    if region:
-        shops_qs = shops_qs.filter(region__icontains=region)
-    if manufacturer:
-        shops_qs = shops_qs.filter(manufacturer__contains=[manufacturer])
-    if shop_kind in ("as", "parts"):
-        shops_qs = shops_qs.filter(shop_kind=shop_kind)
-
-    shops_data = []
-    for shop in shops_qs:
-        equipment_tags = [x for x in (shop.equipment_types or []) if x in equipment_key_by_label]
-        equipment_keys = [equipment_key_by_label[x] for x in equipment_tags]
-        if equipment_type and equipment_type != "all" and equipment_type not in equipment_keys:
-            continue
-        shops_data.append({
-            "id": shop.pk,
-            "name": shop.name,
-            "region": shop.region,
-            "contact": shop.contact,
-            "address": shop.address,
-            "note": shop.note,
-            "shop_kind": shop.shop_kind,
-            "equipment_keys": equipment_keys,
-            "equipment_tags": equipment_tags,
-            "manufacturers": shop.manufacturer or [],
-            "lat": shop.lat,
-            "lng": shop.lng,
-        })
+    equipment_label_by_key = {k: v for k, v in equipment_type_choices}
 
     region_options = list(
         PartsShop.objects.exclude(region="").values_list("region", flat=True).distinct().order_by("region")
     )
-    manufacturer_options = list(PartsShop.MANUFACTURER_CHOICES)
-    summary = {
-        "total": len(shops_data),
-        "as": sum(1 for item in shops_data if item["shop_kind"] == "as"),
-        "parts": sum(1 for item in shops_data if item["shop_kind"] == "parts"),
-    }
 
     kakao_map_js_key = (getattr(settings, "KAKAO_MAP_JS_KEY", "") or "").strip()
     if not kakao_map_js_key:
@@ -1639,18 +1759,131 @@ def parts_as(request):
             kakao_map_js_key = ""
 
     return render(request, 'equipment/parts_as.html', {
-        'shops': shops_data,
         'region': region,
-        'manufacturer': manufacturer,
-        'selected_equipment_type': equipment_type or "all",
+        'selected_equipment_type': equipment_type if equipment_type in equipment_label_by_key else "all",
         'selected_shop_kind': shop_kind or "all",
         'equipment_type_choices': equipment_type_choices,
         'region_options': region_options,
-        'manufacturer_options': manufacturer_options,
-        'summary': summary,
-        'shops_json': json.dumps(shops_data, ensure_ascii=False),
+        'excavator_manufacturers': PartsShop.MANUFACTURER_CHOICES,
+        'excavator_ton_ranges': PartsShop.TON_RANGE_CHOICES,
+        'excavator_repair_types': PartsShop.REPAIR_TYPE_CHOICES,
         'kakao_map_js_key': kakao_map_js_key,
     })
+
+
+def parts_as_register(request):
+    """업체 자진 등록 폼."""
+    equipment_type_options = [
+        ("excavator", "굴삭기"),
+        ("dump", "덤프트럭"),
+        ("forklift", "지게차"),
+        ("crane", "크레인"),
+        ("skidloader", "스키로더·로더"),
+        ("other", "기타"),
+    ]
+    shop_kind_options = [
+        ("parts", "부품점"),
+        ("as", "AS센터"),
+    ]
+
+    if request.method == "POST":
+        name = (request.POST.get("name") or "").strip()
+        shop_kind = (request.POST.get("shop_kind") or "parts").strip().lower()
+        region = (request.POST.get("region") or "").strip()
+        contact = (request.POST.get("contact") or "").strip()
+        address = (request.POST.get("address") or "").strip()
+        note = (request.POST.get("note") or "").strip()
+        selected_equipment_types = [x for x in request.POST.getlist("equipment_types") if x]
+
+        if not name or not region or not contact:
+            messages.error(request, "업체명, 지역, 연락처는 필수입니다.")
+        else:
+            if shop_kind not in ("parts", "as"):
+                shop_kind = "parts"
+            if not selected_equipment_types:
+                selected_equipment_types = ["excavator"]
+            # 중복 제거 + 입력 순서 유지
+            selected_equipment_types = list(dict.fromkeys(selected_equipment_types))
+
+            PartsShop.objects.create(
+                name=name,
+                shop_kind=shop_kind,
+                region=region,
+                equipment_types=selected_equipment_types,
+                contact=contact,
+                address=address,
+                note=note,
+            )
+            messages.success(request, "업체 등록이 완료되었습니다.")
+            return redirect("parts_as_register")
+
+    return render(request, "equipment/parts_as_register.html", {
+        "equipment_type_options": equipment_type_options,
+        "shop_kind_options": shop_kind_options,
+    })
+
+
+def service_centers_api(request):
+    """지도/목록 마커용 서비스센터 데이터 API."""
+    equipment_type = (request.GET.get("equipment_type") or "all").strip().lower()
+    manufacturers = [x.strip() for x in (request.GET.get("manufacturers") or "").split(",") if x.strip()]
+    ton_ranges = [x.strip() for x in (request.GET.get("ton_ranges") or "").split(",") if x.strip()]
+    repair_types = [x.strip() for x in (request.GET.get("repair_types") or "").split(",") if x.strip()]
+    region = (request.GET.get("region") or "").strip()
+    center_type = (request.GET.get("center_type") or "all").strip().lower()
+
+    equipment_aliases_by_key = {
+        "excavator": {"excavator", "굴삭기", "포크레인"},
+        "dump": {"dump", "덤프", "덤프트럭"},
+        "forklift": {"forklift", "지게차"},
+        "crane": {"crane", "크레인"},
+        "loader": {"loader", "skidloader", "스키로더", "로더", "스키로더·로더"},
+        "attachment": {"attachment", "어태치먼트"},
+        "other": {"other", "기타"},
+    }
+
+    centers_qs = PartsShop.objects.all()
+    if center_type in ("as", "parts"):
+        centers_qs = centers_qs.filter(shop_kind=center_type)
+    if region:
+        centers_qs = centers_qs.filter(region__icontains=region)
+
+    centers = []
+    for center in centers_qs:
+        center_manufacturers = list(center.manufacturers or center.manufacturer or [])
+        center_ton_ranges = list(center.ton_ranges or [])
+        center_repair_types = list(center.repair_types or [])
+        center_equipment_types = [str(x).strip().lower() for x in (center.equipment_types or []) if str(x).strip()]
+        if equipment_type and equipment_type != "all":
+            aliases = equipment_aliases_by_key.get(equipment_type, {equipment_type})
+            if not any(token in aliases for token in center_equipment_types):
+                continue
+        if manufacturers and not any(x in center_manufacturers for x in manufacturers):
+            continue
+        if ton_ranges and not any(x in center_ton_ranges for x in ton_ranges):
+            continue
+        if repair_types and not any(x in center_repair_types for x in repair_types):
+            continue
+
+        centers.append({
+            "id": center.pk,
+            "name": center.name,
+            "lat": center.lat,
+            "lng": center.lng,
+            "phone": center.contact,
+            "address": center.address,
+            "center_type": center.get_shop_kind_display(),
+            "center_type_key": center.shop_kind,
+            "manufacturers": center_manufacturers,
+            "ton_ranges": center_ton_ranges,
+            "repair_types": center_repair_types,
+            "operating_hours": center.note or "",
+            "region": center.region,
+            "rating": float(center.rating or 0),
+            "review_count": int(center.review_count or 0),
+        })
+
+    return JsonResponse({"centers": centers})
 
 
 # [4] 매물 관련
@@ -2180,7 +2413,7 @@ def author_listings(request, user_id):
 def part_list(request):
     part_list_qs = Part.objects.all()
     category = (request.GET.get('category') or '').strip().upper()
-    if category and category in dict(Part.PART_CATEGORIES):
+    if category and category in dict(Part.CATEGORY_CHOICES):
         part_list_qs = part_list_qs.filter(category=category)
     favorited_part_ids = set()
     if request.user.is_authenticated:
@@ -2231,41 +2464,25 @@ def toggle_part_favorite(request, pk):
     return redirect(next_url)
 
 
+@login_required(login_url='/login/')
 def part_create(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
     redirect_resp = _require_phone_verified(request)
     if redirect_resp:
         messages.info(request, '부품 매물 등록을 위해 휴대폰 본인인증이 필요합니다.')
         return redirect_resp
 
-    if request.method == "POST":
-        title = (request.POST.get("title") or "").strip()
-        price = (request.POST.get("price") or "").strip()
-        location = (request.POST.get("location") or "").strip()
-        category = (request.POST.get("category") or "ETC").strip()
-        compatibility = (request.POST.get("compatibility") or "").strip()
-        description = (request.POST.get("description") or "").strip()
-        contact = (request.POST.get("contact") or "").strip()
+    form = PartForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        part = form.save(commit=False)
+        part.author = request.user
+        part.save()
 
-        part = Part.objects.create(
-            title=title,
-            price=price,
-            location=location,
-            category=category,
-            compatibility=compatibility,
-            description=description,
-            contact=contact,
-            author=request.user,
-        )
-
-        # ✅ 사진 여러장 저장
         for f in request.FILES.getlist("images"):
             PartImage.objects.create(part=part, image=f)
 
         return redirect("part_detail", part.pk)
 
-    return render(request, "equipment/part_form.html", {"mode": "create"})
+    return render(request, "equipment/part_create.html", {"mode": "create", "form": form})
 
 
 def part_edit(request, pk):
@@ -2278,23 +2495,17 @@ def part_edit(request, pk):
     if part.author_id != request.user.id:
         return redirect("part_detail", part.pk)
 
-    if request.method == "POST":
-        part.title = (request.POST.get("title") or "").strip()
-        part.price = (request.POST.get("price") or "").strip()
-        part.location = (request.POST.get("location") or "").strip()
-        part.category = (request.POST.get("category") or "ETC").strip()
-        part.compatibility = (request.POST.get("compatibility") or "").strip()
-        part.description = (request.POST.get("description") or "").strip()
-        part.contact = (request.POST.get("contact") or "").strip()
+    form = PartForm(request.POST or None, instance=part)
+    if request.method == "POST" and form.is_valid():
+        part = form.save(commit=False)
         part.save()
 
-        # ✅ 수정 시 새 사진 추가 업로드(기존 사진 유지)
         for f in request.FILES.getlist("images"):
             PartImage.objects.create(part=part, image=f)
 
         return redirect("part_detail", part.pk)
 
-    return render(request, "equipment/part_form.html", {"mode": "edit", "part": part})
+    return render(request, "equipment/part_create.html", {"mode": "edit", "part": part, "form": form})
 
 
 def part_delete(request, pk):

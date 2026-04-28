@@ -169,11 +169,10 @@ SOCIALACCOUNT_PROVIDERS = {
     'kakao': {},
     'naver': {},
 }
-if os.getenv('KAKAO_REST_API_KEY'):
-    SOCIALACCOUNT_PROVIDERS['kakao']['APP'] = {
-        'client_id': os.getenv('KAKAO_REST_API_KEY'),
-        'secret': os.getenv('KAKAO_CLIENT_SECRET', ''),
-    }
+# NOTE:
+# 카카오는 Admin > Social applications(DB) 설정을 단일 소스로 사용한다.
+# 환경변수 APP 설정을 동시에 넣으면 DB 앱과 중복되어
+# allauth에서 MultipleObjectsReturned가 발생할 수 있다.
 if os.getenv('NAVER_CLIENT_ID'):
     SOCIALACCOUNT_PROVIDERS['naver']['APP'] = {
         'client_id': os.getenv('NAVER_CLIENT_ID'),
@@ -250,6 +249,8 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 SOLAPI_API_KEY = _env_str("SOLAPI_API_KEY")
 SOLAPI_API_SECRET = _env_str("SOLAPI_API_SECRET")
 SOLAPI_SENDER = _env_str("SOLAPI_SENDER")
+FINANCE_ADMIN_PHONE = _env_str("FINANCE_ADMIN_PHONE", "01024693800")
+YOUTUBE_API_KEY = _env_str("YOUTUBE_API_KEY")
 # 카카오맵 JS SDK 키 (없으면 카카오 로그인 REST 키를 임시로 사용)
 KAKAO_MAP_JS_KEY = _env_str("KAKAO_MAP_JS_KEY", _env_str("KAKAO_REST_API_KEY"))
 

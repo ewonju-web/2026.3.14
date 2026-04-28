@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}할부/금융 | 굴삭기나라{% endblock %}
+
+{% block extra_css %}
+<style>
+  .gn-fin-page { padding: 1rem 0 1.8rem; }
+  .gn-fin-title { margin: 0 0 .9rem; color: var(--gn-text); font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; }
+  .gn-fin-title::before { content: ""; display: inline-block; width: 4px; height: 1.1rem; margin-right: .55rem; border-radius: 2px; background: #2563eb; vertical-align: middle; }
+  .gn-fin-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: .85rem; }
+  .gn-card { border: 1px solid #c7d7ee; border-radius: 12px; background: #fff; box-shadow: var(--gn-shadow); overflow: hidden; }
+  .gn-card-head { padding: .78rem .9rem; border-bottom: 1px solid #d7e3f4; font-size: 1rem; font-weight: 800; color: #1e293b; }
+  .gn-card-body { padding: .9rem; }
+  .gn-result-box { border: 1px solid #d2dff1; border-radius: 10px; background: #f8fbff; padding: .75rem; }
+  .gn-result-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: .35rem; }
+  .gn-result-item:last-child { margin-bottom: 0; }
+  .gn-result-item .label { color: #334155; font-size: .88rem; font-weight: 700; }
+  .gn-result-item .value { color: #111827; font-weight: 800; font-size: .93rem; }
+  .gn-fin-note { font-size: .83rem; color: #334155; margin-top: .7rem; line-height: 1.45; font-weight: 600; }
+  .gn-table-wrap { max-height: 360px; overflow: auto; border: 1px solid #d2dff1; border-radius: 10px; }
+  .gn-table-wrap table { margin: 0; font-size: .84rem; }
+  .gn-table-wrap thead th { position: sticky; top: 0; background: #eef4ff; z-index: 1; color: #1e293b; font-weight: 800; }
+  .gn-card .small.text-muted { color: #334155 !important; font-weight: 700; }
+  .gn-card .form-control,
+  .gn-card .form-select {
+    border-color: #c7d7ee;
+    color: #0f172a;
+    font-weight: 600;
+  }
+  .gn-card .form-control::placeholder { color: #64748b; font-weight: 500; }
+  .gn-card .form-control:focus,
+  .gn-card .form-select:focus {
+    border-color: #7aa2d8;
+    box-shadow: 0 0 0 .2rem rgba(59, 130, 246, 0.18);
+  }
+  @media (max-width: 991.98px) { .gn-fin-grid { grid-template-columns: 1fr; } }
+  .gn-fin-action-btn {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+    font-weight: 800;
+  }
+  .gn-fin-action-btn:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gn-fin-page">
+  <div class="container">
+    <h2 class="gn-fin-title">할부/금융</h2>
+    <section class="gn-fin-grid">
+      <div class="gn-card">
+        <div class="gn-card-head">할부 계산기</div>
+        <div class="gn-card-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-6">
+              <label class="small text-muted mb-1 d-block">필요자금 (원)</label>
+              <input type="text" id="priceWon" class="form-control" value="30,000,000" placeholder="예) 50,000,000원" inputmode="numeric">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="small text-muted mb-1 d-block">할부기간</label>
+              <select id="months" class="form-select">
+                {% for m in months_options %}
+                <option value="{{ m }}" {% if m == 60 %}selected{% endif %}>{{ m }}개월</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="small text-muted mb-1 d-block">연이율 (%)</label>
+              <input type="number" min="0" step="0.01" id="rate" class="form-control" value="{{ default_rate }}">
+            </div>
+            <div class="col-12 col-md-6 d-flex align-items-end">
+              <button type="button" id="calcBtn" class="btn gn-fin-action-btn w-100">계산하기</button>
+            </div>
+          </div>
+
+          <div class="gn-result-box mt-3">
+            <div class="gn-result-item"><span class="label">대출금액</span><span class="value" id="loanAmountOut">-</span></div>
+            <div class="gn-result-item"><span class="label">월 납입금</span><span class="value" id="monthlyOut">-</span></div>
+            <div class="gn-result-item"><span class="label">총 납입금</span><span class="value" id="totalOut">-</span></div>
+            <div class="gn-result-item"><span class="label">총 이자금액</span><span class="value" id="interestOut">-</span></div>
+          </div>
+          <p class="gn-fin-note">본 계산기는 참고용이며 실제 금리는 캐피탈사 심사에 따라 다를 수 있습니다.</p>
+
+          <div class="gn-table-wrap mt-2">
+            <table class="table table-sm table-striped align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>회차</th>
+                  <th class="text-end">납입금</th>
+                  <th class="text-end">원금</th>
+                  <th class="text-end">이자</th>
+                  <th class="text-end">잔액</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="gn-card">
+        <div class="gn-card-head">할부 상담 신청</div>
+        <div class="gn-card-body">
+          {% if source_listing %}
+          <div class="alert alert-info py-2 small">
+            상담 대상 매물: <strong>{{ source_listing.model_name|default:source_listing.get_equipment_type_display }}</strong>
+          </div>
+          {% endif %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="listing_id" value="{% if source_listing %}{{ source_listing.pk }}{% endif %}">
+            <div class="mb-2">
+              <label class="small text-muted mb-1 d-block">신청자 이름</label>
+              <input type="text" name="applicant_name" class="form-control" maxlength="50" required>
+            </div>
+            <div class="mb-2">
+              <label class="small text-muted mb-1 d-block">연락처</label>
+              <input type="tel" name="contact" class="form-control" maxlength="13" placeholder="010-1234-5678" required>
+            </div>
+            <div class="mb-2">
+              <label class="small text-muted mb-1 d-block">희망 장비</label>
+              <select name="desired_equipment_select" id="desiredEquipmentSelect" class="form-select">
+                <option value="none">선택하세요</option>
+                {% for item in equipment_options %}
+                <option value="{{ item }}" {% if source_listing and source_listing.get_equipment_type_display == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+                <option value="custom">직접 입력</option>
+              </select>
+            </div>
+            <div class="mb-2" id="customEquipBox" style="display:none;">
+              <label class="small text-muted mb-1 d-block">희망 장비 직접 입력</label>
+              <input type="text" name="desired_equipment_custom" id="desiredEquipmentCustom" class="form-control" maxlength="100">
+            </div>
+            <div class="mb-2">
+              <label class="small text-muted mb-1 d-block">구입 예산 (원)</label>
+              <input type="text" name="budget_manwon" class="form-control" value="30,000,000" onfocus="this.value=''" inputmode="numeric" required>
+            </div>
+            <div class="mb-2">
+              <label class="small text-muted mb-1 d-block">희망 할부기간</label>
+              <select name="desired_months" class="form-select" required>
+                <option value="">선택하세요</option>
+                {% for m in months_options %}
+                <option value="{{ m }}">{{ m }}개월</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="small text-muted mb-1 d-block">메모 (선택사항)</label>
+              <textarea name="memo" class="form-control" rows="4" maxlength="300"></textarea>
+            </div>
+            <button type="submit" class="btn gn-fin-action-btn w-100">상담 신청하기</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const priceEl = $("priceWon");
+    const monthsEl = $("months");
+    const rateEl = $("rate");
+    const scheduleBodyEl = $("scheduleBody");
+
+    function parseWon(v) {
+      const digits = String(v || "").replace(/[^\d]/g, "");
+      return Number(digits || 0);
+    }
+    function formatDigits(v) {
+      const n = parseWon(v);
+      if (!n) return "";
+      return n.toLocaleString("ko-KR");
+    }
+
+    function formatWon(v) {
+      return `${Math.round(v).toLocaleString("ko-KR")}원`;
+    }
+
+    function calc() {
+      const price = parseWon(priceEl.value);
+      const months = Number(monthsEl.value || 0);
+      const annualRate = Number(rateEl.value || 0);
+      if (price <= 0 || months <= 0) return;
+
+      const loan = price;
+      const monthlyRate = annualRate / 100 / 12;
+      let monthlyPay = 0;
+      if (monthlyRate === 0) monthlyPay = loan / months;
+      else {
+        const factor = Math.pow(1 + monthlyRate, months);
+        monthlyPay = loan * (monthlyRate * factor) / (factor - 1);
+      }
+
+      let balance = loan;
+      let totalPay = 0;
+      let totalInterest = 0;
+      let rowsHtml = "";
+      for (let n = 1; n <= months; n++) {
+        const interest = balance * monthlyRate;
+        const principal = monthlyPay - interest;
+        balance = Math.max(0, balance - principal);
+        totalPay += monthlyPay;
+        totalInterest += interest;
+        rowsHtml += `
+          <tr>
+            <td>${n}</td>
+            <td class="text-end">${formatWon(monthlyPay)}</td>
+            <td class="text-end">${formatWon(principal)}</td>
+            <td class="text-end">${formatWon(interest)}</td>
+            <td class="text-end">${formatWon(balance)}</td>
+          </tr>
+        `;
+      }
+
+      $("loanAmountOut").textContent = formatWon(loan);
+      $("monthlyOut").textContent = formatWon(monthlyPay);
+      $("totalOut").textContent = formatWon(totalPay);
+      $("interestOut").textContent = formatWon(totalInterest);
+      scheduleBodyEl.innerHTML = rowsHtml;
+    }
+
+    $("calcBtn").addEventListener("click", calc);
+    [priceEl, monthsEl, rateEl].forEach((el) => {
+      el.addEventListener("input", calc);
+      el.addEventListener("change", calc);
+    });
+    priceEl.addEventListener("input", function () {
+      this.value = formatDigits(this.value);
+    });
+    priceEl.addEventListener("focus", function () {
+      this.dataset.placeholder = this.getAttribute("placeholder") || "";
+      this.setAttribute("placeholder", "");
+      if (this.value) this.value = "";
+    });
+    priceEl.addEventListener("blur", function () {
+      this.value = formatDigits(this.value);
+      if (!this.value) this.setAttribute("placeholder", this.dataset.placeholder || "예) 50,000,000원");
+    });
+
+    const equipSelectEl = $("desiredEquipmentSelect");
+    const customBoxEl = $("customEquipBox");
+    const customInputEl = $("desiredEquipmentCustom");
+    equipSelectEl.addEventListener("change", function () {
+      const useCustom = this.value === "custom";
+      customBoxEl.style.display = useCustom ? "" : "none";
+      customInputEl.required = useCustom;
+      if (!useCustom) customInputEl.value = "";
+    });
+
+    priceEl.value = formatDigits(priceEl.value);
+    calc();
+  })();
+</script>
+{% endblock %}

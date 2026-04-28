@@ -8,10 +8,11 @@ I18N = {
     "ko": {
         "lang_label": "한국어",
         "nav_market": "중고매물",
+        "nav_market_view": "매물보기",
         "nav_jobs": "구인구직",
-        "nav_attachment": "어태치먼트",
+        "nav_attachment": "할부/금융",
         "nav_youtube": "정비유튜브",
-        "nav_parts_as": "부품/AS",
+        "nav_parts_as": "부품 A/S",
         "nav_soil": "현장 자재 나눔",
         "nav_chat": "채팅",
         "nav_mypage": "마이페이지",
@@ -27,6 +28,9 @@ I18N = {
         "service_trade": "장비 거래",
         "service_menu": "서비스",
         "service_market_home": "중고매물 홈",
+        "service_attachment_sub": "어태치먼트",
+        "service_parts_as_shop": "부품 A/S 부품점",
+        "service_social_connect": "소셜 계정 연결",
         "mypage_title": "마이페이지",
         "mypage_favorites": "찜한 매물",
         "mypage_my_listings": "내가 올린 매물",
@@ -38,8 +42,9 @@ I18N = {
     "en": {
         "lang_label": "English",
         "nav_market": "Listings",
+        "nav_market_view": "Listings",
         "nav_jobs": "Jobs",
-        "nav_attachment": "Attachments",
+        "nav_attachment": "Finance",
         "nav_youtube": "Repair YouTube",
         "nav_parts_as": "Parts/AS",
         "nav_soil": "Site Material Share",
@@ -57,6 +62,9 @@ I18N = {
         "service_trade": "Equipment Trade",
         "service_menu": "Services",
         "service_market_home": "Listings Home",
+        "service_attachment_sub": "Attachment",
+        "service_parts_as_shop": "Parts A/S Shop",
+        "service_social_connect": "Connect Social Account",
         "mypage_title": "My Page",
         "mypage_favorites": "Favorites",
         "mypage_my_listings": "My Listings",
@@ -68,8 +76,9 @@ I18N = {
     "ru": {
         "lang_label": "Русский",
         "nav_market": "Объявления",
+        "nav_market_view": "Объявления",
         "nav_jobs": "Работа",
-        "nav_attachment": "Навесное",
+        "nav_attachment": "Финансы",
         "nav_youtube": "YouTube по ремонту",
         "nav_parts_as": "Запчасти/Сервис",
         "nav_soil": "Раздача стройматериалов",
@@ -87,6 +96,9 @@ I18N = {
         "service_trade": "Техника",
         "service_menu": "Сервисы",
         "service_market_home": "Главная объявлений",
+        "service_attachment_sub": "Навесное",
+        "service_parts_as_shop": "Запчасти A/S",
+        "service_social_connect": "Подключить соцаккаунт",
         "mypage_title": "Моя страница",
         "mypage_favorites": "Избранные объявления",
         "mypage_my_listings": "Мои объявления",
@@ -98,8 +110,9 @@ I18N = {
     "vi": {
         "lang_label": "Tiếng Việt",
         "nav_market": "Tin đăng",
+        "nav_market_view": "Xem tin",
         "nav_jobs": "Việc làm",
-        "nav_attachment": "Phụ kiện",
+        "nav_attachment": "Tài chính",
         "nav_youtube": "YouTube sửa chữa",
         "nav_parts_as": "Phụ tùng/AS",
         "nav_soil": "Chia sẻ vật liệu công trường",
@@ -117,6 +130,9 @@ I18N = {
         "service_trade": "Giao dịch thiết bị",
         "service_menu": "Dịch vụ",
         "service_market_home": "Trang tin đăng",
+        "service_attachment_sub": "Phụ kiện",
+        "service_parts_as_shop": "Phụ tùng A/S",
+        "service_social_connect": "Kết nối tài khoản mạng xã hội",
         "mypage_title": "Trang của tôi",
         "mypage_favorites": "Tin đã lưu",
         "mypage_my_listings": "Tin tôi đã đăng",
@@ -231,4 +247,20 @@ def equipment_row_contact(equipment):
             continue
         return format_phone(ph)
     return "-"
+
+
+@register.filter
+def hide_code_text(value):
+    """
+    의미 없는 코드형 텍스트(예: 0101, 02-02, 01/02)는 화면에서 숨김.
+    숫자/공백/-,/ 만으로 이루어진 경우 빈 문자열을 반환한다.
+    """
+    if value is None:
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
+    if re.fullmatch(r"[0-9\-\s/]+", text):
+        return ""
+    return text
 

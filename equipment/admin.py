@@ -13,6 +13,7 @@ from urllib.request import urlopen, Request
 from .models import (
     Equipment, EquipmentImage, Profile, JobPost, Part, PartImage, PartsShop, YoutubeContent,
     EquipmentFavorite, PartFavorite, Comment, DeletedListingLog, EquipmentType, EquipmentBumpLog,
+    FinanceConsultation,
     ExcavatorEquipment, ForkliftEquipment, DumpEquipment, LoaderEquipment,
     CraneEquipment, AttachmentEquipment, OtherEquipment,
 )
@@ -197,12 +198,16 @@ class PartImageInline(admin.TabularInline):
 
 @admin.register(Part)
 class PartAdmin(admin.ModelAdmin):
-    list_display = ['category', 'title', 'price', 'location', 'author', 'created_at']
-    list_filter = ('category', 'created_at')
+    list_display = ['name', 'category', 'price', 'created_at']
+    list_filter = ['category']
     search_fields = ('title', 'location', 'compatibility', 'description')
     date_hierarchy = 'created_at'
     list_per_page = 50
     inlines = [PartImageInline]
+
+    def name(self, obj):
+        return obj.title
+    name.short_description = "name"
 
 
 @admin.register(PartsShop)
@@ -220,6 +225,24 @@ class PartsShopAdmin(admin.ModelAdmin):
             widget=forms.CheckboxSelectMultiple,
             label="취급 제조사",
         )
+        manufacturers = forms.MultipleChoiceField(
+            choices=[(x, x) for x in PartsShop.MANUFACTURER_CHOICES],
+            required=False,
+            widget=forms.CheckboxSelectMultiple,
+            label="취급 제조사(신규 필터용)",
+        )
+        ton_ranges = forms.MultipleChoiceField(
+            choices=[(x, x) for x in PartsShop.TON_RANGE_CHOICES],
+            required=False,
+            widget=forms.CheckboxSelectMultiple,
+            label="톤급",
+        )
+        repair_types = forms.MultipleChoiceField(
+            choices=[(x, x) for x in PartsShop.REPAIR_TYPE_CHOICES],
+            required=False,
+            widget=forms.CheckboxSelectMultiple,
+            label="정비 유형",
+        )
 
         class Meta:
             model = PartsShop
@@ -233,7 +256,7 @@ class PartsShopAdmin(admin.ModelAdmin):
     radio_fields = {'shop_kind': admin.HORIZONTAL}
     fieldsets = (
         (None, {'fields': ('name', 'shop_kind', 'region', 'contact')}),
-        ('취급 정보', {'fields': ('equipment_types', 'manufacturer')}),
+        ('취급 정보', {'fields': ('equipment_types', 'manufacturer', 'manufacturers', 'ton_ranges', 'repair_types')}),
         ('주소·좌표', {'fields': ('address', ('lat', 'lng'), 'note')}),
     )
 
@@ -616,6 +639,25 @@ class EquipmentBumpLogAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'equipment__model_name')
     date_hierarchy = 'bumped_at'
     readonly_fields = ('bumped_at',)
+
+
+@admin.register(FinanceConsultation)
+class FinanceConsultationAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "applicant_name",
+        "contact",
+        "desired_equipment",
+        "budget_manwon",
+        "desired_months",
+        "status",
+    )
+    list_filter = ("status", "desired_months", "created_at")
+    search_fields = ("applicant_name", "contact", "desired_equipment", "memo")
+    list_editable = ("status",)
+    readonly_fields = ("created_at", "updated_at")
+    date_hierarchy = "created_at"
+    list_per_page = 50
 
 
 class CustomAuthUserAdmin(DjangoUserAdmin):

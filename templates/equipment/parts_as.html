@@ -1,198 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}부품 / AS 센터 찾기 | 굴삭기나라{% endblock %}
+{% block title %}부품 및 A/S 센터 찾기 | 굴삭기나라{% endblock %}
 
 {% block extra_css %}
 <style>
   .gn-partsas-page { background: transparent; padding: 1rem 0 1.6rem; }
-  .gn-partsas-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 0.85rem;
+  .gn-partsas-header { display:flex; justify-content:space-between; align-items:center; gap:.8rem; margin-bottom:.85rem; }
+  .gn-partsas-title { margin:0; color:var(--gn-text); font-size:1.5rem; font-weight:800; letter-spacing:-.01em; }
+  .gn-partsas-title::before { content:""; display:inline-block; width:4px; height:1.1rem; margin-right:.55rem; border-radius:2px; background:var(--gn-accent); vertical-align:middle; }
+  .gn-search-card { background:#fff; border:1px solid var(--gn-border); border-radius:12px; padding:1rem; margin-bottom:.85rem; box-shadow:var(--gn-shadow); }
+  .gn-pill-wrap, .gn-chip-wrap { display:flex; flex-wrap:wrap; gap:.45rem; }
+  .gn-search-card .small.text-muted { color:#334155 !important; font-weight:700; }
+  .gn-pill-btn, .gn-filter-chip { border-radius:999px; border:1px solid #d1d5db; background:#fff; color:#475569; font-size:.92rem; font-weight:700; padding:.4rem .85rem; }
+  .gn-pill-btn:hover, .gn-filter-chip:hover { background:#374151; color:#e8a317; border-color:#374151; }
+  .gn-pill-btn.active, .gn-filter-chip.active { background:#374151; color:#e8a317; border-color:#374151; }
+  .gn-excavator-detail {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    transition: max-height .28s ease, opacity .2s ease, margin-top .2s ease;
+    border-top: 1px dashed transparent;
   }
-  .gn-partsas-title-wrap { min-width: 0; }
-  .gn-partsas-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-bottom: 0.42rem;
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #475569;
+  .gn-excavator-detail.open {
+    max-height: 420px;
+    opacity: 1;
+    margin-top: .8rem;
+    padding-top: .8rem;
+    border-top-color: #e5e7eb;
   }
-  .gn-partsas-back:hover { color: #1f2937; }
-  .gn-partsas-title {
-    margin: 0;
-    color: var(--gn-text);
-    font-size: 1.55rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-  .gn-partsas-title::before {
-    content: "";
-    display: inline-block;
-    width: 4px;
-    height: 1.1rem;
-    margin-right: 0.55rem;
-    border-radius: 2px;
-    background: var(--gn-accent);
-    vertical-align: middle;
-  }
-  .gn-partsas-sub {
-    margin-top: 0.25rem;
-    color: var(--gn-muted);
-    font-size: 0.88rem;
-  }
-  .gn-partsas-head-btn {
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    color: #334155;
-    background: #fff;
-    font-weight: 700;
-    text-decoration: none;
-    padding: 0.48rem 0.9rem;
-    white-space: nowrap;
-  }
-  .gn-partsas-head-btn:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-    color: #1e293b;
-  }
-
-  .gn-search-card {
-    background: #fff;
-    border: 1px solid var(--gn-border);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 0.85rem;
-    box-shadow: var(--gn-shadow);
-  }
-  .gn-pill-wrap { display: flex; flex-wrap: wrap; gap: 0.45rem; }
-  .gn-pill-btn {
-    border-radius: 999px;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #475569;
-    font-size: 0.92rem;
-    font-weight: 700;
-    padding: 0.4rem 0.85rem;
-  }
-  .gn-pill-btn.active { background: #374151; color: #e8a317; border-color: #374151; }
-  .gn-search-btn { background: #e8a317; color: #0f172a; font-weight: 800; border: none; }
-  .gn-search-btn:hover { background: #d49410; color: #0f172a; }
-
-  .gn-layout {
-    display: grid;
-    grid-template-columns: 340px minmax(0, 1fr);
-    gap: 0.85rem;
-    min-height: 620px;
-  }
-  .gn-list-panel, .gn-map-panel {
-    border: 1px solid var(--gn-border);
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: var(--gn-shadow);
-  }
-  .gn-list-panel { display: flex; flex-direction: column; overflow: hidden; }
-  .gn-list-toolbar {
-    border-bottom: 1px solid #eceff4;
-    padding: 0.7rem 0.7rem 0.55rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .gn-kind-tabs { display: flex; gap: 0.4rem; }
-  .gn-kind-btn {
-    border: 1px solid #d1d5db;
-    border-radius: 999px;
-    background: #fff;
-    font-size: 0.85rem;
-    font-weight: 700;
-    padding: 0.28rem 0.64rem;
-    color: #374151;
-  }
-  .gn-kind-btn.active { background: #374151; border-color: #374151; color: #fff; }
-  .gn-shop-list { overflow: auto; padding: 0.7rem; max-height: 620px; }
-  .gn-shop-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #fff;
-    padding: 0.78rem;
-    margin-bottom: 0.62rem;
-    transition: border-color .18s, background .18s, box-shadow .18s;
-    cursor: pointer;
-  }
-  .gn-shop-card:hover { border-color: #e8a317; box-shadow: 0 5px 12px rgba(17,24,39,.07); }
-  .gn-shop-card.active { background: #fffdf5; border: 2px solid #e8a317; }
-  .gn-shop-top { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; }
-  .gn-shop-name { font-weight: 800; margin: 0; font-size: 1rem; color: #101828; }
-  .gn-badge {
-    border-radius: 999px;
-    padding: 0.2rem 0.55rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-  }
-  .gn-badge.as { background: #dbeafe; color: #1d4ed8; }
-  .gn-badge.parts { background: #dcfce7; color: #166534; }
-  .gn-distance { color: #b45309; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.28rem; }
-  .gn-equip-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; }
-  .gn-equip-tag { background: #f4f4f5; color: #52525b; border-radius: 999px; font-size: 0.72rem; padding: 0.18rem 0.5rem; }
-  .gn-card-actions { display: flex; gap: 0.35rem; margin-top: 0.55rem; }
-  .gn-card-actions .btn { flex: 1; font-size: 0.82rem; font-weight: 700; }
-
-  .gn-map-panel { position: relative; overflow: hidden; }
-  #partsAsMap { width: 100%; height: 100%; min-height: 620px; }
-  .gn-map-tools {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-  .gn-map-tools .btn {
-    border-radius: 10px;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    font-weight: 700;
-    font-size: 0.82rem;
-    color: #334155;
-  }
-  .gn-map-tools .btn:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
-  }
-  .gn-empty {
-    text-align: center;
-    color: #6b7280;
-    padding: 2.2rem 1rem;
-    border: 1px dashed #d1d5db;
-    border-radius: 12px;
-    background: #fafafa;
-  }
-  .gn-info-window { min-width: 220px; max-width: 280px; padding: 0.4rem; }
-  .gn-info-window .name { font-weight: 800; margin-bottom: 0.2rem; }
-  .gn-info-window .meta { font-size: 0.82rem; color: #4b5563; margin-bottom: 0.2rem; }
-  .gn-info-window .tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.35rem; }
-  .gn-info-window .tag { background: #f3f4f6; font-size: 0.72rem; border-radius: 999px; padding: 0.12rem 0.45rem; }
-  .gn-info-window .actions { display: flex; gap: 0.35rem; }
-  .gn-info-window .actions a {
-    flex: 1; text-align: center; text-decoration: none; border-radius: 8px; padding: 0.32rem 0.38rem; font-size: 0.76rem; font-weight: 700;
-  }
-  .gn-info-window .call { background: #111827; color: #fff; }
-  .gn-info-window .route { background: #e8a317; color: #111827; }
-
-  @media (max-width: 991.98px) {
-    .gn-layout { grid-template-columns: 1fr; }
-    .gn-shop-list { max-height: 330px; }
-    #partsAsMap { min-height: 420px; }
-    .gn-partsas-header { align-items: flex-start; flex-direction: column; }
-    .gn-partsas-title { font-size: 1.35rem; }
+  .gn-filter-group { margin-bottom:.7rem; }
+  .gn-filter-title { font-size:.84rem; color:#6b7280; margin-bottom:.35rem; font-weight:700; }
+  .gn-layout { display:grid; grid-template-columns:340px minmax(0,1fr); gap:.85rem; min-height:620px; }
+  .gn-list-panel,.gn-map-panel { border:1px solid var(--gn-border); border-radius:12px; background:#fff; box-shadow:var(--gn-shadow); }
+  .gn-list-panel { display:flex; flex-direction:column; overflow:hidden; }
+  .gn-list-toolbar { border-bottom:1px solid #eceff4; padding:.7rem; display:flex; justify-content:space-between; align-items:center; }
+  .gn-kind-tabs { display:flex; gap:.4rem; }
+  .gn-kind-btn { border:1px solid #d1d5db; border-radius:999px; background:#fff; font-size:.85rem; font-weight:700; padding:.28rem .64rem; color:#374151; }
+  .gn-kind-btn.active { background:#374151; border-color:#374151; color:#fff; }
+  .gn-shop-list { overflow:auto; padding:.7rem; max-height:620px; }
+  .gn-shop-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:.78rem; margin-bottom:.62rem; cursor:pointer; }
+  .gn-shop-card.active { background:#fffdf5; border:2px solid #e8a317; }
+  .gn-shop-name { font-weight:800; margin:0 0 .2rem; font-size:1rem; color:#101828; }
+  .gn-shop-rating { font-size:.83rem; color:#f59e0b; font-weight:700; margin-bottom:.2rem; }
+  .gn-shop-rating .count { color:#64748b; font-weight:600; margin-left:.25rem; }
+  .gn-badge { border-radius:999px; padding:.2rem .55rem; font-size:.75rem; font-weight:700; }
+  .gn-badge.as { background:#dbeafe; color:#1d4ed8; } .gn-badge.parts { background:#dcfce7; color:#166534; }
+  .gn-equip-tag { background:#f4f4f5; color:#52525b; border-radius:999px; font-size:.72rem; padding:.18rem .5rem; }
+  .gn-map-panel { position:relative; overflow:hidden; }
+  #partsAsMap { width:100%; height:100%; min-height:620px; }
+  .gn-mobile-tabs { display:none; }
+  .gn-empty { text-align:center; color:#6b7280; padding:2rem 1rem; border:1px dashed #d1d5db; border-radius:12px; background:#fafafa; }
+  .gn-info-window { min-width:220px; max-width:280px; padding:.35rem; font-size:.82rem; }
+  @media (max-width:991.98px) {
+    .gn-layout { grid-template-columns:1fr; min-height:auto; }
+    .gn-mobile-tabs { display:flex; gap:.45rem; margin-bottom:.65rem; }
+    .gn-mobile-tab-btn { flex:1; border:1px solid #d1d5db; border-radius:999px; background:#fff; font-size:.9rem; font-weight:800; color:#374151; padding:.5rem .7rem; }
+    .gn-mobile-tab-btn.active { background:#374151; color:#fff; border-color:#374151; }
+    .gn-layout.mobile-map .gn-list-panel { display:none; }
+    .gn-layout.mobile-list .gn-map-panel { display:none; }
+    .gn-shop-list { max-height:56vh; }
+    #partsAsMap { min-height:56vh; }
   }
 </style>
 {% endblock %}
@@ -201,35 +69,41 @@
 <div class="gn-partsas-page">
   <div class="container">
     <div class="gn-partsas-header">
-      <div class="gn-partsas-title-wrap">
-        <a href="#" id="backToDetailBtn" class="gn-partsas-back">← 이전페이지로</a>
-        <h2 class="gn-partsas-title">부품 / AS 센터 찾기</h2>
-        <div class="gn-partsas-sub">장비 기종과 지역을 선택하면 가까운 업체를 지도에서 확인할 수 있어요</div>
-      </div>
-      <a href="tel:01024693800" class="gn-partsas-head-btn">업체 등록 문의 →</a>
+      <h2 class="gn-partsas-title">부품 및 A/S 센터 찾기</h2>
+      <a href="{% url 'parts_as_register' %}" class="btn btn-sm fw-bold text-dark" style="background: var(--gn-accent); border:1px solid var(--gn-accent); border-radius: 10px; box-shadow: 0 2px 8px rgba(232,163,23,.35);">업체 자진 등록</a>
     </div>
 
     <section class="gn-search-card">
-      <form id="partsAsSearchForm" class="row g-2">
-        <input type="hidden" id="equipmentTypeInput" value="{{ selected_equipment_type }}">
-        <div class="col-12">
-          <label class="small text-muted mb-2 d-block">장비 유형 선택</label>
-          <div class="gn-pill-wrap" id="equipmentTypePills">
-            {% for value, label in equipment_type_choices %}
-              <button type="button" class="gn-pill-btn {% if selected_equipment_type == value %}active{% endif %}" data-equipment-type="{{ value }}">{{ label }}</button>
+      <div class="mb-2">
+        <label class="small text-muted mb-2 d-block">장비 유형 선택</label>
+        <div class="gn-pill-wrap" id="equipmentTypePills">
+          {% for value, label in equipment_type_choices %}
+            <button type="button" class="gn-pill-btn {% if selected_equipment_type == value %}active{% endif %}" data-equipment-type="{{ value }}">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="excavatorDetailBox" class="gn-excavator-detail">
+        <div class="gn-filter-group">
+          <div class="gn-filter-title">제조사 선택 (복수 선택)</div>
+          <div class="gn-chip-wrap" id="manufacturerChips">
+            {% for item in excavator_manufacturers %}
+              <button type="button" class="gn-filter-chip" data-group="manufacturers" data-value="{{ item }}">{% if item == "두산" %}두산/디벨론{% else %}{{ item }}{% endif %}</button>
             {% endfor %}
           </div>
         </div>
-        <div class="col-12 col-md-4">
-          <label class="small text-muted mb-1 d-block">제조사</label>
-          <select id="manufacturerInput" class="form-select">
-            <option value="">전체</option>
-            {% for maker in manufacturer_options %}
-              <option value="{{ maker }}" {% if manufacturer == maker %}selected{% endif %}>{{ maker }}</option>
+        <div class="gn-filter-group">
+          <div class="gn-filter-title">정비 유형 (복수 선택)</div>
+          <div class="gn-chip-wrap" id="repairTypeChips">
+            {% for item in excavator_repair_types %}
+              <button type="button" class="gn-filter-chip" data-group="repair_types" data-value="{{ item }}">{{ item }}</button>
             {% endfor %}
-          </select>
+          </div>
         </div>
-        <div class="col-12 col-md-4">
+      </div>
+
+      <div class="row g-2 mt-1">
+        <div class="col-12 col-md-6">
           <label class="small text-muted mb-1 d-block">지역</label>
           <select id="regionInput" class="form-select">
             <option value="">전국</option>
@@ -238,444 +112,290 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6">
           <label class="small text-muted mb-1 d-block">업체 유형</label>
-          <select id="shopKindSelect" class="form-select">
-            <option value="all" {% if selected_shop_kind == "all" %}selected{% endif %}>전체 업체</option>
+          <select id="centerTypeInput" class="form-select">
+            <option value="all">전체 업체</option>
             <option value="as" {% if selected_shop_kind == "as" %}selected{% endif %}>AS센터</option>
             <option value="parts" {% if selected_shop_kind == "parts" %}selected{% endif %}>부품점</option>
           </select>
         </div>
-        <div class="col-12 d-flex justify-content-end gap-2 mt-1">
-          <button type="button" id="resetBtn" class="btn btn-outline-secondary">초기화</button>
-          <button type="submit" class="btn gn-search-btn">검색하기</button>
+        <div class="col-12">
+          <label class="small text-muted mb-1 d-block">업체명 검색</label>
+          <input type="text" id="nameSearchInput" class="form-control" placeholder="업체명을 입력하세요" autocomplete="off">
         </div>
-      </form>
+      </div>
+      <div class="mt-2 d-flex justify-content-end">
+        <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm">초기화</button>
+      </div>
     </section>
+
+    <div class="gn-mobile-tabs" id="mobileViewTabs">
+      <button type="button" class="gn-mobile-tab-btn active" data-mobile-view="map">지도보기</button>
+      <button type="button" class="gn-mobile-tab-btn" data-mobile-view="list">목록보기</button>
+    </div>
 
     <section class="gn-layout">
       <div class="gn-list-panel">
         <div class="gn-list-toolbar">
-          <div class="small text-muted"><strong id="resultCount">{{ summary.total }}</strong>개 업체</div>
+          <div class="small text-muted"><strong id="resultCount">0</strong>개 업체</div>
           <div class="gn-kind-tabs">
-            <button class="gn-kind-btn active" data-kind-filter="all">전체 (<span id="countAll">{{ summary.total }}</span>)</button>
-            <button class="gn-kind-btn" data-kind-filter="as">AS센터 (<span id="countAs">{{ summary.as }}</span>)</button>
-            <button class="gn-kind-btn" data-kind-filter="parts">부품점 (<span id="countParts">{{ summary.parts }}</span>)</button>
+            <button class="gn-kind-btn active" data-kind-filter="all">전체 (<span id="countAll">0</span>)</button>
+            <button class="gn-kind-btn" data-kind-filter="as">AS센터 (<span id="countAs">0</span>)</button>
+            <button class="gn-kind-btn" data-kind-filter="parts">부품점 (<span id="countParts">0</span>)</button>
           </div>
         </div>
         <div class="gn-shop-list" id="shopList"></div>
       </div>
-
-      <div class="gn-map-panel">
-        <div id="partsAsMap"></div>
-        <div class="gn-map-tools">
-          <button class="btn btn-sm" id="myLocationBtn"><i class="bi bi-crosshair me-1"></i>내 위치</button>
-          <button class="btn btn-sm" id="fitBoundsBtn"><i class="bi bi-arrows-angle-expand me-1"></i>전체보기</button>
-        </div>
-      </div>
+      <div class="gn-map-panel"><div id="partsAsMap"></div></div>
     </section>
   </div>
 </div>
-
-<script id="partsAsData" type="application/json">{{ shops_json|safe }}</script>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const backBtn = document.getElementById("backToDetailBtn");
-    if (!backBtn) return;
-    const returnTo = "{{ request.GET.return_to|default:''|escapejs }}";
-    let canGoBack = false;
-    if (returnTo) {
-      canGoBack = true;
-    } else if (document.referrer) {
-      try {
-        const refUrl = new URL(document.referrer);
-        canGoBack = refUrl.origin === window.location.origin;
-      } catch (err) {
-        canGoBack = false;
-      }
-    }
-    if (!canGoBack) {
-      backBtn.style.display = "none";
-      return;
-    }
-
-    backBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      if (returnTo) {
-        window.location.href = returnTo;
-        return;
-      }
-      if (document.referrer) {
-        try {
-          const refUrl = new URL(document.referrer);
-          if (refUrl.origin === window.location.origin) {
-            window.history.back();
-            return;
-          }
-        } catch (err) {
-          // Ignore malformed referrer and use fallback path.
-        }
-      }
-      window.location.href = "/";
-    });
-  });
-</script>
 {% if kakao_map_js_key %}
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_map_js_key }}&autoload=false&libraries=services,clusterer"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_map_js_key }}&autoload=false&libraries=clusterer"></script>
 <script>
   (function () {
-    const shops = JSON.parse(document.getElementById("partsAsData").textContent || "[]");
     const state = {
-      equipmentType: document.getElementById("equipmentTypeInput").value || "all",
+      equipmentType: "{{ selected_equipment_type|default:'all' }}",
       region: document.getElementById("regionInput").value || "",
-      manufacturer: document.getElementById("manufacturerInput").value.trim(),
-      shopKind: document.getElementById("shopKindSelect").value || "all",
+      centerType: document.getElementById("centerTypeInput").value || "all",
+      manufacturers: new Set(),
+      repairTypes: new Set(),
       listKindFilter: "all",
-      userPosition: null,
-      selectedShopId: null,
+      nameKeyword: "",
+      selectedId: null,
     };
-
-    const regionCenters = {
-      "서울": { lat: 37.5665, lng: 126.9780 }, "경기": { lat: 37.4138, lng: 127.5183 }, "인천": { lat: 37.4563, lng: 126.7052 },
-      "부산": { lat: 35.1796, lng: 129.0756 }, "대구": { lat: 35.8714, lng: 128.6014 }, "광주": { lat: 35.1595, lng: 126.8526 },
-      "대전": { lat: 36.3504, lng: 127.3845 }, "울산": { lat: 35.5384, lng: 129.3114 }, "세종": { lat: 36.4800, lng: 127.2890 },
-      "강원": { lat: 37.8228, lng: 128.1555 }, "충북": { lat: 36.6357, lng: 127.4914 }, "충남": { lat: 36.6588, lng: 126.6728 },
-      "전북": { lat: 35.8200, lng: 127.1088 }, "전남": { lat: 34.8161, lng: 126.4630 }, "경북": { lat: 36.5760, lng: 128.5056 },
-      "경남": { lat: 35.4606, lng: 128.2132 }, "제주": { lat: 33.4996, lng: 126.5312 },
-    };
+    let map, asClusterer, partsClusterer;
+    const markersById = new Map();
+    const infoById = new Map();
+    let centers = [];
 
     const listEl = document.getElementById("shopList");
     const resultCountEl = document.getElementById("resultCount");
     const countAllEl = document.getElementById("countAll");
     const countAsEl = document.getElementById("countAs");
     const countPartsEl = document.getElementById("countParts");
+    const excavatorBox = document.getElementById("excavatorDetailBox");
 
-    let map, geocoder, clusterer;
-    const markersById = new Map();
-    const infoWindowsById = new Map();
-    const geocodeCache = new Map();
-
+    function esc(v) {
+      return (v || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    }
+    function updateExcavatorBox() {
+      excavatorBox.classList.toggle("open", state.equipmentType === "excavator");
+    }
+    function buildApiUrl() {
+      const params = new URLSearchParams();
+      params.set("equipment_type", state.equipmentType);
+      params.set("region", state.region);
+      params.set("center_type", state.centerType);
+      if (state.manufacturers.size) params.set("manufacturers", Array.from(state.manufacturers).join(","));
+      if (state.repairTypes.size) params.set("repair_types", Array.from(state.repairTypes).join(","));
+      return `/api/service-centers/?${params.toString()}`;
+    }
     function markerImage(kind) {
       const text = kind === "as" ? "AS" : "부";
-      const color = kind === "as" ? "#2563eb" : "#16a34a";
-      const svg = encodeURIComponent(
-        `<svg xmlns='http://www.w3.org/2000/svg' width='46' height='56'><path d='M23 2C12 2 3 11 3 22c0 14 18 30 20 32 2-2 20-18 20-32C43 11 34 2 23 2z' fill='${color}'/><circle cx='23' cy='22' r='13' fill='white'/><text x='23' y='26' font-size='11' font-family='Arial' font-weight='700' text-anchor='middle' fill='${color}'>${text}</text></svg>`
-      );
+      const fillColor = kind === "as" ? "rgba(37, 99, 235, 0.75)" : "rgba(249, 115, 22, 0.75)";
+      const textColor = kind === "as" ? "#2563eb" : "#f97316";
+      const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='46' height='56'><path d='M23 2C12 2 3 11 3 22c0 14 18 30 20 32 2-2 20-18 20-32C43 11 34 2 23 2z' fill='${fillColor}' stroke='white' stroke-width='1.2'/><circle cx='23' cy='22' r='13' fill='white'/><text x='23' y='26' font-size='11' font-family='Arial' font-weight='700' text-anchor='middle' fill='${textColor}'>${text}</text></svg>`);
       return new kakao.maps.MarkerImage(`data:image/svg+xml;charset=UTF-8,${svg}`, new kakao.maps.Size(34, 42), { offset: new kakao.maps.Point(17, 42) });
     }
-
-    function sanitize(str) {
-      return (str || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-    }
-
-    function buildInfoWindowContent(shop) {
-      const tags = (shop.equipment_tags || []).slice(0, 4).map((t) => `<span class="tag">${sanitize(t)}</span>`).join("");
-      const contact = sanitize(shop.contact || "연락처 없음");
-      const address = sanitize(shop.address || shop.region || "");
-      const name = sanitize(shop.name);
-      const routeUrl = shop.lat && shop.lng ? `https://map.kakao.com/link/to/${encodeURIComponent(shop.name)},${shop.lat},${shop.lng}` : "#";
-      return `
-        <div class="gn-info-window">
-          <div class="name">${name}</div>
-          <div class="meta">${address}</div>
-          <div class="meta">${contact}</div>
-          <div class="tags">${tags}</div>
-          <div class="actions">
-            <a class="call" href="tel:${sanitize(shop.contact || "")}">전화하기</a>
-            <a class="route" href="${routeUrl}" target="_blank" rel="noopener">길찾기</a>
-          </div>
-        </div>`;
-    }
-
-    function distanceKm(aLat, aLng, bLat, bLng) {
-      const toRad = (v) => (v * Math.PI) / 180;
-      const R = 6371;
-      const dLat = toRad(bLat - aLat);
-      const dLng = toRad(bLng - aLng);
-      const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-    }
-
-    function inferRegionCenter(region) {
-      const key = Object.keys(regionCenters).find((k) => (region || "").includes(k));
-      return key ? regionCenters[key] : null;
-    }
-
-    function getFilteredShops() {
-      let result = shops.filter((shop) => {
-        if (state.equipmentType !== "all" && !(shop.equipment_keys || []).includes(state.equipmentType)) return false;
-        if (state.shopKind !== "all" && shop.shop_kind !== state.shopKind) return false;
-        if (state.region && !(shop.region || "").includes(state.region)) return false;
-        if (state.manufacturer) {
-          if (!Array.isArray(shop.manufacturers) || !shop.manufacturers.includes(state.manufacturer)) return false;
-        }
-        return true;
-      });
-      if (state.userPosition) {
-        result = result.map((shop) => {
-          if (shop.lat && shop.lng) {
-            shop.distanceKm = distanceKm(state.userPosition.lat, state.userPosition.lng, shop.lat, shop.lng);
-          } else {
-            shop.distanceKm = null;
-          }
-          return shop;
-        }).sort((a, b) => {
-          if (a.distanceKm == null && b.distanceKm == null) return 0;
-          if (a.distanceKm == null) return 1;
-          if (b.distanceKm == null) return -1;
-          return a.distanceKm - b.distanceKm;
-        });
-      }
-      return result;
-    }
-
-    function renderList(filtered) {
-      const listFiltered = filtered.filter((shop) => state.listKindFilter === "all" || shop.shop_kind === state.listKindFilter);
-      if (!listFiltered.length) {
-        listEl.innerHTML = `<div class="gn-empty">조건에 맞는 업체가 없습니다.</div>`;
-        return;
-      }
-      listEl.innerHTML = listFiltered.map((shop) => {
-        const active = state.selectedShopId === shop.id ? "active" : "";
-        const badge = shop.shop_kind === "as" ? "AS센터" : "부품점";
-        const distanceText = shop.distanceKm != null ? `${shop.distanceKm.toFixed(1)}km` : "";
-        const tags = (shop.equipment_tags || []).slice(0, 4).map((t) => `<span class="gn-equip-tag">${sanitize(t)}</span>`).join("");
-        const routeUrl = shop.lat && shop.lng ? `https://map.kakao.com/link/to/${encodeURIComponent(shop.name)},${shop.lat},${shop.lng}` : "#";
-        return `
-          <article class="gn-shop-card ${active}" data-shop-id="${shop.id}">
-            <div class="gn-shop-top">
-              <p class="gn-shop-name">${sanitize(shop.name)}</p>
-              <span class="gn-badge ${shop.shop_kind}">${badge}</span>
-            </div>
-            <div class="gn-distance">${distanceText}</div>
-            <div class="small text-muted mb-1"><i class="bi bi-geo-alt me-1"></i>${sanitize(shop.address || shop.region || "주소 미등록")}</div>
-            <div class="small fw-semibold mb-1"><i class="bi bi-telephone me-1"></i>${sanitize(shop.contact || "연락처 없음")}</div>
-            <div class="gn-equip-tags">${tags}</div>
-            <div class="gn-card-actions">
-              <a class="btn btn-outline-dark btn-sm" href="tel:${sanitize(shop.contact || "")}">전화하기</a>
-              <a class="btn btn-outline-secondary btn-sm" href="${routeUrl}" target="_blank" rel="noopener">길찾기</a>
-            </div>
-          </article>`;
-      }).join("");
-
-      listEl.querySelectorAll(".gn-shop-card").forEach((card) => {
-        card.addEventListener("click", function () {
-          const id = Number(this.dataset.shopId);
-          selectShop(id, true);
-        });
+    function visibleCenters() {
+      const keyword = (state.nameKeyword || "").trim().toLowerCase();
+      return centers.filter((c) => {
+        const matchKind = state.listKindFilter === "all" || c.center_type_key === state.listKindFilter;
+        const matchName = !keyword || (c.name || "").toLowerCase().includes(keyword);
+        return matchKind && matchName;
       });
     }
-
-    function updateCounts(filtered) {
-      const all = filtered.length;
-      const asCount = filtered.filter((x) => x.shop_kind === "as").length;
-      const partsCount = filtered.filter((x) => x.shop_kind === "parts").length;
+    function updateCounts() {
+      const all = centers.length;
+      const asCount = centers.filter((x) => x.center_type_key === "as").length;
+      const partsCount = centers.filter((x) => x.center_type_key === "parts").length;
+      resultCountEl.textContent = String(all);
       countAllEl.textContent = String(all);
       countAsEl.textContent = String(asCount);
       countPartsEl.textContent = String(partsCount);
-      resultCountEl.textContent = String(all);
     }
-
-    function refreshMarkers(filtered) {
-      const visible = filtered.filter((shop) => state.listKindFilter === "all" || shop.shop_kind === state.listKindFilter);
-      clusterer.clear();
-      const markers = [];
-      visible.forEach((shop) => {
-        const marker = markersById.get(shop.id);
-        if (marker) markers.push(marker);
+    function renderList() {
+      const filtered = visibleCenters();
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="gn-empty">조건에 맞는 업체가 없습니다.</div>';
+        return;
+      }
+      listEl.innerHTML = filtered.map((c) => `
+        <article class="gn-shop-card ${state.selectedId === c.id ? "active" : ""}" data-id="${c.id}">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <p class="gn-shop-name">${esc(c.name)}</p>
+            <span class="gn-badge ${c.center_type_key}">${esc(c.center_type)}</span>
+          </div>
+          <div class="small text-muted mb-1">${esc(c.address || c.region || "주소 미등록")}</div>
+          <div class="gn-shop-rating">★ ${Number(c.rating || 0).toFixed(1)} <span class="count">리뷰 ${Number(c.review_count || 0)}개</span></div>
+          <div class="small fw-semibold mb-1">${esc(c.phone || "연락처 없음")}</div>
+          <div class="d-flex flex-wrap gap-1">${(c.manufacturers || []).slice(0, 4).map((t) => `<span class="gn-equip-tag">${esc(t)}</span>`).join("")}</div>
+        </article>
+      `).join("");
+      listEl.querySelectorAll(".gn-shop-card").forEach((el) => {
+        el.addEventListener("click", () => selectCenter(Number(el.dataset.id), true));
       });
-      if (markers.length) clusterer.addMarkers(markers);
     }
-
-    function focusBounds(filtered) {
+    function clearMapObjects() {
+      infoById.forEach((iw) => iw.close());
+      markersById.forEach((m) => m.setMap(null));
+      markersById.clear();
+      infoById.clear();
+      if (asClusterer) asClusterer.clear();
+      if (partsClusterer) partsClusterer.clear();
+    }
+    function renderMarkers() {
+      clearMapObjects();
       const bounds = new kakao.maps.LatLngBounds();
-      let count = 0;
-      filtered.forEach((shop) => {
-        if (shop.lat && shop.lng) {
-          bounds.extend(new kakao.maps.LatLng(shop.lat, shop.lng));
-          count += 1;
-        }
+      const asMarkers = [];
+      const partsMarkers = [];
+      visibleCenters().forEach((c) => {
+        if (typeof c.lat !== "number" || typeof c.lng !== "number") return;
+        const pos = new kakao.maps.LatLng(c.lat, c.lng);
+        const marker = new kakao.maps.Marker({ position: pos, title: c.name, image: markerImage(c.center_type_key) });
+        const info = new kakao.maps.InfoWindow({
+          content: `<div class="gn-info-window"><div><strong>${esc(c.name)}</strong></div><div>${esc(c.phone || "연락처 없음")}</div><div>${esc(c.address || c.region || "")}</div><div>취급 제조사: ${esc((c.manufacturers || []).join(", ") || "-")}</div><div>영업시간: ${esc(c.operating_hours || "정보 없음")}</div></div>`,
+        });
+        kakao.maps.event.addListener(marker, "click", () => selectCenter(c.id, false));
+        marker.setMap(map);
+        if (c.center_type_key === "as") asMarkers.push(marker); else partsMarkers.push(marker);
+        markersById.set(c.id, marker);
+        infoById.set(c.id, info);
+        bounds.extend(pos);
       });
-      if (count > 0) {
+      if (asMarkers.length || partsMarkers.length) {
+        if (asMarkers.length) asClusterer.addMarkers(asMarkers);
+        if (partsMarkers.length) partsClusterer.addMarkers(partsMarkers);
         map.setBounds(bounds);
-      } else if (state.region) {
-        const center = inferRegionCenter(state.region);
-        if (center) map.setCenter(new kakao.maps.LatLng(center.lat, center.lng));
       }
     }
-
-    function closeAllInfoWindows() {
-      infoWindowsById.forEach((iw) => iw.close());
-    }
-
-    function selectShop(id, moveMap) {
-      state.selectedShopId = id;
-      const filtered = getFilteredShops();
-      renderList(filtered);
-      refreshMarkers(filtered);
-      closeAllInfoWindows();
+    function selectCenter(id, pan) {
+      state.selectedId = id;
+      renderList();
+      infoById.forEach((iw) => iw.close());
       const marker = markersById.get(id);
-      const infoWindow = infoWindowsById.get(id);
-      if (marker && infoWindow) {
-        infoWindow.open(map, marker);
-        if (moveMap) map.panTo(marker.getPosition());
+      const info = infoById.get(id);
+      if (marker && info) {
+        info.open(map, marker);
+        if (pan) map.panTo(marker.getPosition());
       }
-      const card = listEl.querySelector(`.gn-shop-card[data-shop-id="${id}"]`);
-      if (card) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
-
-    function applyFilters(options) {
-      if (options) Object.assign(state, options);
-      const filtered = getFilteredShops();
-      updateCounts(filtered);
-      renderList(filtered);
-      refreshMarkers(filtered);
-      focusBounds(filtered);
+    function resetSelection() {
+      state.selectedId = null;
+      infoById.forEach((iw) => iw.close());
     }
-
-    function initPillEvents() {
+    async function fetchCenters() {
+      resetSelection();
+      const res = await fetch(buildApiUrl(), { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const data = await res.json();
+      centers = Array.isArray(data.centers) ? data.centers : [];
+      updateCounts();
+      renderList();
+      renderMarkers();
+    }
+    function bindEvents() {
       document.querySelectorAll("#equipmentTypePills .gn-pill-btn").forEach((btn) => {
-        btn.addEventListener("click", function () {
+        btn.addEventListener("click", async function () {
           document.querySelectorAll("#equipmentTypePills .gn-pill-btn").forEach((el) => el.classList.remove("active"));
           this.classList.add("active");
           state.equipmentType = this.dataset.equipmentType;
+          if (state.equipmentType !== "excavator") {
+            state.manufacturers.clear(); state.repairTypes.clear();
+            document.querySelectorAll(".gn-filter-chip").forEach((x) => x.classList.remove("active"));
+          }
+          updateExcavatorBox();
+          await fetchCenters();
         });
       });
-    }
-
-    function setupSearchForm() {
-      const form = document.getElementById("partsAsSearchForm");
-      const regionInput = document.getElementById("regionInput");
-      const manufacturerInput = document.getElementById("manufacturerInput");
-      const shopKindSelect = document.getElementById("shopKindSelect");
-      const resetBtn = document.getElementById("resetBtn");
-
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        applyFilters({
-          region: regionInput.value,
-          manufacturer: manufacturerInput.value.trim(),
-          shopKind: shopKindSelect.value,
+      document.querySelectorAll(".gn-filter-chip").forEach((chip) => {
+        chip.addEventListener("click", async function () {
+          const group = this.dataset.group;
+          const value = this.dataset.value;
+          this.classList.toggle("active");
+          const target = group === "manufacturers" ? state.manufacturers : state.repairTypes;
+          if (target.has(value)) target.delete(value); else target.add(value);
+          await fetchCenters();
         });
       });
-
-      resetBtn.addEventListener("click", function () {
-        state.equipmentType = "all";
-        state.region = "";
-        state.manufacturer = "";
-        state.shopKind = "all";
-        state.listKindFilter = "all";
-        state.userPosition = null;
-        state.selectedShopId = null;
-        regionInput.value = "";
-        manufacturerInput.value = "";
-        shopKindSelect.value = "all";
-        document.querySelectorAll("#equipmentTypePills .gn-pill-btn").forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.equipmentType === "all");
-        });
-        document.querySelectorAll(".gn-kind-btn").forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.kindFilter === "all");
-        });
-        applyFilters();
+      document.getElementById("regionInput").addEventListener("change", async function () {
+        state.region = this.value || "";
+        await fetchCenters();
       });
-    }
-
-    function setupKindTabs() {
+      document.getElementById("centerTypeInput").addEventListener("change", async function () {
+        state.centerType = this.value || "all";
+        await fetchCenters();
+      });
+      document.getElementById("nameSearchInput").addEventListener("input", function () {
+        state.nameKeyword = this.value || "";
+        resetSelection();
+        renderList();
+        renderMarkers();
+      });
       document.querySelectorAll(".gn-kind-btn").forEach((btn) => {
         btn.addEventListener("click", function () {
           document.querySelectorAll(".gn-kind-btn").forEach((el) => el.classList.remove("active"));
           this.classList.add("active");
           state.listKindFilter = this.dataset.kindFilter;
-          const filtered = getFilteredShops();
-          renderList(filtered);
-          refreshMarkers(filtered);
+          resetSelection();
+          renderList();
+          renderMarkers();
         });
       });
-    }
-
-    function geocodeShop(shop) {
-      const cacheKey = `${shop.address || ""}|${shop.region || ""}`;
-      if (geocodeCache.has(cacheKey)) return Promise.resolve(geocodeCache.get(cacheKey));
-      return new Promise((resolve) => {
-        const target = shop.address || shop.region || "";
-        if (!target) { resolve(null); return; }
-        geocoder.addressSearch(target, function (result, status) {
-          if (status === kakao.maps.services.Status.OK && result && result[0]) {
-            const coords = { lat: Number(result[0].y), lng: Number(result[0].x) };
-            geocodeCache.set(cacheKey, coords);
-            resolve(coords);
-            return;
-          }
-          const fallback = inferRegionCenter(shop.region || "");
-          if (fallback) {
-            geocodeCache.set(cacheKey, fallback);
-            resolve(fallback);
-            return;
-          }
-          resolve(null);
+      const layoutEl = document.querySelector(".gn-layout");
+      const mobileTabsEl = document.getElementById("mobileViewTabs");
+      function applyMobileView(view) {
+        if (!layoutEl || window.innerWidth > 991) {
+          if (layoutEl) layoutEl.classList.remove("mobile-map", "mobile-list");
+          return;
+        }
+        layoutEl.classList.toggle("mobile-map", view === "map");
+        layoutEl.classList.toggle("mobile-list", view === "list");
+        mobileTabsEl.querySelectorAll(".gn-mobile-tab-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.mobileView === view);
         });
-      });
-    }
-
-    async function buildMapObjects() {
-      for (const shop of shops) {
-        const coords = await geocodeShop(shop);
-        if (!coords) continue;
-        shop.lat = coords.lat;
-        shop.lng = coords.lng;
-        const marker = new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(coords.lat, coords.lng),
-          image: markerImage(shop.shop_kind),
-          title: shop.name,
-        });
-        const infoWindow = new kakao.maps.InfoWindow({ content: buildInfoWindowContent(shop) });
-        marker.setMap(map);
-        kakao.maps.event.addListener(marker, "click", function () {
-          selectShop(shop.id, false);
-        });
-        markersById.set(shop.id, marker);
-        infoWindowsById.set(shop.id, infoWindow);
       }
-      applyFilters();
-    }
-
-    function setupMapButtons() {
-      document.getElementById("fitBoundsBtn").addEventListener("click", function () {
-        focusBounds(getFilteredShops());
-      });
-      document.getElementById("myLocationBtn").addEventListener("click", function () {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(function (pos) {
-          state.userPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          map.panTo(new kakao.maps.LatLng(state.userPosition.lat, state.userPosition.lng));
-          applyFilters();
+      mobileTabsEl.querySelectorAll(".gn-mobile-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          applyMobileView(this.dataset.mobileView);
         });
       });
+      window.addEventListener("resize", function () {
+        const current = mobileTabsEl.querySelector(".gn-mobile-tab-btn.active")?.dataset.mobileView || "map";
+        applyMobileView(current);
+      });
+      applyMobileView("map");
+      document.getElementById("resetBtn").addEventListener("click", async function () {
+        state.equipmentType = "all"; state.region = ""; state.centerType = "all"; state.listKindFilter = "all";
+        state.nameKeyword = "";
+        state.manufacturers.clear(); state.repairTypes.clear();
+        document.getElementById("regionInput").value = "";
+        document.getElementById("centerTypeInput").value = "all";
+        document.getElementById("nameSearchInput").value = "";
+        document.querySelectorAll(".gn-pill-btn").forEach((x) => x.classList.toggle("active", x.dataset.equipmentType === "all"));
+        document.querySelectorAll(".gn-kind-btn").forEach((x) => x.classList.toggle("active", x.dataset.kindFilter === "all"));
+        document.querySelectorAll(".gn-filter-chip").forEach((x) => x.classList.remove("active"));
+        updateExcavatorBox();
+        await fetchCenters();
+      });
     }
-
-    kakao.maps.load(function () {
-      map = new kakao.maps.Map(document.getElementById("partsAsMap"), {
-        center: new kakao.maps.LatLng(36.5, 127.8),
-        level: 13,
+    kakao.maps.load(async function () {
+      map = new kakao.maps.Map(document.getElementById("partsAsMap"), { center: new kakao.maps.LatLng(36.5, 127.8), level: 13 });
+      asClusterer = new kakao.maps.MarkerClusterer({
+        map, averageCenter: true, minLevel: 8,
+        styles: [{ width:"46px", height:"46px", background:"rgba(37, 99, 235, 0.75)", border:"1px solid rgba(255,255,255,0.95)", borderRadius:"23px", color:"#fff", textAlign:"center", fontWeight:"700", lineHeight:"46px", fontSize:"14px" }],
       });
-      geocoder = new kakao.maps.services.Geocoder();
-      clusterer = new kakao.maps.MarkerClusterer({
-        map: map,
-        averageCenter: true,
-        minLevel: 8,
-        styles: [{
-          width: "46px", height: "46px", background: "rgba(26,26,26,.82)", borderRadius: "23px", color: "#F5A623", textAlign: "center", fontWeight: "700", lineHeight: "46px",
-        }],
+      partsClusterer = new kakao.maps.MarkerClusterer({
+        map, averageCenter: true, minLevel: 8,
+        styles: [{ width:"46px", height:"46px", background:"rgba(249, 115, 22, 0.75)", border:"1px solid rgba(255,255,255,0.95)", borderRadius:"23px", color:"#fff", textAlign:"center", fontWeight:"700", lineHeight:"46px", fontSize:"14px" }],
       });
-
-      initPillEvents();
-      setupSearchForm();
-      setupKindTabs();
-      setupMapButtons();
-      buildMapObjects();
+      updateExcavatorBox();
+      bindEvents();
+      await fetchCenters();
     });
   })();
 </script>

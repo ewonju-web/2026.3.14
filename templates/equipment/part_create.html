@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .gn-part-create-page { padding: 1.15rem 0 2rem; }
+    .gn-part-create-card {
+        max-width: 820px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid var(--gn-border);
+        border-radius: 14px;
+        box-shadow: var(--gn-shadow);
+    }
+    .gn-part-create-head {
+        padding: 1rem 1.1rem 0.25rem;
+        border-bottom: 1px solid #eceff4;
+    }
+    .gn-part-create-title {
+        margin: 0;
+        font-size: 1.28rem;
+        font-weight: 800;
+        color: var(--gn-text);
+    }
+    .gn-part-create-title::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 1rem;
+        margin-right: 0.5rem;
+        border-radius: 2px;
+        background: var(--gn-accent);
+        vertical-align: middle;
+    }
+    .gn-part-create-body { padding: 1rem 1.1rem 1.1rem; }
+    .gn-form-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    .gn-chip-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .gn-chip-input { position: absolute; opacity: 0; pointer-events: none; }
+    .gn-chip-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        padding: 0.42rem 0.9rem;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #374151;
+        background: #fff;
+        cursor: pointer;
+        transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .gn-chip-input:checked + .gn-chip-label {
+        background: #F5A623;
+        border-color: #F5A623;
+        color: #fff;
+    }
+    .gn-help {
+        font-size: 0.82rem;
+        color: #6b7280;
+        margin-top: 0.28rem;
+    }
+    .gn-file-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.55rem;
+    }
+    .gn-file-thumb {
+        width: 78px;
+        height: 78px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+    .gn-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+    .gn-submit-btn {
+        flex: 1;
+        border: none;
+        border-radius: 10px;
+        background: var(--gn-accent);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 800;
+        padding: 0.7rem 0.9rem;
+    }
+    .gn-cancel-btn {
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 0.7rem 0.9rem;
+        min-width: 110px;
+        text-align: center;
+    }
+    .gn-error {
+        font-size: 0.82rem;
+        color: #dc2626;
+        margin-top: 0.28rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gn-part-create-page">
+    <div class="container">
+        <div class="gn-part-create-card">
+            <div class="gn-part-create-head">
+                <h2 class="gn-part-create-title">{% if mode == "edit" %}부품 수정{% else %}부품 등록{% endif %}</h2>
+            </div>
+
+            <div class="gn-part-create-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2">
+                        {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="gn-form-label">카테고리</label>
+                        <div class="gn-chip-group">
+                            {% for value, label in form.fields.category.choices %}
+                            <div>
+                                <input
+                                    type="radio"
+                                    class="gn-chip-input"
+                                    name="category"
+                                    id="cat_{{ value }}"
+                                    value="{{ value }}"
+                                    {% if form.category.value == value %}checked{% endif %}
+                                >
+                                <label class="gn-chip-label" for="cat_{{ value }}">{{ label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.category.errors %}
+                        <div class="gn-error">{{ form.category.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="gn-form-label" for="{{ form.title.id_for_label }}">상품명</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="gn-error">{{ form.title.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="gn-form-label" for="{{ form.price.id_for_label }}">가격(만원)</label>
+                        {{ form.price }}
+                        {% if form.price.errors %}<div class="gn-error">{{ form.price.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="gn-form-label" for="{{ form.compatibility.id_for_label }}">호환기종</label>
+                        {{ form.compatibility }}
+                        {% if form.compatibility.errors %}<div class="gn-error">{{ form.compatibility.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="gn-form-label" for="id_part_images">사진 업로드</label>
+                        <input type="file" name="images" id="id_part_images" class="form-control" multiple accept="image/*">
+                        <p class="gn-help mb-0">여러 장 선택할 수 있습니다.</p>
+                        <div id="part-image-previews" class="gn-file-preview"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="gn-form-label" for="{{ form.description.id_for_label }}">설명</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="gn-error">{{ form.description.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="gn-actions">
+                        <button type="submit" class="gn-submit-btn">{% if mode == "edit" %}수정 저장{% else %}등록하기{% endif %}</button>
+                        <a href="{% if mode == 'edit' and part %}{% url 'part_detail' part.pk %}{% else %}{% url 'part_list' %}{% endif %}" class="gn-cancel-btn">취소</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const input = document.getElementById("id_part_images");
+    const preview = document.getElementById("part-image-previews");
+    if (!input || !preview) return;
+
+    input.addEventListener("change", function () {
+        preview.innerHTML = "";
+        Array.from(this.files || []).forEach((file) => {
+            const img = document.createElement("img");
+            img.className = "gn-file-thumb";
+            img.alt = "preview";
+            img.src = URL.createObjectURL(file);
+            preview.appendChild(img);
+        });
+    });
+})();
+</script>
+{% endblock %}

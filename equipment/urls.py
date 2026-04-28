@@ -76,5 +76,8 @@ urlpatterns = [
     path('parts/<int:pk>/edit/', views.part_edit, name='part_edit'),
     path('parts/<int:pk>/delete/', views.part_delete, name='part_delete'),
     path('info/', views.excavator_info, name='excavator_info'),
+    path('finance/', views.finance, name='finance'),
     path('parts-as/', views.parts_as, name='parts_as'),
+    path('parts-as/register/', views.parts_as_register, name='parts_as_register'),
+    path('api/service-centers/', views.service_centers_api, name='service_centers_api'),
 ]
